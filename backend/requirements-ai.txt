@@ -1,0 +1,3 @@
+# Optional: required only when ACADEMICAI_AI_PROVIDER=anthropic.
+# The default heuristic provider needs no API access.
+anthropic>=0.40

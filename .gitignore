@@ -1,0 +1,19 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+dist/
+*.db
+*.db-wal
+*.db-shm
+.env
+.DS_Store
+instance/
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

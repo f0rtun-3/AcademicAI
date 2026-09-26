@@ -1,0 +1,68 @@
+"""In-app notifications (spec 19, 21).
+
+WHAT THIS IS NOT
+----------------
+Not a second notification system. These endpoints read the SAME `notifications`
+rows the worker already writes for email; a row is one event with two outputs.
+Nothing here enqueues, sends, retries, or touches delivery state — that remains
+the worker's, so connecting a real email provider later changes nothing in this
+file.
+
+WHOSE ROWS
+----------
+Only the caller's, enforced in the query rather than by a check the route is
+trusted to have performed. No endpoint accepts a user id: the identity comes
+from the bearer token via `require_auth`, and every statement in
+notification_service filters on it. Asking for another person's notification id
+returns 404 — the same answer as an id that does not exist, so the endpoint
+cannot be used to discover whether one does.
+
+`require_auth`, not `require_member`: a student between communities still has a
+history worth reading, and the bell must not 403 mid-transfer.
+"""
+from flask import Blueprint, g
+
+from ..errors import NotFoundError
+from ..security import authz
+from ..services import notification_service
+from .helpers import int_arg, ok
+
+bp = Blueprint("notifications", __name__, url_prefix="/api/notifications")
+
+
+@bp.get("")
+@authz.require_auth
+def list_notifications():
+    """The bell's payload: recent rows plus the unread badge.
+
+    Both in one response because the client polls this, and two round trips to
+    render one bell is one too many.
+    """
+    user_id = g.current_user["id"]
+    limit = int_arg("limit", default=20, maximum=50)
+    rows = notification_service.list_for_user(user_id, limit=limit)
+    return ok({
+        "notifications": [notification_service.notification_payload(r) for r in rows],
+        "unread": notification_service.unread_count(user_id),
+    })
+
+
+@bp.post("/<int:notification_id>/read")
+@authz.require_auth
+def read_one(notification_id):
+    user_id = g.current_user["id"]
+    if not notification_service.mark_read(user_id, notification_id):
+        # Either it is not theirs, or it was already read. Distinguish the two
+        # only for rows that ARE theirs, so a stranger's id never produces a
+        # different answer from a missing one.
+        if not notification_service.exists_for_user(user_id, notification_id):
+            raise NotFoundError("Notification not found.")
+    return ok({"id": notification_id, "unread": notification_service.unread_count(user_id)})
+
+
+@bp.post("/read-all")
+@authz.require_auth
+def read_all():
+    user_id = g.current_user["id"]
+    marked = notification_service.mark_all_read(user_id)
+    return ok({"marked": marked, "unread": notification_service.unread_count(user_id)})
