@@ -708,28 +708,91 @@ Emails should contain enough information to understand the change without openin
 
 # 20. Reminders
 
-MVP default reminder:
+## Academic time (the timezone rule)
 
-**1 day before deadline**
+Every university has a **required IANA timezone**, `universities.timezone`
+(for example `Africa/Lagos`). It is the university's **academic clock**, and a
+community reads every date and time on its university's clock. It is a
+geographic zone, never a fixed offset such as `+01:00`, and never "server time".
+There is **no per-user timezone**: a student always reads their university's
+clock, whatever their device is set to.
 
-Current MVP firing time:
+AcademicAI has two kinds of time value, and they are never mixed:
 
-**08:00 server time**
+- An **instant** is an absolute moment, stored and exchanged as ISO-8601 in UTC
+  **with its offset**, for example `2026-09-27T07:00:00+00:00`. Reminder firing
+  times, `created_at` and ballot deadlines are instants. A value without an
+  offset is **refused**, never assumed to be UTC (`clock.py`).
+- An **academic wall-clock value** is a date and time as people at the
+  university read them: an event's `event_date` + `event_time`, a timetable
+  `start_time`, or a reminder's `remind_at_local` (`2026-09-27T08:00`). It
+  deliberately has no offset, because it means "on this university's clock".
 
-Do not introduce per-user timezone infrastructure yet; this is acceptable for the MVP.
+The pipeline is always:
 
-Architecture should avoid making future timezone support unnecessarily difficult.
+    academic wall-clock -> university IANA zone -> UTC instant -> database/worker
+    UTC instant -> university IANA zone -> what the student reads
 
-When a deadline changes:
+Conversion happens in the backend, in `academic_time.py`, using Python's
+`zoneinfo`. The browser never turns a wall-clock value into an instant. The
+worker compares stored UTC instants only and knows nothing about universities.
 
-- cancel old reminder;
-- schedule new reminder.
+**Today and tomorrow** are the university's date: Chat, the Dashboard's
+upcoming window, calendar parsing and the AI's reading of "due tomorrow" all use
+it. At 00:30 in Lagos it is already the next day, even though the UTC date has
+not changed.
 
-When an event is cancelled:
+**Daylight saving** follows the zone's own rules (zoneinfo, `fold=0`):
 
-- cancel future reminders.
+- A local time the clocks **skip** (01:30 on the spring-forward night) moves
+  **forward by the gap**: it fires at the instant the zone calls 02:30, and
+  that is the time shown back.
+- A local time the clocks **repeat** (01:30 on the fall-back night) means its
+  **first occurrence**, still on summer time.
 
-Personal reminders are separate from official academic records.
+## Official reminders
+
+Default: **REMINDER_HOUR (08:00) on the academic day REMINDER_LEAD_DAYS (1)
+before the event, on the university's clock.** For a Lagos university that is
+07:00 UTC. For London it is 07:00 UTC in summer and 08:00 UTC in winter.
+
+- An event published **after** its reminder moment has passed gets **no**
+  official reminder: not a late one, and not one at a substitute time.
+- When a deadline changes, the old reminder is cancelled and a new one is
+  scheduled on the university's clock.
+- When an event is cancelled, its pending official reminder **and every
+  pending personal reminder linked to it** are cancelled. Unlinked personal
+  reminders are untouched, and reminders that already fired are never
+  rewritten.
+
+## Personal reminders
+
+Personal reminders are separate from official academic records. A request gives
+its time in exactly one way:
+
+- `remind_at_local`: a wall-clock time on the university's clock
+  (`YYYY-MM-DDTHH:MM`). This is preferred; the frontend and the AI both send it.
+- `remind_at`: an instant **with** an explicit offset, kept for compatibility.
+
+Sending both is refused. `remind_at` without an offset is refused. A malformed
+value is refused. Responses return `remind_at` (the UTC instant),
+`remind_at_local` and `timezone`.
+
+AI-suggested reminders use the same `remind_at_local` format and never contain
+an offset. The backend validates a suggestion before the student sees it: its
+format, that it is in the future, and that it names an event the student can
+see, which is not cancelled, and which the reminder does not come after.
+Otherwise the suggestion is dropped.
+
+## Migration
+
+A database from before `universities.timezone` gets the column on start-up.
+Universities listed in `db/reference_data.py` are backfilled with their known
+zone. **Start-up refuses to run** while any university has no valid zone, and
+it writes nothing in that case. Pending official reminders are recalculated
+onto the university's clock. Sent and cancelled reminders, and all personal
+reminders, are left exactly as they were: which zone the author of an existing
+personal reminder meant cannot be known.
 
 ---
 
@@ -1011,8 +1074,9 @@ Core conceptual endpoints:
 
 ## Reminders
 
-- `POST /api/reminders`
-- `GET /api/reminders`
+- `POST /api/reminders` - `{title, event_id?, remind_at_local}`, or an
+  offset-bearing `remind_at` (see section 20)
+- `GET /api/reminders` - each with `remind_at` (UTC), `remind_at_local`, `timezone`
 - `PUT /api/reminders/:id`
 - `DELETE /api/reminders/:id`
 
@@ -1354,9 +1418,11 @@ This has a regression test.
 Recent known implementation notes:
 
 - Announcement route may still need completion if not already added.
-- Reminder lead time is currently fixed at 1 day.
-- Reminder firing time is currently 08:00 server time.
-- No per-user timezone exists yet; do not add it unless explicitly requested.
+- Reminder lead time defaults to 1 day (`ACADEMICAI_REMINDER_LEAD_DAYS`).
+- Official reminders fire at `ACADEMICAI_REMINDER_HOUR` (08:00) on the
+  university's academic clock (`universities.timezone`), never server time.
+- There is no per-user timezone: a student reads their university's clock. Do
+  not add per-user zones unless explicitly requested.
 - Outbox/worker multiprocess behavior should be tested carefully.
 - PostgreSQL integration may be added when practical.
 

@@ -10,7 +10,7 @@ community elects its own reps.
 import json
 import re
 
-from .. import clock
+from .. import academic_time, clock
 from ..db.connection import execute, insert_returning_id, query_all, query_one, transaction
 from ..errors import AuthorizationError, ConflictError, ValidationError
 from ..security import authz
@@ -30,14 +30,13 @@ END_HINTS = ("session ends", "end of session", "session closes", "semester ends"
              "end of semester", "vacation begins", "closing", "last day")
 
 
-def extract(raw_text, reference=None):
+def extract(raw_text, reference):
     """Pull session/term dates out of free-form calendar text.
 
     Returns a dict with session_start, session_end and every labelled period
     found. Nothing is guessed: a label whose value is not a readable date is
-    simply omitted.
+    simply omitted. `reference` is today on the university's clock.
     """
-    reference = reference or clock.now().date()
     periods = []
     for match in LABELLED_DATE_RE.finditer(raw_text or ""):
         label = " ".join(match.group("label").split()).strip(" -:")
@@ -75,7 +74,10 @@ def upload(actor_id, community_id, payload):
         raise ValidationError(
             f"Calendar text must be {MAX_CALENDAR_LENGTH} characters or fewer.")
 
-    extracted = extract(raw_text)
+    # Year-less dates ("12 January") resolve against today on the university's
+    # clock, not the UTC date.
+    extracted = extract(
+        raw_text, reference=academic_time.today(academic_time.zone_for_community(community_id)))
     with transaction() as conn:
         if not authz.is_rep(actor_id, community_id, conn=conn):
             raise AuthorizationError("Only a verified course rep can upload the academic calendar.")

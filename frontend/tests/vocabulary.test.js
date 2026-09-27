@@ -10,7 +10,11 @@ import {
   eventTypeLabel, eventTypeNoun, isRoutineStatus, isStudentFacingChange,
   notificationKindLabel, notificationViewLabel, spokenDay, statusLabel, voteWord,
 } from '../src/lib/vocabulary.js';
-import { localInputToUtc } from '../src/components/ui.jsx';
+import {
+  academicClockTime, academicDateOf, academicToday, instantToLocal, isInstant, reminderLocal,
+  setAcademicTimeZone,
+} from '../src/lib/academicTime.js';
+import { todayISO, whenParts } from '../src/components/ui.jsx';
 
 // Anything matching this in a student-facing string is a leak.
 const LEAK = /[A-Z]{2,}_[A-Z]|_[a-z]+_|\b(SCHEDULED|CANCELLED|PENDING|ACTIVE|NORMAL|CREATE)\b|→|->|event_type|course_id|\bversion\b|\d{4}-\d{2}-\d{2}/;
@@ -163,31 +167,69 @@ describe('dates and small words', () => {
   });
 });
 
-// ── The reminder instant ──────────────────────────────────────────────────
+// ── The academic clock ────────────────────────────────────────────────────
 //
-// localInputToUtc turns the wall-clock time a student picked into the instant
-// it means in THEIR zone. The zone's own rules decide the offset, so the same
-// "08:00" is a different instant either side of a DST change.
+// AcademicAI times are read on the UNIVERSITY'S clock (the session's IANA
+// zone), never on the device's. The device is set to a different zone in each
+// test below to prove it cannot move anything.
 
-describe('local reminder time to an instant', () => {
+describe('the academic clock', () => {
   const original = process.env.TZ;
-  afterEach(() => { process.env.TZ = original; });
-
-  it('reads 08:00 in Lagos as 07:00 UTC', () => {
-    process.env.TZ = 'Africa/Lagos';
-    expect(localInputToUtc('2026-09-27T08:00')).toBe('2026-09-27T07:00:00.000Z');
+  afterEach(() => {
+    process.env.TZ = original;
+    setAcademicTimeZone(null);
   });
 
-  it('follows DST rather than a fixed offset', () => {
-    process.env.TZ = 'Europe/London';
-    // British Summer Time until 25 October 2026, then GMT.
-    expect(localInputToUtc('2026-10-24T08:00')).toBe('2026-10-24T07:00:00.000Z');
-    expect(localInputToUtc('2026-10-26T08:00')).toBe('2026-10-26T08:00:00.000Z');
+  it('reads an instant on the university clock, not the device clock', () => {
+    process.env.TZ = 'UTC';
+    setAcademicTimeZone('Africa/Lagos');
+    expect(instantToLocal('2026-09-27T07:00:00+00:00')).toBe('2026-09-27T08:00');
+    expect(academicClockTime('2026-09-27T07:00:00+00:00')).toBe('08:00');
   });
 
-  it('never returns a value without its zone', () => {
+  it('puts 00:30 Lagos on the Lagos day, though it is still yesterday in UTC', () => {
+    process.env.TZ = 'UTC';
+    setAcademicTimeZone('Africa/Lagos');
+    expect(academicDateOf('2026-09-26T23:30:00+00:00')).toBe('2026-09-27');
+    const when = whenParts('2026-09-26T23:30:00+00:00', new Date('2026-09-20T00:00:00'));
+    expect(when).toEqual({ top: 'Sun', bottom: '27 Sep' });
+  });
+
+  it('follows the university zone\'s DST, not a fixed offset', () => {
     process.env.TZ = 'Africa/Lagos';
-    expect(localInputToUtc('2026-09-27T08:00')).toMatch(/Z$/);
-    expect(localInputToUtc('')).toBeUndefined();
+    setAcademicTimeZone('Europe/London');
+    expect(instantToLocal('2026-10-24T07:00:00+00:00')).toBe('2026-10-24T08:00');   // BST
+    expect(instantToLocal('2026-10-26T08:00:00+00:00')).toBe('2026-10-26T08:00');   // GMT
+  });
+
+  it('takes today from the university clock', () => {
+    process.env.TZ = 'UTC';
+    setAcademicTimeZone('Africa/Lagos');
+    const utcStillYesterday = new Date('2026-09-26T23:30:00Z');
+    expect(academicToday(utcStillYesterday)).toBe('2026-09-27');
+    expect(todayISO(utcStillYesterday)).toBe('2026-09-27');
+  });
+
+  it('leaves academic wall-clock values exactly as written', () => {
+    process.env.TZ = 'America/New_York';
+    setAcademicTimeZone('Africa/Lagos');
+    expect(isInstant('2026-09-27T08:00')).toBe(false);
+    expect(academicDateOf('2026-09-27T00:30')).toBe('2026-09-27');
+    expect(academicClockTime('2026-09-27T00:30')).toBe('00:30');
+    expect(academicDateOf('2026-09-27')).toBe('2026-09-27');
+  });
+
+  it('prefers the API\'s remind_at_local and falls back to reading the instant', () => {
+    process.env.TZ = 'UTC';
+    setAcademicTimeZone('Africa/Lagos');
+    expect(reminderLocal({ remind_at: 'ignored+00:00', remind_at_local: '2026-09-27T00:30' }))
+      .toBe('2026-09-27T00:30');
+    expect(reminderLocal({ remind_at: '2026-09-26T23:30:00+00:00' })).toBe('2026-09-27T00:30');
+  });
+
+  it('refuses a zone the browser does not know, falling back to the device', () => {
+    process.env.TZ = 'UTC';
+    setAcademicTimeZone('Mars/Olympus_Mons');
+    expect(instantToLocal('2026-09-27T07:00:00+00:00')).toBe('2026-09-27T07:00');
   });
 });

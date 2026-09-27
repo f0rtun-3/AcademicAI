@@ -113,6 +113,11 @@ _ADDED_COLUMNS = (
     # verification could never identify which accounts still need it.
     # NULL on rows that predate the column.
     ("users", "email_verification_method", "TEXT"),
+    # The university's academic clock (IANA zone). Added nullable because
+    # SQLite cannot add a NOT NULL column without a default, and there is
+    # deliberately no default zone. _require_university_timezones backfills
+    # the known ones and refuses to start while any university lacks one.
+    ("universities", "timezone", "TEXT"),
 )
 
 
@@ -338,7 +343,53 @@ def init_schema(conn):
     _apply_added_columns(conn)
     _widen_notification_status_check(conn)
     _seed_reference_data(conn)
+    _require_university_timezones(conn)
     return conn
+
+
+def _require_university_timezones(conn):
+    """Give every university its academic timezone, or refuse to start.
+
+    Universities named in reference_data.UNIVERSITY_TIMEZONES that have no zone
+    yet are backfilled with their known one. Any other university without a
+    zone - or with a value that is not a geographic IANA zone - stops start-up
+    with a message saying exactly which rows need one. Nothing is guessed: a
+    wrong zone moves every reminder and every "today" in that university, and
+    UTC is not a safe default for anyone.
+
+    Everything is checked BEFORE anything is written, and the write only fills
+    rows that are still empty, so two processes starting together (API and
+    worker) cannot disagree and a normal start performs no writes at all.
+    """
+    from .. import academic_time
+    from . import reference_data
+
+    fill, unresolved = reference_data.timezone_backfill(conn)
+    problems = [f"id {uid} {name!r} (no timezone set)" for uid, name, _ in unresolved]
+    for row in conn.execute(
+            "SELECT id, name, timezone FROM universities "
+            "WHERE timezone IS NOT NULL AND timezone <> ''").fetchall():
+        try:
+            academic_time.zone(row["timezone"])
+        except academic_time.InvalidTimezone as exc:
+            problems.append(f"id {row['id']} {row['name']!r} ({exc})")
+    if problems:
+        example = (unresolved[0][0] if unresolved else None) or "<id>"
+        raise RuntimeError(
+            "Refusing to start: every university needs its academic timezone "
+            "(universities.timezone, a geographic IANA zone such as "
+            "'Africa/Lagos'), and these do not have a valid one: "
+            + "; ".join(problems) + ". No timezone has been assumed or written. "
+            "Set each to the zone where the university is, for example "
+            f"UPDATE universities SET timezone = 'Africa/Lagos' WHERE id = {example}; "
+            "then start again.")
+    if fill:
+        with transaction(conn):
+            for university_id, zone_name in fill:
+                conn.execute(
+                    "UPDATE universities SET timezone = ? "
+                    "WHERE id = ? AND (timezone IS NULL OR timezone = '')",
+                    (zone_name, university_id))
 
 
 def _explain_schema_conflict(conn, exc):

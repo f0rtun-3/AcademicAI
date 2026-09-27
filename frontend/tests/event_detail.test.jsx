@@ -69,15 +69,19 @@ describe('event detail', () => {
   });
 
   it('offers a student a reminder, created only on an explicit submit', async () => {
-    // A fixed day before the event, in a fixed zone, so the instant sent is
-    // exact. Only Date is faked: faking timers too would stall userEvent.
+    // Only Date is faked: faking timers too would stall userEvent. The DEVICE
+    // is in London on purpose: the university (Babcock) is on Lagos time, and
+    // the device's zone must not move the reminder.
     vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-09-15T09:00:00Z') });
-    process.env.TZ = 'Africa/Lagos';
+    process.env.TZ = 'Europe/London';
     const calls = open({
       '/auth/me': STUDENT_SESSION,
-      '/events/7': { event: EVENT, history: [] },
+      // The backend's default: 08:00 on the academic day before, Lagos clock.
+      '/events/7': { event: EVENT, history: [], reminder_default_local: '2026-09-17T08:00' },
       'POST /reminders': { reminder: { id: 1, title: 'Prepare for COS202 Assignment',
-                                       remind_at: '2026-09-17T08:00:00+00:00',
+                                       remind_at: '2026-09-17T07:00:00+00:00',
+                                       remind_at_local: '2026-09-17T08:00',
+                                       timezone: 'Africa/Lagos',
                                        status: 'PENDING', event_id: 7 } },
     });
     const user = userEvent.setup();
@@ -90,11 +94,12 @@ describe('event detail', () => {
     await waitFor(() => {
       const call = calls.find((c) => c.path === '/reminders' && c.method === 'POST');
       expect(call).toBeTruthy();
-      // It is linked to the event, and defaults to 08:00 the morning before -
-      // 08:00 in LAGOS, which is 07:00 UTC. It used to send "08:00+00:00",
-      // the same digits relabelled as UTC, so the reminder fired an hour late.
+      // Linked to the event, defaulting to 08:00 the morning before on the
+      // university's clock, and sent as that wall-clock time: the backend
+      // attaches Lagos's zone. No instant is computed from the London device.
       expect(call.body.event_id).toBe(7);
-      expect(call.body.remind_at).toBe('2026-09-17T07:00:00.000Z');
+      expect(call.body.remind_at_local).toBe('2026-09-17T08:00');
+      expect(call.body.remind_at).toBeUndefined();
     });
     expect(await screen.findByText(/Only you can see it/)).toBeInTheDocument();
   });

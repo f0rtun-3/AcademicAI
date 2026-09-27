@@ -13,9 +13,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
 import { EmptyState, ErrorBanner } from './States.jsx';
 import {
-  Board, Field, Panel, Row, StatusBadge,
-  localInputToUtc, localTime, utcToLocalInput, whenParts,
+  Board, Field, Panel, Row, StatusBadge, localTime, whenParts,
 } from './ui.jsx';
+import { reminderLocal } from '../lib/academicTime.js';
 
 const PRIVACY = 'These are personal. They are not official academic records and '
               + 'nobody else sees them.';
@@ -61,9 +61,9 @@ export default function PersonalReminders({ caption = PRIVACY }) {
     setEditing(reminder.id);
     setDraft({
       title: reminder.title,
-      // datetime-local wants YYYY-MM-DDTHH:MM
-      // The stored instant, shown in the reader's own clock.
-      remind_at: utcToLocalInput(reminder.remind_at),
+      // datetime-local wants YYYY-MM-DDTHH:MM: the reminder's time on the
+      // university's clock, exactly as the API reports it.
+      remind_at: reminderLocal(reminder),
     });
   }
 
@@ -72,7 +72,8 @@ export default function PersonalReminders({ caption = PRIVACY }) {
     const id = editing;
     await act(() => api.put(`/reminders/${id}`, {
       title: draft.title,
-      remind_at: localInputToUtc(draft.remind_at),
+      // Sent as picked; the backend reads it on the university's clock.
+      remind_at_local: draft.remind_at,
     }));
     setEditing(null);
   }
@@ -81,7 +82,7 @@ export default function PersonalReminders({ caption = PRIVACY }) {
     event.preventDefault();
     await act(() => api.post('/reminders', {
       title: creating.title,
-      remind_at: localInputToUtc(creating.remind_at),
+      remind_at_local: creating.remind_at,
     }));
     setCreating({ title: '', remind_at: '' });
   }
@@ -128,9 +129,9 @@ export default function PersonalReminders({ caption = PRIVACY }) {
                  /* Same column as the calendar and the dashboard: the day
                     named, not an ISO date. The clock time moves to the meta
                     line, where a reminder's own detail belongs. */
-                 when={whenParts(reminder.remind_at)}
+                 when={whenParts(reminderLocal(reminder))}
                  title={reminder.title}
-                 meta={[localTime(reminder.remind_at),
+                 meta={[localTime(reminderLocal(reminder)),
                         reminder.event_id ? 'linked to an academic event' : null]
                    .filter(Boolean).join(' · ') || null}
                  side={<>

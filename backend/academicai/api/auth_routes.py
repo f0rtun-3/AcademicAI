@@ -3,6 +3,7 @@ import logging
 
 from flask import Blueprint, current_app, g
 
+from .. import academic_time
 from ..errors import ConflictError, ValidationError
 from ..security import authz, rate_limit
 from ..services import (auth_service, email_service, email_templates,
@@ -236,6 +237,10 @@ def me():
         "membership": _membership_payload(membership),
         "pending_membership": _membership_payload(pending),
         "next_step": _next_step(user, membership, pending),
+        # The academic clock this student reads (their community's university,
+        # or the one they registered with). The interface shows every event
+        # and reminder time in this IANA zone, whatever the device is set to.
+        "timezone": academic_time.zone_name_for_user(user["id"]),
     })
 
 

@@ -67,6 +67,8 @@ export const REP_SESSION = {
   membership: { community_id: 1, status: 'ACTIVE', role: 'VERIFIED_REP' },
   pending_membership: null,
   next_step: 'dashboard',
+  // As /api/auth/me reports it: the university's academic clock.
+  timezone: 'Africa/Lagos',
 };
 
 export const STUDENT_SESSION = {

@@ -40,10 +40,18 @@ CREATE TABLE IF NOT EXISTS users (
 );
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
+-- universities.timezone is the university's academic clock: a geographic IANA
+-- zone such as 'Africa/Lagos', never a fixed offset. Every event date/time,
+-- "today", and reminder wall-clock time in its communities is read in this
+-- zone (academic_time.py). Databases created before it get the column through
+-- connection._ADDED_COLUMNS and a backfill; start-up refuses to run while any
+-- university lacks a valid zone. (The comment sits outside the CREATE TABLE
+-- because SQLite stores that statement's text verbatim.)
 CREATE TABLE IF NOT EXISTS universities (
     id          INTEGER PRIMARY KEY,
     name        TEXT NOT NULL UNIQUE,
-    created_at  TEXT NOT NULL
+    created_at  TEXT NOT NULL,
+    timezone    TEXT NOT NULL
 );
 
 -- A community is uniquely identified by university + department + level + session (spec 4).

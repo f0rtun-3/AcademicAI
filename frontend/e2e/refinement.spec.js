@@ -192,7 +192,12 @@ test('a sign-up error sits beside its field, which takes focus', async ({ page }
   await expect(page.getByText('Passwords do not match.')).toBeInViewport();
 });
 
-// ── The reminder instant, in real zones ────────────────────────────────────
+// ── Reminder times are on the university's clock, whatever the device says ─
+//
+// Babcock is on Africa/Lagos (the session's `timezone`). The browser's own zone
+// is set per test with timezoneId; it must not move any AcademicAI time. The
+// wall-clock value goes to the API as remind_at_local and the backend attaches
+// the university's zone (DST included), so the page never computes an instant.
 
 async function createDefaultReminder(page, eventPath) {
   const api = await open(page, { path: eventPath, session: STUDENT, ready: 'What changed' });
@@ -202,22 +207,61 @@ async function createDefaultReminder(page, eventPath) {
   return api.requests.find((r) => r.method === 'POST' && r.path === '/api/reminders').body;
 }
 
-test.describe('in Lagos', () => {
-  test.use({ timezoneId: 'Africa/Lagos' });
-  test('08:00 the morning before is sent as 07:00 UTC', async ({ page }) => {
-    const body = await createDefaultReminder(page, '/events/2');   // quiz on 28 September
-    expect(body.remind_at).toBe('2026-09-27T07:00:00.000Z');
+for (const device of ['Africa/Lagos', 'Europe/London', 'America/New_York']) {
+  test.describe(`on a device set to ${device}`, () => {
+    test.use({ timezoneId: device });
+    test('Event Detail sends Babcock\'s 08:00 the morning before, as a local time', async ({ page }) => {
+      const body = await createDefaultReminder(page, '/events/2');   // quiz on 28 September
+      expect(body.remind_at_local).toBe('2026-09-27T08:00');
+      expect(body.remind_at).toBeUndefined();
+      expect(body.event_id).toBe(2);
+    });
+  });
+}
+
+test.describe('London device, Babcock (Lagos) university, after the UK clocks change', () => {
+  test.use({ timezoneId: 'Europe/London' });
+  test('the default is still Babcock\'s wall-clock 08:00', async ({ page }) => {
+    const body = await createDefaultReminder(page, '/events/9');     // due 26 October
+    expect(body.remind_at_local).toBe('2026-10-25T08:00');
   });
 });
 
-test.describe('in London, either side of the clocks going back', () => {
-  test.use({ timezoneId: 'Europe/London' });
-  test('British Summer Time: 08:00 is 07:00 UTC', async ({ page }) => {
-    const body = await createDefaultReminder(page, '/events/8');   // due 25 October
-    expect(body.remind_at).toBe('2026-10-24T07:00:00.000Z');
-  });
-  test('after the change: 08:00 is 08:00 UTC', async ({ page }) => {
-    const body = await createDefaultReminder(page, '/events/9');   // due 26 October
-    expect(body.remind_at).toBe('2026-10-25T08:00:00.000Z');
+test.describe('a device set to UTC', () => {
+  test.use({ timezoneId: 'UTC' });
+  for (const theme of THEMES) {
+    test(`a reminder at 00:30 Lagos shows on the Lagos day (${theme})`, async ({ page }) => {
+      // "Now" is 10:00Z on Saturday 26 September; the reminder is 00:30 on
+      // Sunday 27th in Lagos, which is still the 26th in UTC. It must read as
+      // tomorrow, 27 Sep, 00:30 - never "Today 26 Sep".
+      await page.setViewportSize({ width: 390, height: 800 });
+      await open(page, { path: '/reminders', session: STUDENT, ready: 'Check the portal' }, theme);
+      const row = page.locator('.brow', { hasText: 'Check the portal after midnight' });
+      await expect(row).toContainText('Tomorrow');
+      await expect(row).toContainText('27 Sep');
+      await expect(row).toContainText('00:30');
+      await expect(row).not.toContainText('26 Sep');
+
+      await page.goto('/dashboard');
+      const onDashboard = page.locator('.brow', { hasText: 'Check the portal after midnight' });
+      await expect(onDashboard).toContainText('27 Sep');
+      await expect(onDashboard).toContainText('00:30');
+    });
+  }
+
+  test('Chat shows a suggestion in Babcock\'s time and accepts it unchanged', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    const api = await open(page, { path: '/chat', session: STUDENT, ready: 'AcademicAI Assistant' });
+    api.suggestion = { title: 'Prepare for Programming II Quiz 1',
+                       remind_at_local: '2026-09-27T08:00', timezone: 'Africa/Lagos', event_id: 2 };
+    const input = page.getByLabel('Your question');
+    await input.fill('What is my next deadline?');
+    await input.press('Enter');
+    await expect(page.getByText('Sunday 27 September at 08:00')).toBeVisible();
+    await page.getByRole('button', { name: 'Add reminder' }).click();
+    await expect(page.getByText('Personal reminder created.')).toBeVisible();
+    const body = api.requests.find((r) => r.method === 'POST' && r.path === '/api/reminders').body;
+    expect(body).toEqual({ title: 'Prepare for Programming II Quiz 1',
+                           remind_at_local: '2026-09-27T08:00', event_id: 2 });
   });
 });

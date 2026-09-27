@@ -42,16 +42,22 @@ def _require_text(value, field, max_len=200):
     return cleaned
 
 
-def get_or_create_university(name, conn=None):
+def registered_university_id(name, conn=None):
+    """The id of a university that already exists in the registry.
+
+    Universities are never created as a side effect of signing up or
+    transferring: each one needs its academic timezone, which only the
+    registry (db/reference_data.py) or an operator can state. With the domain
+    check on, the registry gate has already refused an unknown name; this also
+    holds when development relaxes that check.
+    """
     name = _require_text(name, "University")
-    row = query_one("SELECT * FROM universities WHERE name = ?", (name,), conn=conn)
-    if row:
-        return row["id"]
-    return insert_returning_id(
-        "INSERT INTO universities (name, created_at) VALUES (?, ?)",
-        (name, clock.now_iso()),
-        conn=conn,
-    )
+    row = query_one("SELECT id FROM universities WHERE name = ?", (name,), conn=conn)
+    if row is None:
+        raise ValidationError(
+            "AcademicAI does not yet support that university.",
+            details={"field": "university", "university": name})
+    return row["id"]
 
 
 @contextmanager
@@ -136,7 +142,7 @@ def register(data):
         with _about("email"):
             if query_one("SELECT id FROM users WHERE email = ?", (email,), conn=conn):
                 raise ConflictError("An account with that email already exists.")
-        university_id = get_or_create_university(university, conn=conn)
+        university_id = registered_university_id(university, conn=conn)
         # users.identity_status is a LEGACY column: student ID-card verification
         # is out of MVP scope and nothing reads it any more. It is left in the
         # schema rather than dropped (the migrator can add columns but not

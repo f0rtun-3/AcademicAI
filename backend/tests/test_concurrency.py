@@ -251,7 +251,8 @@ def test_transaction_rolls_back_on_failure(file_app):
         before = query_one("SELECT COUNT(*) AS n FROM universities")["n"]
         with pytest.raises(RuntimeError):
             with transaction() as conn:
-                conn.execute("INSERT INTO universities (name, created_at) VALUES ('X', 'now')")
+                conn.execute("INSERT INTO universities (name, created_at, timezone) "
+                             "VALUES ('X', 'now', 'Africa/Lagos')")
                 raise RuntimeError("boom")
         after = query_one("SELECT COUNT(*) AS n FROM universities")["n"]
         assert after == before

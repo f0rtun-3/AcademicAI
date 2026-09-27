@@ -9,9 +9,10 @@ import urllib.parse
 
 from flask import Blueprint, Response, g, request, stream_with_context
 
+from .. import academic_time
 from ..errors import ValidationError
 from ..security import authz
-from ..services import attachment_service, event_service
+from ..services import attachment_service, event_service, reminder_service
 from ..services.change_history import change_payload, history_for
 from .helpers import body, int_arg, ok
 
@@ -42,7 +43,17 @@ def get_event(event_id):
             event, event["id"] in completed,
             attachment_service.attachments_for_payload(event_id)),
         "history": [change_payload(h) for h in history_for("academic_event", event_id)],
+        # The same wall-clock moment the official reminder uses (REMINDER_HOUR
+        # on the academic day before), on the university's clock. The page
+        # offers it as the default for a personal reminder, so the rule lives
+        # in one place instead of being re-derived in the browser.
+        "reminder_default_local": _format_or_none(
+            reminder_service.default_reminder_local(event["event_date"])),
     })
+
+
+def _format_or_none(local):
+    return academic_time.format_local(local) if local is not None else None
 
 
 @bp.post("")

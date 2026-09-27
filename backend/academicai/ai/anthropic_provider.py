@@ -23,10 +23,15 @@ CHAT_JSON_SCHEMA = {
         "answer": {"type": "string"},
         "grounded": {"type": "boolean"},
         "referenced_event_ids": {"type": "array", "items": {"type": "integer"}},
+        # remind_at_local is a wall-clock time on the university's clock,
+        # "YYYY-MM-DDTHH:MM". The model never computes an offset or UTC; the
+        # backend attaches the university's zone and validates it.
         "suggested_reminder": {
             "type": ["object", "null"],
-            "properties": {"title": {"type": "string"}, "remind_at": {"type": "string"}},
-            "required": ["title", "remind_at"],
+            "properties": {"title": {"type": "string"},
+                           "remind_at_local": {"type": "string"},
+                           "event_id": {"type": ["integer", "null"]}},
+            "required": ["title", "remind_at_local"],
             "additionalProperties": False,
         },
     },

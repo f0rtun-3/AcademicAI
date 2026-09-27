@@ -1,8 +1,15 @@
-"""Single source of current time.
+"""Single source of current time, and the owner of INSTANTS.
 
 Every service reads the clock through here rather than calling datetime.now()
 directly, so ballot windows, cooldowns and reminder scheduling are testable
 without sleeping.
+
+Everything here is an absolute instant, stored as ISO-8601 in UTC with its
+offset ("2026-09-27T07:00:00+00:00"). A value without an offset does not say
+which moment it means, so it is REFUSED rather than assumed to be UTC - that
+assumption is exactly how a Lagos reminder once fired an hour late. Academic
+wall-clock values (event_date + event_time, remind_at_local) are a different
+kind of value and live in academic_time.py.
 """
 from datetime import datetime, timedelta, timezone
 
@@ -20,17 +27,19 @@ def now_iso():
 
 
 def to_iso(dt):
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+    if dt.tzinfo is None or dt.utcoffset() is None:
+        raise ValueError(f"to_iso needs an aware datetime; {dt!r} has no timezone")
     return dt.astimezone(timezone.utc).isoformat(timespec="seconds")
 
 
 def parse_iso(value):
+    """A stored or supplied instant. The offset is required: an offset-less
+    string raises ValueError instead of silently becoming UTC."""
     if value is None:
         return None
-    dt = datetime.fromisoformat(value)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
+    dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if dt.tzinfo is None or dt.utcoffset() is None:
+        raise ValueError(f"{value!r} is not an instant: it has no timezone offset")
     return dt
 
 

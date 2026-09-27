@@ -258,7 +258,9 @@ def cancel_event(actor_id, community_id, event_id, expected_version=None,
         record_change(community_id, "academic_event", event_id, "EVENT_CANCELLED",
                       {"status": "SCHEDULED"}, {"status": "CANCELLED"},
                       actor_id=actor_id, source_message=source_message, conn=conn)
-        reminder_service.cancel_for_event(event_id, conn=conn)
+        # The official reminder and every personal reminder linked to this
+        # event - what the rep's cancel dialog promises. Unlinked ones stay.
+        reminder_service.cancel_all_for_event(event_id, conn=conn)
         if notify:
             notification_service.enqueue(
                 notification_service.recipients_for(community_id, updated["course_id"], conn=conn),

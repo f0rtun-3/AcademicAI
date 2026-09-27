@@ -6,6 +6,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api, onUnauthorized, setToken, getToken } from '../api/client.js';
+import { setAcademicTimeZone } from '../lib/academicTime.js';
 
 const AuthContext = createContext(null);
 
@@ -23,6 +24,7 @@ export function AuthProvider({ children }) {
 
   const refresh = useCallback(async () => {
     if (!getToken()) {
+      setAcademicTimeZone(null);
       setSession(null);
       setStatus('anonymous');
       return null;
@@ -30,12 +32,16 @@ export function AuthProvider({ children }) {
     setStatus((current) => (current === 'ready' ? 'ready' : 'loading'));
     try {
       const data = await api.get('/auth/me');
+      // Before the session is stored, so the first screen that renders with it
+      // already reads dates and times on the university's clock.
+      setAcademicTimeZone(data?.timezone ?? null);
       setSession(data);
       setStatus('ready');
       setError(null);
       return data;
     } catch (err) {
       if (err.status === 401) {
+        setAcademicTimeZone(null);
         setSession(null);
         setStatus('anonymous');
       } else {
@@ -49,6 +55,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     refresh();
     return onUnauthorized(() => {
+      setAcademicTimeZone(null);
       setSession(null);
       setStatus('anonymous');
     });
@@ -67,6 +74,7 @@ export function AuthProvider({ children }) {
       /* logging out locally matters more than the server round-trip */
     }
     setToken(null);
+    setAcademicTimeZone(null);
     setSession(null);
     setStatus('anonymous');
   }, []);
@@ -79,6 +87,8 @@ export function AuthProvider({ children }) {
     membership: session?.membership ?? null,
     pendingMembership: session?.pending_membership ?? null,
     nextStep: session?.next_step ?? null,
+    // The university's IANA zone: the clock every date and time is shown on.
+    timeZone: session?.timezone ?? null,
     isRep: session?.membership?.role === 'VERIFIED_REP',
     login,
     logout,

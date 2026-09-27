@@ -11,6 +11,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { IconCheck, IconChevronRight, IconEye, IconEyeOff } from './icons.jsx';
 import { TONE, isRoutineStatus, statusLabel } from '../lib/vocabulary.js';
+import { academicClockTime, academicDateOf, academicToday } from '../lib/academicTime.js';
 
 /* ── Formatting ─────────────────────────────────────────────────────────── */
 
@@ -18,16 +19,20 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
                 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// A calendar day as a local Date at midnight, for day arithmetic only. The DAY
+// is the academic one: an instant ("…T23:30:00+00:00") is read on the
+// university's clock first, because its own first ten characters are the UTC
+// date - a different day for part of every night.
 function parseDate(value) {
-  if (!value) return null;
-  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  const day = academicDateOf(value);
+  if (!day) return null;
+  const date = new Date(`${day}T00:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+// Today on the university's clock (lib/academicTime.js), not the device's.
 export function todayISO(now = new Date()) {
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+  return academicToday(now);
 }
 
 // "Mon / 21 Sep", with today and tomorrow named rather than dated — the
@@ -80,44 +85,21 @@ export function remaining(closesAt) {
   return hours > 0 ? `${hours}h ${minutes}m left` : `${minutes}m left`;
 }
 
-/* ── Local wall-clock ↔ UTC ──────────────────────────────────────────────
+/* ── Reminder times ─────────────────────────────────────────────────────
  *
- * `<input type="datetime-local">` speaks the reader's wall clock and carries
- * no zone. The API stores an absolute instant. Converting between them is the
- * client's job, and getting it wrong is silent: the reminder is accepted, the
- * row looks right, and it simply fires at the wrong moment.
+ * `<input type="datetime-local">` holds a wall-clock time with no zone. It is
+ * sent AS SUCH, as remind_at_local, and the backend reads it on the
+ * university's clock (with that zone's DST rules) - so the browser never turns
+ * it into an instant, and a device set to another zone cannot move it. The API
+ * returns remind_at_local for display and editing.
  *
- * It WAS wrong. The value was sent as `${local}:00+00:00` — local digits
- * relabelled as UTC — so in Lagos (UTC+1) every reminder was set an hour late,
- * and in a negative offset it would have fired early.
+ * It was once converted here with the DEVICE's zone, which put a Babcock
+ * reminder on London time whenever the laptop was set to London.
  */
 
-// "2026-09-22T17:27" (local) → "2026-09-22T16:27:00.000Z".
-// `new Date` parses a zone-less datetime-local string as LOCAL time, which is
-// exactly what the input meant.
-export function localInputToUtc(value) {
-  if (!value) return undefined;
-  const at = new Date(value);
-  return Number.isNaN(at.getTime()) ? undefined : at.toISOString();
-}
-
-// The reverse, for putting a stored instant back into the input.
-export function utcToLocalInput(value) {
-  if (!value) return '';
-  const at = new Date(value);
-  if (Number.isNaN(at.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`
-       + `T${pad(at.getHours())}:${pad(at.getMinutes())}`;
-}
-
-// "08:00" in the reader's own zone, for display beside a reminder.
+// "08:00" on the university's clock, for an instant or a wall-clock value.
 export function localTime(value) {
-  if (!value) return null;
-  const at = new Date(value);
-  if (Number.isNaN(at.getTime())) return null;
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(at.getHours())}:${pad(at.getMinutes())}`;
+  return academicClockTime(value);
 }
 
 export function initials(name) {

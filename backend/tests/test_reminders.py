@@ -16,7 +16,9 @@ def test_reminder_is_scheduled_one_day_before_at_0800(client, academic_community
         from academicai.db.connection import query_all
         rows = query_all("SELECT * FROM event_reminders WHERE event_id = ?", (event["id"],))
         assert len(rows) == 1
-        assert rows[0]["remind_at"].startswith("2026-09-24T08:00")
+        # 08:00 on the university's clock (Babcock: Africa/Lagos, UTC+1) is
+        # 07:00 UTC - not 08:00 UTC, which fired at 09:00 in Lagos.
+        assert rows[0]["remind_at"] == "2026-09-24T07:00:00+00:00"
         assert rows[0]["status"] == "PENDING"
 
 
@@ -44,7 +46,7 @@ def test_deadline_change_cancels_old_and_schedules_new(client, academic_communit
         assert len(rows) == 2
         assert rows[0]["status"] == "CANCELLED"
         assert rows[1]["status"] == "PENDING"
-        assert rows[1]["remind_at"].startswith("2026-10-01T08:00")
+        assert rows[1]["remind_at"] == "2026-10-01T07:00:00+00:00"   # 08:00 Lagos
 
 
 def test_cancelling_an_event_cancels_future_reminders(client, academic_community, app):

@@ -22,6 +22,17 @@ UNIVERSITY_EMAIL_DOMAINS = (
     ("Covenant University", "stu.cu.edu.ng", "STUDENT"),
 )
 
+# Each registry university's academic clock (universities.timezone): where the
+# university IS, as a geographic IANA zone. Stated per university on purpose -
+# there is no default zone, so a university added without one is refused at
+# start-up rather than silently put on UTC or on anyone else's clock.
+UNIVERSITY_TIMEZONES = {
+    "Babcock University": "Africa/Lagos",
+    "University of Ibadan": "Africa/Lagos",
+    "University of Lagos": "Africa/Lagos",
+    "Covenant University": "Africa/Lagos",
+}
+
 
 def normalize_domain(value):
     """Lowercase, trimmed, with any leading '@' or scheme noise removed."""
@@ -59,7 +70,8 @@ def seed(conn, now):
         row = conn.execute("SELECT id FROM universities WHERE name = ?", (name,)).fetchone()
         if row is None:
             cur = conn.execute(
-                "INSERT INTO universities (name, created_at) VALUES (?, ?)", (name, now))
+                "INSERT INTO universities (name, created_at, timezone) VALUES (?, ?, ?)",
+                (name, now, UNIVERSITY_TIMEZONES[name]))
             university_id = cur.lastrowid
         else:
             university_id = row["id"] if not isinstance(row, tuple) else row[0]
@@ -70,3 +82,31 @@ def seed(conn, now):
             (university_id, normalize_domain(domain), domain_type, now),
         )
     return True
+
+
+def timezone_backfill(conn):
+    """The timezones a database still needs, and the universities that cannot
+    be given one.
+
+    Returns (fill, unresolved):
+      fill        [(university_id, zone)] for rows with no timezone yet whose
+                  name is in UNIVERSITY_TIMEZONES;
+      unresolved  [(university_id, name, stored_value)] for rows with no
+                  timezone and no known one.
+
+    Reads only. A timezone already stored is never replaced here: an operator's
+    value wins over the seed list. Whether a stored value is a VALID zone is
+    checked by the caller (connection._require_university_timezones).
+    """
+    fill, unresolved = [], []
+    for row in conn.execute("SELECT id, name, timezone FROM universities").fetchall():
+        uid, name, current = (row[0], row[1], row[2]) if isinstance(row, tuple) else (
+            row["id"], row["name"], row["timezone"])
+        if current not in (None, ""):
+            continue
+        known = UNIVERSITY_TIMEZONES.get(name)
+        if known:
+            fill.append((uid, known))
+        else:
+            unresolved.append((uid, name, current))
+    return fill, unresolved

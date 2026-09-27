@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { SuccessBanner, errorText } from '../components/States.jsx';
-import { Notice, localTime } from '../components/ui.jsx';
+import { Notice } from '../components/ui.jsx';
 import { spokenDay } from '../lib/vocabulary.js';
 import { BrandMark } from '../components/Brand.jsx';
 import ChatAnswer from '../components/ChatAnswer.jsx';
@@ -21,16 +21,16 @@ import { IconSend } from '../components/icons.jsx';
 // The slow case is never made slower.
 const MIN_THINKING_MS = 620;
 
-// When a suggested reminder would fire, in the student's own clock: "Monday
-// 12 October at 09:00". The instant comes from the backend; only its wording
-// is local.
-function reminderWhen(instant) {
-  if (!instant) return null;
-  const at = new Date(instant);
-  if (Number.isNaN(at.getTime())) return null;
-  const pad = (n) => String(n).padStart(2, '0');
-  const day = spokenDay(`${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`);
-  return day ? `${day} at ${localTime(instant)}` : null;
+// When a suggested reminder would fire, on the university's clock: "Monday
+// 12 October at 08:00". The backend has already checked the suggestion and
+// states it as remind_at_local, so the words are read straight from it - no
+// zone conversion happens in the browser.
+function reminderWhen(suggestion) {
+  const local = suggestion?.remind_at_local;
+  if (!local) return null;
+  const day = spokenDay(local.slice(0, 10));
+  const time = local.slice(11, 16);
+  return day && time ? `${day} at ${time}` : null;
 }
 
 function settle(startedAt) {
@@ -143,7 +143,12 @@ export default function ChatPage() {
   async function acceptReminder() {
     setFailed(null);
     try {
-      await api.post('/reminders', suggestion);
+      // Exactly the time offered, on the university's clock.
+      await api.post('/reminders', {
+        title: suggestion.title,
+        remind_at_local: suggestion.remind_at_local,
+        event_id: suggestion.event_id ?? undefined,
+      });
       setNotice('Personal reminder created.');
       setSuggestion(null);
     } catch (err) {
@@ -291,9 +296,9 @@ export default function ChatPage() {
             <span>
               {suggestion.title}
               {/* When it would fire, so accepting it is an informed choice. */}
-              {reminderWhen(suggestion.remind_at) && (
+              {reminderWhen(suggestion) && (
                 <span className="t-meta" style={{ display: 'block' }}>
-                  {reminderWhen(suggestion.remind_at)}
+                  {reminderWhen(suggestion)}
                 </span>
               )}
             </span>

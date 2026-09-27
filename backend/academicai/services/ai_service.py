@@ -10,7 +10,7 @@ Nothing in this module writes academic data.
 """
 from flask import current_app
 
-from .. import clock
+from .. import academic_time, clock
 from ..ai import provider as ai_provider
 from ..ai.prompts import sanitize_untrusted
 from ..ai.schemas import normalize
@@ -77,14 +77,20 @@ def analyze_message(user, community_id, payload):
     courses, timetable, events = _community_context(
         community_id, selected_course["id"] if selected_course else None)
 
+    # "Due tomorrow" means tomorrow on the university's clock. The UTC date is
+    # yesterday there for part of every night east of UTC, which is how a rep
+    # posting just after midnight in Lagos got the wrong deadline.
+    tz = academic_time.zone_for_community(community_id)
     now = clock.now()
     request = {
         "message": message,
         "context": payload.get("context"),
         "information_type": payload.get("information_type"),
         "selected_course": selected_course,
-        "today": now.date().isoformat(),
+        "today": academic_time.today(tz).isoformat(),
         "now": clock.to_iso(now),
+        "now_local": academic_time.format_local(academic_time.now_local(tz)),
+        "timezone": tz.key,
         "max_length": max_length,
         "community": {
             "department": community["department"],

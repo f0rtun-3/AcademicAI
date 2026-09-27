@@ -96,15 +96,25 @@ def _init_database(app):
         # One shared connection for the whole app so every request sees the same
         # in-memory database. Used by tests only.
         conn = connect(":memory:", app.config["SQLITE_BUSY_TIMEOUT_MS"], wal=False)
-        init_schema(conn)
+        _migrate(conn, app)
         app.config["_SHARED_MEMORY_CONN"] = conn
     else:
         app.config["_SHARED_MEMORY_CONN"] = None
         conn = connect(path, app.config["SQLITE_BUSY_TIMEOUT_MS"], app.config["SQLITE_WAL"])
         try:
-            init_schema(conn)
+            _migrate(conn, app)
         finally:
             conn.close()
+
+
+def _migrate(conn, app):
+    """Schema, reference data and university timezones, then the one data
+    migration that needs the reminder policy: pending official reminders are
+    moved onto their university's clock. Both steps are idempotent."""
+    init_schema(conn)
+    from .services import reminder_service
+    reminder_service.recalculate_pending_official(
+        conn, lead_days=app.config["REMINDER_LEAD_DAYS"], hour=app.config["REMINDER_HOUR"])
 
 
 def _register_blueprints(app):

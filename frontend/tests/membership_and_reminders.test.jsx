@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import CommunityMembership from '../src/components/CommunityMembership.jsx';
 import PersonalReminders from '../src/components/PersonalReminders.jsx';
 import ChatPage from '../src/pages/ChatPage.jsx';
@@ -138,6 +138,12 @@ const REMINDERS = [
     status: 'SENT', event_id: null },
 ];
 
+const ORIGINAL_TZ = process.env.TZ;
+afterEach(() => {
+  vi.useRealTimers();
+  process.env.TZ = ORIGINAL_TZ;
+});
+
 describe('personal reminders', () => {
   it('lists the student\'s reminders with their timing and status', async () => {
     mockApi({ '/auth/me': STUDENT_SESSION, '/reminders': { reminders: REMINDERS } });
@@ -165,21 +171,10 @@ describe('personal reminders', () => {
     await waitFor(() => {
       const call = calls.find((c) => c.path === '/reminders' && c.method === 'POST');
       expect(call.body.title).toBe('Revise for the quiz');
-
-      // The input is LOCAL wall-clock and the API stores an instant, so what
-      // goes on the wire is the UTC equivalent — not the typed digits with a
-      // "+00:00" glued on, which is what it used to send and which set every
-      // reminder an hour late in Lagos.
-      //
-      // Asserted by round-tripping rather than against a fixed string, so the
-      // test means the same thing in every timezone it is run in.
-      expect(call.body.remind_at).toMatch(/Z$/);
-      const sent = new Date(call.body.remind_at);
-      expect(sent.getFullYear()).toBe(2026);
-      expect(sent.getMonth()).toBe(8);      // September
-      expect(sent.getDate()).toBe(21);
-      expect(sent.getHours()).toBe(8);      // 08:00 as the reader set it
-      expect(sent.getMinutes()).toBe(0);
+      // Sent exactly as typed: a time on the university's clock, which the
+      // backend reads in the university's zone. No instant is made here.
+      expect(call.body.remind_at_local).toBe('2026-09-21T08:00');
+      expect(call.body.remind_at).toBeUndefined();
     });
   });
 
@@ -202,6 +197,66 @@ describe('personal reminders', () => {
       const call = calls.find((c) => c.path === '/reminders/11' && c.method === 'PUT');
       expect(call.body.title).toBe('Renamed');
     });
+  });
+
+  it('edits the time on the university\'s clock, whatever the device says', async () => {
+    process.env.TZ = 'Europe/London';                  // the device, not Babcock
+    const calls = mockApi({
+      '/auth/me': STUDENT_SESSION,
+      '/reminders': { reminders: [{ ...REMINDERS[0], remind_at: '2026-09-19T07:00:00+00:00',
+                                    remind_at_local: '2026-09-19T08:00',
+                                    timezone: 'Africa/Lagos' }] },
+      'PUT /reminders/11': { reminder: REMINDERS[0] },
+    });
+    renderWithAuth(<PersonalReminders />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByTestId('edit-11'));
+    const when = document.getElementById('r-when-11');
+    expect(when).toHaveValue('2026-09-19T08:00');      // Lagos 08:00, not London 08:00
+    await user.clear(when);
+    await user.type(when, '2026-09-19T18:30');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => {
+      const call = calls.find((c) => c.path === '/reminders/11' && c.method === 'PUT');
+      expect(call.body.remind_at_local).toBe('2026-09-19T18:30');
+      expect(call.body.remind_at).toBeUndefined();
+    });
+  });
+
+  it('shows a reminder just after midnight on the right academic day, on a UTC device',
+    async () => {
+      // Sunday 27 September, 00:30 in Lagos is still Saturday 26th in UTC.
+      // "Now" is pinned a week earlier so the day is named, not "Tomorrow".
+      vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-09-20T10:00:00Z') });
+      process.env.TZ = 'UTC';
+      mockApi({
+        '/auth/me': STUDENT_SESSION,
+        '/reminders': { reminders: [{ id: 21, title: 'Just after midnight',
+                                      remind_at: '2026-09-26T23:30:00+00:00',
+                                      remind_at_local: '2026-09-27T00:30',
+                                      timezone: 'Africa/Lagos', status: 'PENDING',
+                                      event_id: null }] },
+      });
+      renderWithAuth(<PersonalReminders />);
+      const row = (await screen.findByText('Just after midnight')).closest('.brow');
+      expect(row).toHaveTextContent('Sun');
+      expect(row).toHaveTextContent('27 Sep');
+      expect(row).toHaveTextContent('00:30');
+      expect(row).not.toHaveTextContent('26 Sep');
+    });
+
+  it('reads an older payload\'s instant on the university\'s clock', async () => {
+    process.env.TZ = 'UTC';
+    mockApi({
+      '/auth/me': STUDENT_SESSION,
+      '/reminders': { reminders: [{ id: 22, title: 'No local field',
+                                    remind_at: '2026-09-26T23:30:00+00:00',
+                                    status: 'PENDING', event_id: null }] },
+    });
+    renderWithAuth(<PersonalReminders />);
+    const row = (await screen.findByText('No local field')).closest('.brow');
+    expect(row).toHaveTextContent('27 Sep');
+    expect(row).toHaveTextContent('00:30');
   });
 
   it('cancels a reminder', async () => {

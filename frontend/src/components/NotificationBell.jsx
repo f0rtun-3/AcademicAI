@@ -44,7 +44,9 @@ function when(value) {
   if (minutes < 1) return 'just now';
   if (minutes < 60) return `${minutes}m ago`;
   if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`;
-  const { top, bottom } = whenParts(value.slice(0, 10));
+  // The whole instant, not its first ten characters: those are the UTC date,
+  // and whenParts reads the day on the university's clock.
+  const { top, bottom } = whenParts(value);
   return `${top} ${bottom}`;
 }
 

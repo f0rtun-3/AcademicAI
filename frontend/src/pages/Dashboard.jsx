@@ -27,6 +27,7 @@ import {
 import { IconChat } from '../components/icons.jsx';
 import { needsAttention } from '../lib/attention.js';
 import { describeChange, eventTypeLabel, eventTypeNoun } from '../lib/vocabulary.js';
+import { reminderLocal } from '../lib/academicTime.js';
 
 const NEXT_DAYS = 7;
 
@@ -210,9 +211,9 @@ export default function Dashboard() {
             /* The day goes in the column; only the clock time, which no other
                row has, goes in the meta. A scheduled reminder is the normal
                case, so it carries no badge. */
-            <Row key={reminder.id} when={whenParts(reminder.remind_at)}
+            <Row key={reminder.id} when={whenParts(reminderLocal(reminder))}
                  title={reminder.title}
-                 meta={localTime(reminder.remind_at)}
+                 meta={localTime(reminderLocal(reminder))}
                  side={<StatusBadge value={reminder.status} context="reminder" />} />
           ))}
         </Board>

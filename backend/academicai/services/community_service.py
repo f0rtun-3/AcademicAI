@@ -156,11 +156,14 @@ def election_readiness(community_id, viewer_id=None, conn=None):
 
 
 def community_payload(community, viewer_id=None, conn=None):
-    university = query_one("SELECT name FROM universities WHERE id = ?",
+    university = query_one("SELECT name, timezone FROM universities WHERE id = ?",
                            (community["university_id"],), conn=conn)
     return {
         "id": community["id"],
         "university": university["name"] if university else None,
+        # The community's academic clock: every date and time it shows is
+        # read in this IANA zone (academic_time.py).
+        "timezone": university["timezone"] if university else None,
         "department": community["department"],
         "level": community["level"],
         "academic_session": community["academic_session"],

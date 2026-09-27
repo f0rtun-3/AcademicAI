@@ -8,7 +8,9 @@ student who created it.
 The chat may PROPOSE a personal reminder. It never creates one on its own and
 it never touches official academic information.
 """
-from .. import clock
+from flask import current_app
+
+from .. import academic_time, clock
 from ..ai import provider as ai_provider
 from ..ai.prompts import sanitize_untrusted
 from ..db.connection import (execute, insert_returning_id, query_all, query_one,
@@ -33,9 +35,17 @@ def _authorized_context(user_id, community_id):
     announcements = announcement_service.list_announcements(community_id, limit=10)
     changes = community_service.recent_changes(community_id, limit=15)
     reminders = reminder_service.list_personal(user_id)
+    tz = academic_time.zone_for_community(community_id)
 
     return {
-        "today": clock.now().date().isoformat(),
+        # Every date and time below is on the university's clock (`timezone`),
+        # so "today" and "tomorrow" are the university's, not the UTC date.
+        "timezone": tz.key,
+        "today": academic_time.today(tz).isoformat(),
+        "now_local": academic_time.format_local(academic_time.now_local(tz)),
+        # The official reminder rule, so a suggested reminder follows it.
+        "reminder_policy": {"lead_days": current_app.config["REMINDER_LEAD_DAYS"],
+                            "hour": current_app.config["REMINDER_HOUR"]},
         # The asking student's own membership row id. It lets the answer say
         # "your membership was approved" only when it really was theirs; a
         # membership change records the MEMBERSHIP row, not the user, so
@@ -52,7 +62,7 @@ def _authorized_context(user_id, community_id):
         "events": [event_service.event_payload(e) for e in events],
         "announcements": [announcement_service.announcement_payload(a) for a in announcements],
         "changes": [change_payload(c) for c in changes],
-        "reminders": [reminder_service.reminder_payload(r) for r in reminders],
+        "reminders": [reminder_service.reminder_payload(r, tz.key) for r in reminders],
     }
 
 
@@ -70,21 +80,19 @@ def ask(user_id, community_id, payload):
     request["history"] = _recent_messages(conversation_id, user_id) if conversation_id else []
 
     raw = ai_provider.get_provider().answer(request)
-    result = _normalize_answer(raw)
+    result = _normalize_answer(raw, request)
 
     conversation_id = _persist(user_id, community_id, conversation_id, question, result["answer"])
     result["conversation_id"] = conversation_id
     return result
 
 
-def _normalize_answer(raw):
+def _normalize_answer(raw, context):
     if not isinstance(raw, dict):
         return {"answer": "I could not answer that.", "grounded": False,
                 "referenced_event_ids": [], "suggested_reminder": None}
     answer = str(raw.get("answer") or "").strip()[:4000]
-    reminder = raw.get("suggested_reminder")
-    if not isinstance(reminder, dict) or not reminder.get("title") or not reminder.get("remind_at"):
-        reminder = None
+    reminder = _acceptable_reminder(raw.get("suggested_reminder"), context)
     ids = raw.get("referenced_event_ids")
     return {
         "answer": answer or "I could not answer that from your academic records.",
@@ -92,6 +100,57 @@ def _normalize_answer(raw):
         "referenced_event_ids": [i for i in ids if isinstance(i, int)][:20]
         if isinstance(ids, list) else [],
         "suggested_reminder": reminder,
+    }
+
+
+def _acceptable_reminder(suggestion, context):
+    """A suggested reminder the student can accept exactly as offered, or None.
+
+    Checked HERE, before the student sees it, so a malformed or impossible
+    suggestion is never shown and then refused when they press Accept. The
+    provider - built-in or model - supplies a wall-clock remind_at_local; the
+    university's zone turns it into an instant. Dropped when:
+      * it is not a dict with a title and a strict YYYY-MM-DDTHH:MM value
+        (an offset, "Z", seconds or prose all fail the format);
+      * its moment has already passed;
+      * it names an event_id this student cannot see, or one that is
+        cancelled, or it falls after that event.
+    The returned value is what POST /api/reminders accepts unchanged.
+    """
+    if not isinstance(suggestion, dict):
+        return None
+    title = suggestion.get("title")
+    if not isinstance(title, str) or not title.strip():
+        return None
+    try:
+        local = academic_time.parse_local(suggestion.get("remind_at_local"))
+    except ValidationError:
+        return None
+    tz = academic_time.zone(context["timezone"])
+    instant = academic_time.local_to_instant(local, tz)
+    if instant <= clock.now():
+        return None
+
+    event_id = suggestion.get("event_id")
+    if event_id is not None:
+        if isinstance(event_id, bool) or not isinstance(event_id, int):
+            return None
+        event = next((e for e in context.get("events") or [] if e.get("id") == event_id), None)
+        if event is None or event.get("status") == "CANCELLED":
+            return None
+        # Not AFTER the event (spec 20): a reminder at its very start is fine.
+        latest = academic_time.event_end_instant(
+            event.get("event_date"), event.get("event_time"), tz)
+        if latest is not None and instant > latest:
+            return None
+
+    return {
+        "title": title.strip()[:200],
+        # Re-derived from the instant, so a time the clocks skip is shown as
+        # the moment it will really fire.
+        "remind_at_local": academic_time.local_string(instant, tz),
+        "timezone": tz.key,
+        "event_id": event_id,
     }
 
 

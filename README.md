@@ -23,7 +23,8 @@ backend/
   academicai/
     app.py                  Flask application factory, error handlers
     config.py               Configuration; secrets come from the environment
-    clock.py                Single source of time, so ballots/reminders are testable
+    clock.py                Single source of time; owns UTC instants (offset required)
+    academic_time.py        University wall-clock <-> UTC instant, in the university's zone
     errors.py               Error types, each mapping to one HTTP status
     db/
       schema.sql            The only SQLite-specific file
@@ -549,6 +550,31 @@ stopping and all of its tests remain fully intact and are exercised by the test
 suite — only the user-facing entry point is withheld. A dedicated
 session-management workflow may be designed later.
 
+## Time and timezones
+
+Every university has a required IANA timezone, `universities.timezone` (the
+seeded Nigerian universities are `Africa/Lagos`). It is the university's
+academic clock. Every event date and time, "today", and reminder time in its
+communities is read on that clock, whatever the server or the student's device
+is set to.
+
+- **Instants** (reminder firing times, `created_at`) are stored in UTC with an
+  explicit offset. A timestamp without an offset is refused, never assumed to
+  be UTC.
+- **Academic wall-clock values** (`event_date`/`event_time`, `remind_at_local`)
+  have no offset on purpose. The backend reads them in the university's zone
+  (`academic_time.py`, with Python's `zoneinfo`, so daylight saving is handled
+  by the zone's own rules).
+- **Official reminders** fire at 08:00 (`ACADEMICAI_REMINDER_HOUR`) on the
+  academic day before the event, on the university's clock. An event published
+  after that moment gets no official reminder.
+- **Personal reminders** are sent as `remind_at_local`. Responses include
+  `remind_at` (UTC), `remind_at_local` and `timezone`.
+- **Start-up refuses** to run while any university lacks a valid zone.
+
+`ACADEMICAI_CONTEXT.md` section 20 has the full rule, including daylight-saving
+edge cases and the migration.
+
 ## Personal reminder states
 
 Personal reminders use `PENDING | SENT | CANCELLED`. There is deliberately **no
@@ -594,8 +620,9 @@ These are deliberate and documented rather than hidden:
   configuration switch.
 - **Rate limiting is in-process.** A multi-process deployment needs a shared
   store. Call sites will not change.
-- **No per-user timezones.** Reminders fire at 08:00 server time, one day before
-  the deadline, by design.
+- **No per-user timezones.** A student reads their university's academic clock
+  (`universities.timezone`). Official reminders fire at 08:00 on that clock, one
+  day before the deadline, by design.
 - **Email delivery backends are `console` and `memory` only.** Wiring a real
   SMTP or transactional-email provider is outstanding; the outbox, retry and
   status machinery around it is complete and tested.

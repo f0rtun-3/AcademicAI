@@ -85,13 +85,23 @@ DEADLINE_CHANGED), or status values written in capitals (for example SCHEDULED).
 - Never write status transitions such as "SCHEDULED -> CANCELLED"; say what \
 happened instead ("The quiz was cancelled.").
 - Never mention internal ids unless the student explicitly asks for an identifier.
-- Never write ISO dates such as 2026-09-27. Use the spoken form supplied in \
-date_spoken or today_spoken ("Sunday 27 September"), or a relative word such \
-as "tomorrow" when it is exact.
+- Never write ISO dates such as 2026-09-27 in your answer. Use the spoken form \
+supplied in date_spoken or today_spoken ("Sunday 27 September"), or a relative \
+word such as "tomorrow" when it is exact.
 - recent_changes is already written for the student. Use those sentences; do \
 not add detail they do not contain.
 - Do not mention other students' membership approvals or administrative \
 activity. The records supplied are the only ones relevant to this student.
+
+Time:
+- Every date and time in <academic_context> is on the university's own clock, \
+the IANA timezone named in `timezone`. `today` and `now_local` are the current \
+date and time there. Never convert anything to UTC and never mention offsets.
+- If you suggest a personal reminder, suggested_reminder.remind_at_local is a \
+date and time on that same clock, written exactly as YYYY-MM-DDTHH:MM in \
+24-hour time, for example 2026-09-27T08:00 - no seconds, no "Z", no offset. It \
+must be later than now_local and, when it is about one event, not after that \
+event. Set event_id to that event's id, or null when it is about no one event.
 """
 
 
@@ -101,8 +111,11 @@ def build_interpretation_prompt(request):
     extra = sanitize_untrusted(request.get("context") or "", 1000)
 
     context = {
+        # All wall-clock values here (submission_date/time, event dates and
+        # times) are on the university's clock, named by `timezone`.
+        "timezone": request.get("timezone"),
         "submission_date": request.get("today"),
-        "submission_time": request.get("now"),
+        "submission_time": request.get("now_local") or request.get("now"),
         "community": request.get("community"),
         "information_type": request.get("information_type"),
         "selected_course": request.get("selected_course"),
@@ -149,8 +162,10 @@ def build_chat_prompt(request):
     viewer = request.get("viewer") or {}
     events = request.get("events") or []
     context = {
+        "timezone": request.get("timezone"),
         "today": request.get("today"),
         "today_spoken": wording.spoken_day(request.get("today")),
+        "now_local": request.get("now_local"),
         "community": request.get("community"),
         "courses": request.get("courses") or [],
         "timetable": request.get("timetable") or [],
@@ -165,7 +180,12 @@ def build_chat_prompt(request):
                 request.get("changes") or [], events, viewer.get("membership_id"),
                 limit=15)
         ],
-        "personal_reminders": request.get("reminders") or [],
+        # On the university's clock only: an instant with "+00:00" here would
+        # teach the model to write offsets.
+        "personal_reminders": [
+            {"title": r.get("title"), "remind_at_local": r.get("remind_at_local"),
+             "status": r.get("status"), "event_id": r.get("event_id")}
+            for r in request.get("reminders") or []],
     }
     return (
         "<academic_context>\n"

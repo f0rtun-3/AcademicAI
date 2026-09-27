@@ -70,20 +70,41 @@ describe('Chat when a question cannot be sent', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  it('says when a suggested reminder would fire, in the student\'s own clock', async () => {
-    process.env.TZ = 'Africa/Lagos';
+  it('says when a suggested reminder would fire, on the university\'s clock', async () => {
+    process.env.TZ = 'Europe/London';                  // the device, not Babcock
     chat({
       answer: 'Your next deadline is the COS202 exam - Monday 12 October at 08:00.',
       grounded: true, referenced_event_ids: [7], conversation_id: 4,
       suggested_reminder: { title: 'Prepare for the COS202 exam',
-                            remind_at: '2026-10-12T07:00:00+00:00' },
+                            remind_at_local: '2026-10-12T08:00',
+                            timezone: 'Africa/Lagos', event_id: 7 },
     });
     const user = userEvent.setup();
     renderWithAuth(<ChatPage />);
     await user.type(await screen.findByLabelText('Your question'), 'next deadline');
     await user.click(screen.getByRole('button', { name: 'Ask' }));
-    // 07:00 UTC is 08:00 in Lagos.
     expect(await screen.findByText('Monday 12 October at 08:00')).toBeInTheDocument();
+  });
+
+  it('accepts a suggestion as the same university-clock time it offered', async () => {
+    process.env.TZ = 'UTC';
+    const calls = chat({
+      answer: 'Your next deadline is the COS202 exam.', grounded: true,
+      referenced_event_ids: [7], conversation_id: 4,
+      suggested_reminder: { title: 'Prepare for the COS202 exam',
+                            remind_at_local: '2026-10-12T08:00',
+                            timezone: 'Africa/Lagos', event_id: 7 },
+    });
+    const user = userEvent.setup();
+    renderWithAuth(<ChatPage />);
+    await user.type(await screen.findByLabelText('Your question'), 'next deadline');
+    await user.click(screen.getByRole('button', { name: 'Ask' }));
+    await user.click(await screen.findByRole('button', { name: 'Add reminder' }));
+    await waitFor(() => {
+      const call = calls.find((c) => c.path === '/reminders' && c.method === 'POST');
+      expect(call.body).toEqual({ title: 'Prepare for the COS202 exam',
+                                  remind_at_local: '2026-10-12T08:00', event_id: 7 });
+    });
   });
 });
 

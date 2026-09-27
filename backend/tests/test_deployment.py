@@ -49,8 +49,8 @@ def test_backup_produces_a_readable_copy_and_prunes_old_ones():
         from academicai import clock
         from academicai.db.connection import execute, transaction
         with transaction() as conn:
-            execute("INSERT INTO universities (name, created_at) VALUES (?, ?)",
-                    ("Backup Test University", clock.now_iso()), conn=conn)
+            execute("INSERT INTO universities (name, created_at, timezone) VALUES (?, ?, ?)",
+                    ("Backup Test University", clock.now_iso(), "Africa/Lagos"), conn=conn)
 
     dest = os.path.join(directory, "backups")
     target = backup(path, dest, keep=2)

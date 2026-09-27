@@ -8,7 +8,10 @@
 // DATES ARE LOCAL, NEVER UTC. `new Date("2026-09-21")` parses as midnight UTC,
 // which in Lagos (UTC+1) is still the 21st but in any negative offset is the
 // 20th - so every date here is built from explicit local components, the same
-// rule todayISO() already follows in ui.jsx.
+// rule todayISO() already follows in ui.jsx. "Today" is the university's
+// date (lib/academicTime.js), not the device's.
+
+import { academicToday } from './academicTime.js';
 
 export const DAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY',
                          'FRIDAY', 'SATURDAY', 'SUNDAY'];
@@ -33,8 +36,7 @@ export function toISO(date) {
 }
 
 export function startOfToday() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return parseISO(academicToday());
 }
 
 export function addMonths(date, n) {

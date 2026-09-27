@@ -139,7 +139,7 @@ def request_transfer(user_id, target):
         email_domain_service.assert_domain_matches_university(
             university_name, user["email"], conn=conn)
 
-        university_id = auth_service.get_or_create_university(university_name, conn=conn)
+        university_id = auth_service.registered_university_id(university_name, conn=conn)
         destination = community_service.find_community(
             university_id, department, level, academic_session, conn=conn)
         if destination is None:

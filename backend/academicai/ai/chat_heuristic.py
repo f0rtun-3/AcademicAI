@@ -142,7 +142,7 @@ def answer_question(request):
         return _classes_on(timetable, events, today + timedelta(days=1), "tomorrow")
 
     if _asks_next_deadline(normalized):
-        return _next_deadline(events, today)
+        return _next_deadline(events, today, request.get("reminder_policy") or {})
 
     if _asks_about_class_schedule(normalized):
         return _next_class(timetable, today, course)
@@ -218,13 +218,19 @@ def _in_window(events, today, until, text):
                    event_ids=[e["id"] for e in matching])
 
 
-def _next_deadline(events, today):
+def _next_deadline(events, today, policy):
     upcoming = _upcoming(events, today)
     if not upcoming:
         return _answer("You have no upcoming deadlines in your academic records.")
     nxt = upcoming[0]
+    # The official reminder's own rule (REMINDER_HOUR on the academic day
+    # REMINDER_LEAD_DAYS before), as a wall-clock time on the university's
+    # clock. No offset: the backend attaches the university's zone, and drops
+    # the suggestion if that moment has already passed (chat_service).
+    fire_day = _date(nxt["event_date"]) - timedelta(days=int(policy.get("lead_days", 1)))
     reminder = {"title": f"Prepare for {nxt['title']}",
-                "remind_at": f"{nxt['event_date']}T08:00:00+00:00"}
+                "remind_at_local": f"{fire_day.isoformat()}T{int(policy.get('hour', 8)):02d}:00",
+                "event_id": nxt["id"]}
     return _answer(f"Your next deadline is {_fmt_event(nxt)}.",
                    event_ids=[nxt["id"]], reminder=reminder)
 

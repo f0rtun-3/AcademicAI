@@ -18,7 +18,7 @@ import {
 } from '../components/States.jsx';
 import {
   Board, Completion, Field, Modal, Notice, Panel, Row, StatusBadge,
-  localInputToUtc, longDate, todayISO, whenParts,
+  longDate, todayISO, whenParts,
 } from '../components/ui.jsx';
 import {
   PRIORITIES, dateLabel, describeChange, eventTypeNoun, priorityLabel, statusLabel,
@@ -55,16 +55,6 @@ function HistoryRow({ change, eventType }) {
   );
 }
 
-// The reminder defaults to the morning before, but nothing is created until
-// the student submits: an offer, never a silent write.
-function defaultRemindAt(event) {
-  if (!event.event_date) return '';
-  const date = new Date(`${event.event_date}T08:00:00`);
-  date.setDate(date.getDate() - 1);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T08:00`;
-}
-
 // Sizes are for a person deciding whether to open something on mobile data,
 // so they are rounded rather than exact.
 function fileSize(bytes) {
@@ -98,7 +88,10 @@ export default function EventDetailPage() {
                        message={error} onRetry={reload} />;
   }
 
-  const { event, history = [] } = data;
+  // reminder_default_local: the official reminder's own moment (08:00 on the
+  // academic day before, by default) on the university's clock, computed by
+  // the backend so the rule lives in one place. An offer, never a silent write.
+  const { event, history = [], reminder_default_local: defaultRemindAt = '' } = data;
   const archived = event.status === 'ARCHIVED';
   const cancelled = event.status === 'CANCELLED';
   const noun = eventTypeNoun(event.event_type);
@@ -183,10 +176,10 @@ export default function EventDetailPage() {
     submitEvent.preventDefault();
     const ok = await run(() => api.post('/reminders', {
       title: reminder.title,
-      // The picked wall-clock time, as the instant it means in THIS browser's
-      // zone (DST included). It used to be the same digits relabelled as UTC,
-      // so a Lagos reminder set for 08:00 fired at 09:00.
-      remind_at: localInputToUtc(reminder.remind_at),
+      // The picked time exactly as picked: a wall-clock time on the
+      // university's clock. The backend reads it in the university's zone, so
+      // the device's own timezone can never move it.
+      remind_at_local: reminder.remind_at,
       event_id: event.id,
     }), 'Personal reminder created. Only you can see it.');
     if (ok) setReminder(null);
@@ -310,7 +303,7 @@ export default function EventDetailPage() {
                             disabled={busy}
                             onClick={() => setReminder({
                               title: `Prepare for ${event.title}`,
-                              remind_at: defaultRemindAt(event),
+                              remind_at: defaultRemindAt ?? '',
                             })}>
                       Add a reminder
                     </button>

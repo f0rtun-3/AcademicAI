@@ -7,7 +7,7 @@ from datetime import timedelta
 
 from flask import Blueprint, g
 
-from .. import clock
+from .. import academic_time
 from ..security import authz
 from ..services import (announcement_service, community_service, course_service,
                         event_service, membership_service, reminder_service,
@@ -25,7 +25,9 @@ UPCOMING_WINDOW_DAYS = 14
 def dashboard():
     user = g.current_user
     community = community_service.get_community(g.community_id)
-    today = clock.now().date()
+    # "Today" on the university's clock, not the UTC date - they differ for
+    # part of every night, which put yesterday's work in "upcoming".
+    today = academic_time.today(academic_time.zone_for_community(g.community_id))
     horizon = today + timedelta(days=UPCOMING_WINDOW_DAYS)
 
     completed = event_service.completed_event_ids(user["id"])
@@ -47,8 +49,8 @@ def dashboard():
                            for c in community_service.recent_changes(g.community_id, limit=10)],
         "announcements": [announcement_service.announcement_payload(a)
                           for a in announcement_service.list_announcements(g.community_id, limit=5)],
-        "reminders": [reminder_service.reminder_payload(r)
-                      for r in reminder_service.list_personal(user["id"])],
+        "reminders": reminder_service.payloads_for_user(
+            user["id"], reminder_service.list_personal(user["id"])),
     }
 
     if g.membership["role"] == "VERIFIED_REP":

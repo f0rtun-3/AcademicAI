@@ -93,9 +93,12 @@ class Config:
     # below that threshold could never reach the minimum vote count (spec 8, 11).
     MIN_ELECTION_PREPARATION = int(os.environ.get("ACADEMICAI_MIN_ELECTORATE", "3"))
 
-    # Reminder policy (spec 20). No per-user timezone in MVP, by design.
+    # Official reminder policy (spec 20): REMINDER_HOUR o'clock on the academic
+    # day REMINDER_LEAD_DAYS before the event, on the UNIVERSITY'S clock
+    # (universities.timezone) - never server time, never UTC. There is no
+    # per-user timezone; a student reads their university's clock.
     REMINDER_LEAD_DAYS = int(os.environ.get("ACADEMICAI_REMINDER_LEAD_DAYS", "1"))
-    REMINDER_HOUR_LOCAL = int(os.environ.get("ACADEMICAI_REMINDER_HOUR", "8"))
+    REMINDER_HOUR = int(os.environ.get("ACADEMICAI_REMINDER_HOUR", "8"))
 
     PASSWORD_HASH_ITERATIONS = int(os.environ.get("ACADEMICAI_PBKDF2_ITERATIONS", "260000"))
     MAX_MESSAGE_LENGTH = int(os.environ.get("ACADEMICAI_MAX_MESSAGE_LENGTH", "4000"))

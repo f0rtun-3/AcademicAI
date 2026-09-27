@@ -17,6 +17,8 @@
 //      state of things, so lists do not badge them (see isRoutineStatus); a
 //      badge is spent on what a student needs to notice.
 
+import { academicDateOf } from './academicTime.js';
+
 /* ── Dates ─────────────────────────────────────────────────────────────── */
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
@@ -24,9 +26,12 @@ const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                 'August', 'September', 'October', 'November', 'December'];
 
+// The academic calendar day of a date, a wall-clock value or an instant (an
+// instant is read on the university's clock first - lib/academicTime.js).
 function parseDay(value) {
-  if (!value) return null;
-  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  const day = academicDateOf(value);
+  if (!day) return null;
+  const date = new Date(`${day}T00:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 

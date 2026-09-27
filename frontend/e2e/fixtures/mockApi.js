@@ -22,6 +22,9 @@ export const STUDENT = {
           email_verified: true, student_id_number: '21/1234' },
   membership: { community_id: 3, role: 'STUDENT', status: 'ACTIVE', user_id: 7 },
   next_step: 'dashboard',
+  // As /api/auth/me reports it: Babcock's academic clock. The browser's own
+  // zone is set per test (timezoneId) and must never move an AcademicAI time.
+  timezone: 'Africa/Lagos',
 };
 
 export const REP = {
@@ -110,10 +113,18 @@ const announcements = [
     status: 'PUBLISHED', created_at: '2026-09-25T09:00:00Z', author_name: 'Tolu Adeyemi',
     version: 1 },
 ];
+// As /api/reminders returns them: the stored UTC instant plus the same moment
+// on the university's clock (remind_at_local), which is what the page shows.
 const reminders = [
-  { id: 1, title: 'Prepare for Programming II Quiz 1', remind_at: '2026-09-27T07:00:00Z',
+  { id: 1, title: 'Prepare for Programming II Quiz 1', remind_at: '2026-09-27T07:00:00+00:00',
+    remind_at_local: '2026-09-27T08:00', timezone: 'Africa/Lagos',
     status: 'PENDING', event_id: 2 },
-  { id: 2, title: 'Revise pointers', remind_at: '2026-09-25T17:00:00Z', status: 'SENT',
+  // Sunday 27 September, 00:30 in Lagos - still Saturday 26th in UTC.
+  { id: 3, title: 'Check the portal after midnight', remind_at: '2026-09-26T23:30:00+00:00',
+    remind_at_local: '2026-09-27T00:30', timezone: 'Africa/Lagos',
+    status: 'PENDING', event_id: null },
+  { id: 2, title: 'Revise pointers', remind_at: '2026-09-25T17:00:00+00:00',
+    remind_at_local: '2026-09-25T18:00', timezone: 'Africa/Lagos', status: 'SENT',
     event_id: null },
 ];
 
@@ -148,6 +159,16 @@ const chatMessages = [
   { role: 'user', content: 'What classes do I have tomorrow?' },
   { role: 'assistant', content: "You don't have anything scheduled tomorrow." },
 ];
+
+// What the backend returns as reminder_default_local: 08:00 on the academic
+// day before the event, on the university's clock (plain date arithmetic on the
+// date string - no timezone is involved in a wall-clock value).
+function dayBeforeAtEight(eventDate) {
+  if (!eventDate) return null;
+  const [y, m, d] = eventDate.split('-').map(Number);
+  const day = new Date(Date.UTC(y, m - 1, d - 1));
+  return `${day.toISOString().slice(0, 10)}T08:00`;
+}
 
 function payloadFor(url, state) {
   const { pathname, search } = new URL(url);
@@ -186,7 +207,8 @@ function payloadFor(url, state) {
   if (path === '/chat') return state.chatFails
     ? [503, { error: 'unavailable', message: 'The AI service is temporarily unavailable.' }]
     : [201, { answer: "You don't have anything scheduled tomorrow.", grounded: true,
-             referenced_event_ids: [], suggested_reminder: null, conversation_id: 1 }];
+             referenced_event_ids: [], suggested_reminder: state.suggestion ?? null,
+             conversation_id: 1 }];
   if (path === '/community') return [200, { community, membership: session.membership }];
   if (path === '/community/courses') return [200, { courses }];
   if (path === '/community/timetable') return [200, { timetable }];
@@ -196,7 +218,7 @@ function payloadFor(url, state) {
   if (path === '/reminders') {
     if (state.lastRequest?.method === 'POST') {
       return [201, { reminder: { id: 9, status: 'PENDING', event_id: 1,
-                                 ...state.lastRequest.body } }];
+                                 timezone: 'Africa/Lagos', ...state.lastRequest.body } }];
     }
     return [200, { reminders }];
   }
@@ -214,19 +236,21 @@ function payloadFor(url, state) {
         title: 'Computer Architecture Quiz', event_type: 'QUIZ', event_date: '2026-09-29',
         event_time: '12:00', venue: 'LT1', priority: 'NORMAL', status: 'SCHEDULED' } }, changes[0]]
         : [];
-    return [200, { event: events.find((e) => e.id === id), history }];
+    const event = events.find((e) => e.id === id);
+    return [200, { event, history, reminder_default_local: dayBeforeAtEight(event?.event_date) }];
   }
   return [200, {}];
 }
 
 /**
  * Answer every /api request for `page` from the fixtures above.
- * Returns a state object: flip `fresh`, `chatFails` or `emptyChat` to change
+ * Returns a state object: flip `fresh`, `chatFails` or `emptyChat`, or set
+ * `suggestion` (a chat suggested_reminder), to change
  * what later requests see, and read `requests` to inspect what was sent.
  */
 export async function installMockApi(page, { session = STUDENT } = {}) {
   const state = {
-    session, fresh: false, chatFails: false, emptyChat: false,
+    session, fresh: false, chatFails: false, emptyChat: false, suggestion: null,
     notificationCalls: 0, requests: [], lastRequest: null,
   };
   if (session) {
