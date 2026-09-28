@@ -9,6 +9,7 @@ import {
 import {
   Board, Field, PageHeader, Panel, Row, StateChip, StatusBadge, Tile, longDate, whenParts,
 } from '../components/ui.jsx';
+import { IconBook, IconCalendar, IconMegaphone, IconShield, IconUser } from '../components/icons.jsx';
 import CommunityNav from '../components/CommunityNav.jsx';
 import { dayLong, dayShort, spokenDay } from '../lib/vocabulary.js';
 
@@ -79,7 +80,7 @@ function CourseManager({ courses, onChanged, setError }) {
   );
 
   return (
-    <Board title="Courses" foot={addForm}>
+    <Board title="Courses" icon={IconBook} foot={addForm}>
       <div>
         {courses.length === 0 && (
           <EmptyState title="No courses yet"
@@ -198,7 +199,7 @@ function TimetableManager({ timetable, courses, onChanged, setError }) {
   );
 
   return (
-    <Board title="Timetable" foot={addForm}>
+    <Board title="Timetable" icon={IconCalendar} foot={addForm}>
       <div>
         {timetable.length === 0 && (
           <EmptyState title="No timetable yet"
@@ -408,7 +409,7 @@ export default function RepDashboard() {
       </div>
 
       {/* First, because it blocks other people. */}
-      <Board title="Awaiting your decision">
+      <Board title="Awaiting your decision" icon={IconUser}>
         {rep.pending_requests.length === 0 ? (
           <EmptyState title="Nobody is waiting for approval"
                       message="A student who requests to join this community appears here
@@ -433,7 +434,7 @@ export default function RepDashboard() {
       <TimetableManager timetable={timetable} courses={courses}
                         onChanged={resource.reload} setError={setError} />
 
-      <Board title="Announcements"
+      <Board title="Announcements" icon={IconMegaphone}
              foot={<form className="stack" onSubmit={announce}>
                <span className="t-label">Publish an announcement</span>
                <Field id="a-title" label="Title" name="title" required />
@@ -498,7 +499,7 @@ export default function RepDashboard() {
         )}
       </Board>
 
-      <Board title="Rep management"
+      <Board title="Rep management" icon={IconShield}
              action={<Link className="linkish" to="/community/elections">Open Elections</Link>}>
         {candidates.length === 0 ? (
           <EmptyState title="No nominations yet"

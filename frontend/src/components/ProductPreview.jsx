@@ -19,6 +19,7 @@
 // dates are relative strings rather than fabricated calendar dates.
 
 import { Board, Row, StatusBadge } from './ui.jsx';
+import { IconAlert, IconMegaphone } from './icons.jsx';
 
 export default function ProductPreview() {
   return (
@@ -31,7 +32,7 @@ export default function ProductPreview() {
       </div>
 
       <div className="preview__body">
-        <Board title="Needs attention">
+        <Board title="Needs attention" icon={IconAlert}>
           <Row when={{ top: 'Today', bottom: '18 Sep' }}
                title="COS202 Assignment"
                meta="Data Structures · due 23:59"
@@ -46,7 +47,7 @@ export default function ProductPreview() {
                side={<StatusBadge value="RESCHEDULED" />} />
         </Board>
 
-        <Board title="Official updates">
+        <Board title="Official updates" icon={IconMegaphone}>
           <Row title="Mid-semester timetable published"
                meta="Published by your course rep"
                side={<StatusBadge value="PUBLISHED" />} />

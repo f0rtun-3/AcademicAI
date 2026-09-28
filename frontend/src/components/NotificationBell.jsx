@@ -20,6 +20,7 @@ import { api } from '../api/client.js';
 import { IconBell, IconCheck } from './icons.jsx';
 import { whenParts } from './ui.jsx';
 import NotificationToasts from './NotificationToasts.jsx';
+import { usePresence } from './motion.js';
 import { notificationKindLabel, notificationViewLabel } from '../lib/vocabulary.js';
 
 // Slow enough to be invisible in aggregate, fast enough that a reminder
@@ -28,6 +29,10 @@ const POLL_MS = 45000;
 
 // A stack, not a wall. Anything beyond this waits in the bell.
 const MAX_TOASTS = 3;
+
+// How long the bell carries its swing class: the swing itself is twice
+// --dur-slow (640ms), and the class must outlast it to be removed cleanly.
+const NUDGE_MS = 700;
 
 // What sort of thing happened comes from the vocabulary layer
 // (notificationKindLabel). A kind it does not know shows no label rather than
@@ -59,6 +64,12 @@ export default function NotificationBell() {
   const panelRef = useRef(null);
   const buttonRef = useRef(null);
   const [toasts, setToasts] = useState([]);
+  // The panel stays mounted for its closing animation, then goes.
+  const [panelShown, panelLeaving] = usePresence(open);
+  // A counter, bumped only when something genuinely new and unread arrives;
+  // each bump swings the bell once (styles.css §31), and nothing else does.
+  const [arrivals, setArrivals] = useState(0);
+  const [nudging, setNudging] = useState(false);
 
   // Every notification id this session has already seen. `null` means the
   // first load has not happened yet.
@@ -85,6 +96,7 @@ export default function NotificationBell() {
       const fresh = list.filter((n) => !n.read_at && !seen.current.has(n.id));
       list.forEach((n) => seen.current.add(n.id));
       if (fresh.length > 0) {
+        setArrivals((n) => n + 1);
         setToasts((prev) => {
           const known = new Set(prev.map((t) => t.id));
           const added = fresh
@@ -94,6 +106,7 @@ export default function NotificationBell() {
               subject: n.subject,
               body: n.body,
               link: n.link,
+              kind: n.kind,
               kindLabel: notificationKindLabel(n.kind) ?? 'Notification',
               viewLabel: notificationViewLabel(n.kind),
             }));
@@ -124,6 +137,14 @@ export default function NotificationBell() {
       window.removeEventListener('focus', onFocus);
     };
   }, [load]);
+
+  // One swing per arrival, then the bell is still again.
+  useEffect(() => {
+    if (arrivals === 0) return undefined;
+    setNudging(true);
+    const stop = setTimeout(() => setNudging(false), NUDGE_MS);
+    return () => clearTimeout(stop);
+  }, [arrivals]);
 
   // Close on Escape or an outside click, and return focus to the bell — the
   // same contract the account menu in this shell already keeps.
@@ -198,7 +219,8 @@ export default function NotificationBell() {
       <NotificationToasts toasts={toasts} onView={viewToast} onDismiss={dismissToast}
                           returnFocusTo={buttonRef} />
       <div className="bell" ref={panelRef}>
-      <button type="button" className="bell__btn" ref={buttonRef}
+      <button type="button" className={`bell__btn${nudging ? ' bell__btn--nudge' : ''}`}
+              ref={buttonRef}
               aria-haspopup="dialog" aria-expanded={open} aria-label={label}
               onClick={() => setOpen((v) => !v)}>
         <IconBell size={19} />
@@ -211,8 +233,9 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="bell__panel" role="dialog" aria-label="Notifications">
+      {panelShown && (
+        <div className="bell__panel" role="dialog" aria-label="Notifications"
+             data-state={panelLeaving ? 'closed' : 'open'}>
           <div className="bell__head">
             <h2 className="t-label">Notifications</h2>
             {unread > 0 && (
@@ -282,7 +305,9 @@ function BellBody({ item, kind }) {
         {/* Said once, in words, for a screen reader; the dot below is the
             same fact for the eye. */}
         {unread && <span className="sr-only">Unread.</span>}
-        {kind && <span className="bellrow__kind">{kind}</span>}
+        {/* The kind drives the label's tone (a cancellation is crit, a
+            change is info) - the word is always there, so tone is an echo. */}
+        {kind && <span className="bellrow__kind" data-kind={item.kind}>{kind}</span>}
         <span className="bellrow__when">{when(item.created_at)}</span>
       </span>
       <span className="bellrow__subject">

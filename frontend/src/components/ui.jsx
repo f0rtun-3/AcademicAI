@@ -9,9 +9,12 @@
 //      and may never be rendered through StateChip.
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { IconCheck, IconChevronRight, IconEye, IconEyeOff } from './icons.jsx';
+import {
+  IconAlert, IconCheck, IconChevronRight, IconEye, IconEyeOff, IconInfo,
+} from './icons.jsx';
 import { TONE, isRoutineStatus, statusLabel } from '../lib/vocabulary.js';
 import { academicClockTime, academicDateOf, academicToday } from '../lib/academicTime.js';
+import { isAssessment } from '../lib/calendar.js';
 
 /* ── Formatting ─────────────────────────────────────────────────────────── */
 
@@ -273,12 +276,24 @@ export function Panel({ title, action, children, as: Tag = 'section',
 
 // A board's title is a section heading a student scans for ("Needs
 // attention", "Coming up"), so it is set as one - not as an 11px caption.
-export function Board({ title, action, children, foot, className = '', ...rest }) {
+//
+// `raised` lifts the board one elevation step. It is for the ONE board on a
+// screen that holds what needs the reader - elevation is how this system
+// shows priority, so a second raised board would cancel the first. `icon` is
+// a glyph beside the title, decorative (the heading's text is its name).
+export function Board({ title, action, children, foot, raised = false, icon: Icon,
+                        className = '', ...rest }) {
+  const cls = ['board', raised ? 'board--raised' : '', className].filter(Boolean).join(' ');
   return (
-    <section className={`board ${className}`.trim()} {...rest}>
+    <section className={cls} {...rest}>
       {(title || action) && (
         <div className="board__head">
-          {title && <h2 className="board__title">{title}</h2>}
+          {title && (
+            <h2 className="board__title">
+              {Icon && <span className="board__icon" aria-hidden="true"><Icon size={16} /></span>}
+              {title}
+            </h2>
+          )}
           {action}
         </div>
       )}
@@ -289,14 +304,21 @@ export function Board({ title, action, children, foot, className = '', ...rest }
 }
 
 // The row pattern everything else is built from: urgency leftmost in tabular
-// mono, state chip always in the same column.
-export function Row({ when, title, meta, side, onClick, ...rest }) {
+// figures, state chip always in the same column.
+//
+// `today` marks a row whose THING is due today (an event, a reminder) with the
+// accent marker at its leading edge. It is opt-in rather than read from the
+// date column, because a change that merely happened today - a history row,
+// an announcement - is not something due today.
+export function Row({ when, title, meta, side, onClick, today = false, ...rest }) {
+  const whenCls = `brow__when${when?.top === 'Today' ? ' brow__when--today' : ''}`;
+  const mark = today ? ' brow--today' : '';
   const body = (
     <>
       {when && (
-        <div className="brow__when">
+        <div className={whenCls}>
           <strong>{when.top}</strong>
-          {when.bottom}
+          <DateLine text={when.bottom} />
         </div>
       )}
       <div className="brow__main">
@@ -311,14 +333,61 @@ export function Row({ when, title, meta, side, onClick, ...rest }) {
     // the affordance is a chevron rather than a state the finger never sees.
     return (
       <button type="button"
-              className={`brow brow--link${when ? '' : ' brow--flat'}`}
+              className={`brow brow--link${when ? '' : ' brow--flat'}${mark}`}
               onClick={onClick} {...rest}>
         {body}
         <span className="brow__go" aria-hidden="true"><IconChevronRight size={16} /></span>
       </button>
     );
   }
-  return <div className={`brow${when ? '' : ' brow--flat'}`} {...rest}>{body}</div>;
+  return <div className={`brow${when ? '' : ' brow--flat'}${mark}`} {...rest}>{body}</div>;
+}
+
+// "Due today", "Due tomorrow", "Due in 3 days" - an event's proximity, from
+// its own date, in one component so the dashboard, the calendar and the
+// event page say it the same way. It states proximity; it does not invent
+// urgency: only work with a deadline (an assessment) within a week earns it,
+// and the warn tone is reserved for inside a day or a stored HIGH priority.
+export function DueLabel({ event, today }) {
+  if (!event?.event_date || event.status === 'CANCELLED') return null;
+  if (!isAssessment(event)) return null;
+  const days = daysUntil(event.event_date, today);
+  if (days === null || days < 0 || days > 7) return null;
+  const word = days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`;
+  // HIGH priority is a real stored field, not a frontend guess.
+  const urgent = days <= 1 || event.priority === 'HIGH';
+  return <span className={`due${urgent ? ' due--now' : ''}`}>{word}</span>;
+}
+
+// "26 Sep" with the day of the month set as a numeral - the figure the eye
+// runs down a column of dates by. The space is a real text node, so the line
+// still reads (and copies, and is found by a test) as "26 Sep".
+function DateLine({ text }) {
+  const [day, ...rest] = String(text ?? '').split(' ');
+  if (!/^\d{1,2}$/.test(day)) return <span>{text}</span>;
+  return <span><span className="brow__num">{day}</span>{' '}{rest.join(' ')}</span>;
+}
+
+// A date as a small calendar leaf: weekday, day of the month, month. It is
+// the visual anchor of a record's header, so it is decorative (aria-hidden):
+// the record states its date in words beside it. Today is lit with signal.
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export function DateTile({ value, className = '' }) {
+  const date = parseDate(value);
+  const today = date && daysUntil(value) === 0;
+  return (
+    <span className={`datetile${today ? ' datetile--today' : ''}${date ? '' : ' datetile--none'}`
+                     + `${className ? ` ${className}` : ''}`}
+          aria-hidden="true">
+      {date ? (
+        <>
+          <span className="datetile__dow">{today ? 'Today' : SHORT_DAYS[date.getDay()]}</span>
+          <span className="datetile__num">{date.getDate()}</span>
+          <span className="datetile__mon">{MONTHS[date.getMonth()]}</span>
+        </>
+      ) : <span className="datetile__num">—</span>}
+    </span>
+  );
 }
 
 export function Tile({ n, label }) {
@@ -332,10 +401,21 @@ export function Tile({ n, label }) {
 
 /* ── 12 · Notices ───────────────────────────────────────────────────────── */
 
+// A labelled notice carries its tone's glyph beside the label, so the kind of
+// message - information, a warning, a refusal, a success - is readable before
+// a word of it is, and never by colour alone.
+const NOTICE_ICON = { info: IconInfo, warn: IconAlert, crit: IconAlert, pos: IconCheck };
+
 export function Notice({ tone = 'info', label, children, role, ...rest }) {
+  const Glyph = NOTICE_ICON[tone];
   return (
     <div className={`notice notice--${tone}`} role={role} {...rest}>
-      {label && <span className="notice__label">{label}</span>}
+      {label && (
+        <span className="notice__label">
+          {Glyph && <span className="notice__icon" aria-hidden="true"><Glyph size={15} /></span>}
+          {label}
+        </span>
+      )}
       {children}
     </div>
   );
@@ -453,7 +533,12 @@ export function PasswordInput({ id, label, hint, error, value, onChange,
 
 // `className` exists for one case: a viewer needs to be wide and tall, and a
 // confirmation needs to be neither.
-export function Modal({ title, children, onClose, actions, className = '' }) {
+//
+// `leaving` is true while the dialog plays its closing animation - the caller
+// keeps it mounted for that long with usePresence (components/motion.js). It
+// only changes how the dialog looks while it goes; focus returns to the
+// trigger when it is finally removed, exactly as before.
+export function Modal({ title, children, onClose, actions, className = '', leaving = false }) {
   const ref = useRef(null);
   const titleId = useId();
   // Callers pass an inline `onClose`, which is a new function on every render.
@@ -496,7 +581,7 @@ export function Modal({ title, children, onClose, actions, className = '' }) {
   }, []);
 
   return (
-    <div className="scrim">
+    <div className="scrim" data-state={leaving ? 'closed' : 'open'}>
       <div className={`modal ${className}`.trim()} role="dialog" aria-modal="true"
            aria-labelledby={titleId}
            tabIndex={-1} ref={ref}>

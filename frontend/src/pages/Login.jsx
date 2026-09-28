@@ -67,6 +67,7 @@ export default function Login() {
         </div>
 
         <button type="submit" className="btn btn--primary btn--block" disabled={busy}
+                aria-busy={busy || undefined}
                 style={{ marginTop: 'var(--s2)' }}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>

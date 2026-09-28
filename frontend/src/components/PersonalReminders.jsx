@@ -11,6 +11,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
+import { IconBell, IconCheck } from './icons.jsx';
+import { useFlash } from './motion.js';
 import { EmptyState, ErrorBanner } from './States.jsx';
 import {
   Board, Field, Panel, Row, StatusBadge, localTime, whenParts,
@@ -31,6 +33,7 @@ export default function PersonalReminders({ caption = PRIVACY }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState({ title: '', remind_at: '' });
   const [creating, setCreating] = useState({ title: '', remind_at: '' });
+  const [added, flashAdded] = useFlash();
 
   const load = useCallback(async () => {
     try {
@@ -44,14 +47,17 @@ export default function PersonalReminders({ caption = PRIVACY }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Resolves true when the change was made, so a caller can confirm it.
   async function act(fn) {
     setBusy(true);
     setError(null);
     try {
       await fn();
       await load();
+      return true;
     } catch (err) {
       setError(err);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -80,11 +86,14 @@ export default function PersonalReminders({ caption = PRIVACY }) {
 
   async function create(event) {
     event.preventDefault();
-    await act(() => api.post('/reminders', {
+    const ok = await act(() => api.post('/reminders', {
       title: creating.title,
       remind_at_local: creating.remind_at,
     }));
     setCreating({ title: '', remind_at: '' });
+    // The new row is in the list above; the button confirms it worked with a
+    // check that draws in and settles away (§31).
+    if (ok) flashAdded();
   }
 
   if (reminders === null) return <p className="t-meta">Loading reminders…</p>;
@@ -102,7 +111,7 @@ export default function PersonalReminders({ caption = PRIVACY }) {
           one screen made the page look padded rather than careful. On the
           dashboard, where there is no Notice, the caption is still supplied by
           the caller. */}
-      <Board title="Your reminders"
+      <Board title="Your reminders" icon={IconBell} className="board--timeline"
              action={caption ? <span className="t-meta">{caption}</span> : null}>
         {ordered.length === 0 ? (
           <EmptyState title="You have no personal reminders."
@@ -118,7 +127,8 @@ export default function PersonalReminders({ caption = PRIVACY }) {
                        required value={draft.remind_at} disabled={busy}
                        onChange={(e) => setDraft({ ...draft, remind_at: e.target.value })} />
                 <div className="row-x stackable">
-                  <button type="submit" className="btn btn--primary" disabled={busy}>Save</button>
+                  <button type="submit" className="btn btn--primary" disabled={busy}
+                          aria-busy={busy || undefined}>Save</button>
                   <button type="button" className="btn btn--secondary" disabled={busy}
                           onClick={() => setEditing(null)}>Cancel editing</button>
                 </div>
@@ -162,9 +172,15 @@ export default function PersonalReminders({ caption = PRIVACY }) {
                  value={creating.remind_at} disabled={busy}
                  onChange={(e) => setCreating({ ...creating, remind_at: e.target.value })} />
           <div style={{ gridColumn: '1 / -1' }}>
-            <button type="submit" className="btn btn--primary" disabled={busy}>
+            <button type="submit" className={`btn btn--primary${added ? ' btn--done' : ''}`}
+                    disabled={busy} aria-busy={busy || undefined}>
+              {added && !busy && (
+                <span className="tick" aria-hidden="true"><IconCheck size={16} /></span>
+              )}
               {busy ? 'Saving…' : 'Add reminder'}
             </button>
+            {/* Said once for a screen reader; the check is the same fact. */}
+            <span className="sr-only" role="status">{added ? 'Reminder added.' : ''}</span>
           </div>
         </form>
       </Panel>

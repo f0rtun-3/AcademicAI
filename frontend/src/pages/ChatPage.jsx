@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
-import { SuccessBanner, errorText } from '../components/States.jsx';
+import { errorText } from '../components/States.jsx';
 import { Notice } from '../components/ui.jsx';
 import { spokenDay } from '../lib/vocabulary.js';
 import { BrandMark } from '../components/Brand.jsx';
 import ChatAnswer from '../components/ChatAnswer.jsx';
-import { IconSend } from '../components/icons.jsx';
+import {
+  IconAlert, IconBell, IconBook, IconCalendar, IconChat, IconCheck, IconClock, IconSend,
+} from '../components/icons.jsx';
 
 // How long the thinking state stays up AT MINIMUM.
 //
@@ -33,6 +36,17 @@ function reminderWhen(suggestion) {
   return day && time ? `${day} at ${time}` : null;
 }
 
+// A glyph for a suggested question, from the words of the QUESTION (which the
+// product itself supplies) - never from an answer. Presentation only.
+function promptGlyph(prompt) {
+  const text = prompt.toLowerCase();
+  if (/deadline|due/.test(text)) return IconClock;
+  if (/class|timetable|tomorrow/.test(text)) return IconCalendar;
+  if (/chang|cancel|venue/.test(text)) return IconAlert;
+  if (/assignment|exam|quiz|test|project/.test(text)) return IconBook;
+  return IconChat;
+}
+
 function settle(startedAt) {
   const remaining = MIN_THINKING_MS - (Date.now() - startedAt);
   if (remaining <= 0) return Promise.resolve();
@@ -47,8 +61,8 @@ export default function ChatPage() {
   const [prompts, setPrompts] = useState([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
   const [suggestion, setSuggestion] = useState(null);
+  const [accepting, setAccepting] = useState(false);
   // The question that failed to send, kept so the student can try again
   // without retyping it.
   const [failed, setFailed] = useState(null);
@@ -110,7 +124,9 @@ export default function ChatPage() {
     setError(null);
     setFailed(null);
     setSuggestion(null);
-    setMessages((prev) => [...prev, { role: 'user', content: asked }]);
+    // `live`: added in this visit, so it animates in (a restored history
+    // does not).
+    setMessages((prev) => [...prev, { role: 'user', content: asked, live: true }]);
     setQuestion('');
     const startedAt = Date.now();
     try {
@@ -120,7 +136,9 @@ export default function ChatPage() {
       });
       await settle(startedAt);
       setConversationId(response.conversation_id);
-      setMessages((prev) => [...prev, { role: 'assistant', content: response.answer }]);
+      setMessages((prev) => [...prev, {
+        role: 'assistant', content: response.answer, live: true,
+      }]);
       if (response.suggested_reminder) setSuggestion(response.suggested_reminder);
     } catch (err) {
       // The failure waits too. A refusal that appears instantly reads as
@@ -141,7 +159,9 @@ export default function ChatPage() {
   }
 
   async function acceptReminder() {
+    if (accepting) return;
     setFailed(null);
+    setAccepting(true);
     try {
       // Exactly the time offered, on the university's clock.
       await api.post('/reminders', {
@@ -149,10 +169,16 @@ export default function ChatPage() {
         remind_at_local: suggestion.remind_at_local,
         event_id: suggestion.event_id ?? undefined,
       });
-      setNotice('Personal reminder created.');
-      setSuggestion(null);
+      // The card becomes its own confirmation, where the student is looking,
+      // rather than a banner at the top of the page they would have to find.
+      setSuggestion((current) => (current ? { ...current, done: true } : current));
+      // The button that was pressed is gone; the conversation is where the
+      // keyboard belongs next.
+      inputRef.current?.focus();
     } catch (err) {
       setError(err);
+    } finally {
+      setAccepting(false);
     }
   }
 
@@ -193,7 +219,6 @@ export default function ChatPage() {
         </p>
       </header>
 
-      <SuccessBanner message={notice} onDismiss={() => setNotice(null)} />
       {error && (
         <Notice tone="crit" role="alert"
                 label={failed ? 'Your question was not sent' : undefined}>
@@ -229,14 +254,21 @@ export default function ChatPage() {
               Ask about your academic records — deadlines, venues, your timetable,
               or what changed recently.
             </p>
+            {/* The opening offers questions as cards, each with the glyph of
+                what it asks about, so the first move is a choice rather than a
+                blank box. The same prompts, through the same `send`. */}
             {prompts.length > 0 && (
-              <div className="promptchips promptchips--start">
-                {prompts.map((prompt) => (
-                  <button key={prompt} type="button" className="chip-btn"
-                          disabled={busy} onClick={() => sendPrompt(prompt)}>
-                    {prompt}
-                  </button>
-                ))}
+              <div className="promptgrid">
+                {prompts.map((prompt) => {
+                  const Glyph = promptGlyph(prompt);
+                  return (
+                    <button key={prompt} type="button" className="promptcard"
+                            disabled={busy} onClick={() => sendPrompt(prompt)}>
+                      <span className="promptcard__icon" aria-hidden="true"><Glyph size={17} /></span>
+                      <span className="promptcard__text">{prompt}</span>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -244,7 +276,7 @@ export default function ChatPage() {
 
         {messages.map((message, index) => (
           message.role === 'user' ? (
-            <div className="turn turn--user" key={index}>
+            <div className={`turn turn--user${message.live ? ' turn--live' : ''}`} key={index}>
               <div className="bubble bubble--user">{message.content}</div>
             </div>
           ) : (
@@ -252,7 +284,7 @@ export default function ChatPage() {
                name, so a transcript reads as a conversation rather than as
                alternating cards. Small on purpose — this is an academic tool,
                not a character. */
-            <div className="turn turn--ai" key={index}>
+            <div className={`turn turn--ai${message.live ? ' turn--live' : ''}`} key={index}>
               <span className="turn__avatar" aria-hidden="true">
                 <BrandMark size={28} radius={8} />
               </span>
@@ -276,44 +308,64 @@ export default function ChatPage() {
             </span>
             <div className="turn__body">
               <p className="turn__who">AcademicAI</p>
+              {/* Not a typing indicator: the assistant is READING the
+                  community's records, and says so - a signal trace runs along
+                  a rule while it works. Grounding, stated in the wait. */}
               <div className="bubble bubble--ai bubble--pending">
-                <span className="thinking" aria-hidden="true">
-                  <i /><i /><i />
-                </span>
-                <span className="sr-only">Thinking…</span>
+                <span className="trace" aria-hidden="true"><i /></span>
+                <span className="trace__text">Reading your community&apos;s records…</span>
               </div>
             </div>
           </div>
         )}
-        <div ref={endRef} />
-      </div>
-
-      {/* A reminder is an OFFER requiring an explicit accept. Nothing is
-          created silently. */}
-      {suggestion && (
-        <Notice tone="pos" label="Personal reminder">
-          <div className="row-x" style={{ justifyContent: 'space-between' }}>
-            <span>
-              {suggestion.title}
+        {/* A reminder is an OFFER requiring an explicit accept; nothing is
+            created silently. It is an action card, not a notice - a question
+            put to the student, not something that has happened - and it sits
+            IN the conversation, under the answer that offered it. Placed after
+            the transcript it scrolled in underneath the sticky composer, which
+            covered it; inside the log it is also announced with its answer. */}
+        {suggestion && (
+          <section className={`suggest${suggestion.done ? ' suggest--done' : ''}`}
+                   aria-label={suggestion.done ? 'Personal reminder created' : 'Suggested reminder'}>
+            {/* Accepted, the same card confirms it: the tile fills and a
+                check draws in, the first line says what happened, and the
+                title and time stay exactly where they were (§31). */}
+            <span className="suggest__icon" aria-hidden="true">
+              {suggestion.done
+                ? <span className="tick"><IconCheck size={18} /></span>
+                : <IconBell size={18} />}
+            </span>
+            <div className="suggest__body">
+              {suggestion.done
+                ? <p className="suggest__kind suggest__done">Personal reminder created.</p>
+                : <p className="suggest__kind">Suggested personal reminder</p>}
+              <p className="suggest__title">{suggestion.title}</p>
               {/* When it would fire, so accepting it is an informed choice. */}
               {reminderWhen(suggestion) && (
-                <span className="t-meta" style={{ display: 'block' }}>
-                  {reminderWhen(suggestion)}
-                </span>
+                <p className="suggest__when">{reminderWhen(suggestion)}</p>
               )}
-            </span>
-            <span className="row-x">
-              <button type="button" className="btn btn--secondary" onClick={acceptReminder}>
-                Add reminder
-              </button>
-              <button type="button" className="btn btn--quiet"
-                      onClick={() => setSuggestion(null)}>
-                No thanks
-              </button>
-            </span>
-          </div>
-        </Notice>
-      )}
+            </div>
+            {suggestion.done ? (
+              <div className="suggest__actions suggest__done">
+                <Link className="linkish" to="/reminders">See your reminders</Link>
+              </div>
+            ) : (
+              <div className="suggest__actions">
+                {/* Secondary: the screen's one primary action is Ask. */}
+                <button type="button" className="btn btn--secondary" onClick={acceptReminder}
+                        disabled={accepting} aria-busy={accepting || undefined}>
+                  Add reminder
+                </button>
+                <button type="button" className="btn btn--quiet" disabled={accepting}
+                        onClick={() => setSuggestion(null)}>
+                  No thanks
+                </button>
+              </div>
+            )}
+          </section>
+        )}
+        <div ref={endRef} />
+      </div>
 
       {/* The composer.
         *
@@ -346,7 +398,7 @@ export default function ChatPage() {
                    value={question} aria-busy={busy || undefined}
                    aria-describedby="question-note"
                    onChange={(e) => setQuestion(e.target.value)} />
-            <button type="submit" className="btn btn--primary askbar__send"
+            <button type="submit" className="btn btn--ai askbar__send"
                     disabled={busy || !question.trim()}>
               <IconSend size={16} />
               <span className="askbar__sendword">Ask</span>

@@ -12,7 +12,7 @@
 //     changed.
 
 import { Notice } from './ui.jsx';
-import { IconClose } from './icons.jsx';
+import { IconAlert, IconCheck, IconClock, IconClose, IconInbox, IconShield } from './icons.jsx';
 
 const BUSINESS_RULE = new Set([400, 403, 404, 409, 422]);
 
@@ -98,16 +98,26 @@ export function Loading({ label = 'Loading…', rows = 3 }) {
 // These three replace a whole page rather than filling a band inside one, so
 // they carry `state--page`: their own surface, because a failure message
 // floating on the page ground is the flatness this system exists to remove.
+// Every state leads with a small glyph in its tone - a tinted tile, not an
+// illustration - so "empty", "refused", "failed" and "waiting" are told apart
+// at a glance, and the words beside it carry the meaning.
+function Glyph({ icon: Icon }) {
+  return <span className="state__glyph" aria-hidden="true"><Icon size={18} /></span>;
+}
+
 export function ErrorState({ title = 'Something went wrong', message, onRetry }) {
   return (
     <div className="state state--page state--error" role="alert">
-      <h2>{title}</h2>
-      <p>{errorText(message, 'read')}</p>
-      {onRetry && (
-        <button type="button" className="btn btn--secondary" onClick={onRetry}>
-          Try again
-        </button>
-      )}
+      <Glyph icon={IconAlert} />
+      <div className="state__body">
+        <h2>{title}</h2>
+        <p>{errorText(message, 'read')}</p>
+        {onRetry && (
+          <button type="button" className="btn btn--secondary" onClick={onRetry}>
+            Try again
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -118,12 +128,15 @@ export function ErrorState({ title = 'Something went wrong', message, onRetry })
 // `surface` is for the few empty states that are NOT inside a board — the
 // chat transcript is the only one — where the shared padding would leave the
 // text sitting on the page ground with no container.
-export function EmptyState({ title, message, action, surface = false }) {
+export function EmptyState({ title, message, action, surface = false, icon = IconInbox }) {
   return (
     <div className={`state state--empty${surface ? ' state--page' : ''}`}>
-      <h2>{title}</h2>
-      {message && <p>{message}</p>}
-      {action}
+      <Glyph icon={icon} />
+      <div className="state__body">
+        <h2>{title}</h2>
+        {message && <p>{message}</p>}
+        {action}
+      </div>
     </div>
   );
 }
@@ -131,9 +144,12 @@ export function EmptyState({ title, message, action, surface = false }) {
 export function Unauthorized({ message = 'You do not have access to this page.', action }) {
   return (
     <div className="state state--page state--unauthorized" role="alert">
-      <h2>Not available to you</h2>
-      <p>{message}</p>
-      {action}
+      <Glyph icon={IconShield} />
+      <div className="state__body">
+        <h2>Not available to you</h2>
+        <p>{message}</p>
+        {action}
+      </div>
     </div>
   );
 }
@@ -141,20 +157,23 @@ export function Unauthorized({ message = 'You do not have access to this page.',
 export function AwaitingApproval({ community }) {
   return (
     <div className="state state--page state--awaiting" role="status">
-      <h2>Waiting for approval</h2>
-      <p>
-        Your request to join
-        {community ? ` ${community.department} ${community.level} (${community.academic_session})` : ' your academic community'}
-        {' '}has been sent. A verified course rep needs to approve it before you can
-        see official academic information.
-      </p>
-      {/* Was "You will receive an email once a rep responds", which was
-          untrue twice over: no email provider is connected, and approving a
-          membership does not enqueue a notification either. What DOES happen
-          is that the gate opens, so that is what this says. */}
-      <p className="t-meta">
-        Access opens here as soon as a rep approves it — check back.
-      </p>
+      <Glyph icon={IconClock} />
+      <div className="state__body">
+        <h2>Waiting for approval</h2>
+        <p>
+          Your request to join
+          {community ? ` ${community.department} ${community.level} (${community.academic_session})` : ' your academic community'}
+          {' '}has been sent. A verified course rep needs to approve it before you can
+          see official academic information.
+        </p>
+        {/* Was "You will receive an email once a rep responds", which was
+            untrue twice over: no email provider is connected, and approving a
+            membership does not enqueue a notification either. What DOES happen
+            is that the gate opens, so that is what this says. */}
+        <p className="t-meta">
+          Access opens here as soon as a rep approves it — check back.
+        </p>
+      </div>
     </div>
   );
 }
@@ -164,7 +183,11 @@ export function SuccessBanner({ message, onDismiss }) {
   return (
     <Notice tone="pos" role="status">
       <div className="row-x" style={{ justifyContent: 'space-between' }}>
-        <span>{message}</span>
+        {/* The check draws itself in once as the banner rises (§31). */}
+        <span>
+          <span className="tick" aria-hidden="true"><IconCheck size={16} /></span>
+          {message}
+        </span>
         {onDismiss && (
           <button type="button" className="btn btn--quiet" onClick={onDismiss}
                   aria-label="Dismiss"><IconClose size={16} /></button>

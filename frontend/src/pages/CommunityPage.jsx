@@ -21,6 +21,9 @@ import {
   Board, CommunityStatus, Facts, Notice, PageHeader, Row, StatusBadge,
   longDate, whenParts,
 } from '../components/ui.jsx';
+import {
+  IconBook, IconCalendar, IconClock, IconMegaphone, IconShield,
+} from '../components/icons.jsx';
 import { dayShort, describeChange, isStudentFacingChange } from '../lib/vocabulary.js';
 
 const SECTIONS = ['elections', 'membership'];
@@ -29,7 +32,7 @@ function Overview({ community, courses, timetable, announcements, changes,
                    onToggleEnrollment, busy, archived }) {
   return (
     <div className="stack stack--loose">
-      <Board title="Verified reps">
+      <Board title="Verified reps" icon={IconShield}>
         {community.reps.length === 0 ? (
           /* The shared empty state, not a bare row with grey text in it. The
              readiness sentence is the same one the Notice above prints, and
@@ -51,7 +54,7 @@ function Overview({ community, courses, timetable, announcements, changes,
         ))}
       </Board>
 
-      <Board title="Your courses"
+      <Board title="Your courses" icon={IconBook}
              foot={<span className="prose">
                You only receive notifications for courses you are enrolled in.
              </span>}>
@@ -71,7 +74,7 @@ function Overview({ community, courses, timetable, announcements, changes,
       </Board>
 
       <div className="bands bands--2">
-        <Board title="Announcements">
+        <Board title="Announcements" icon={IconMegaphone}>
           {announcements.length === 0 ? (
             <EmptyState title="No announcements"
                         message="Announcements your reps publish appear here." />
@@ -91,7 +94,7 @@ function Overview({ community, courses, timetable, announcements, changes,
           ))}
         </Board>
 
-        <Board title="Timetable">
+        <Board title="Timetable" icon={IconCalendar}>
           {timetable.length === 0 ? (
             <EmptyState title="No timetable yet"
                         message="Your course rep can publish the weekly timetable." />
@@ -105,7 +108,7 @@ function Overview({ community, courses, timetable, announcements, changes,
         </Board>
       </div>
 
-      <Board title="Recent changes">
+      <Board title="Recent changes" icon={IconClock} className="board--timeline board--past">
         {changes.length === 0 ? (
           <EmptyState title="Nothing has changed recently"
                       message="Changes your course reps make to official information appear here." />

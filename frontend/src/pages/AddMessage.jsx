@@ -159,6 +159,7 @@ function Proposal({ proposal, isRep, onPublish, onDiscard, publishing, publishEr
           <div className="row-x stackable" style={{ marginTop: 'var(--s4)' }}>
             {canPublish && (
               <button type="button" className="btn btn--primary" disabled={publishing}
+                      aria-busy={publishing || undefined}
                       onClick={() => onPublish(edited)}>
                 {publishing ? 'Publishing…' : 'Confirm & Publish'}
               </button>
@@ -507,7 +508,9 @@ export default function AddMessage() {
             <Field id="context" label="Extra context (optional)" value={form.context}
                    onChange={(e) => update('context', e.target.value)} />
 
-            <button type="submit" className="btn btn--primary" disabled={busy}>
+            {/* The assistant's material: this hands the message to the AI. */}
+            <button type="submit" className="btn btn--ai" disabled={busy}
+                    aria-busy={busy || undefined}>
               {busy ? 'Analysing…' : 'Analyse message'}
             </button>
           </form>

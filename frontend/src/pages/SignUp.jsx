@@ -265,6 +265,7 @@ export default function SignUp() {
         </fieldset>
 
         <button type="submit" className="btn btn--primary btn--block" disabled={busy}
+                aria-busy={busy || undefined}
                 style={{ marginTop: 'var(--s5)' }}>
           {busy ? 'Creating account…' : 'Create account'}
         </button>

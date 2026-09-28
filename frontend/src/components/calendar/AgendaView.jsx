@@ -14,12 +14,12 @@
 // nothing here is distinguished by colour alone, because the word is always
 // present beside the glyph.
 
-import { Completion, StatusBadge, daysUntil, humanTime } from '../ui.jsx';
+import { Completion, DueLabel, StatusBadge, humanTime } from '../ui.jsx';
 import { eventTypeLabel } from '../../lib/vocabulary.js';
 import {
   IconAlert, IconBook, IconCalendar, IconClock, IconEdit, IconPin, IconSpark,
 } from '../icons.jsx';
-import { parseISO, isAssessment } from '../../lib/calendar.js';
+import { parseISO } from '../../lib/calendar.js';
 
 const LONG_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday',
                    'Friday', 'Saturday'];
@@ -49,20 +49,6 @@ export function EventType({ type }) {
   );
 }
 
-// "Due tomorrow", "In 3 days" — computed from the event's own date, which the
-// backend already supplies. It states proximity; it does not invent urgency,
-// and it is only shown for assessment types where a deadline is the point.
-function Proximity({ event, today }) {
-  if (!event.event_date || event.status === 'CANCELLED') return null;
-  if (!isAssessment(event)) return null;
-  const days = daysUntil(event.event_date, today);
-  if (days === null || days < 0 || days > 7) return null;
-  const word = days === 0 ? 'Due today' : days === 1 ? 'Due tomorrow' : `Due in ${days} days`;
-  // HIGH priority is a real stored field, not a frontend guess.
-  const urgent = days <= 1 || event.priority === 'HIGH';
-  return <span className={`due${urgent ? ' due--now' : ''}`}>{word}</span>;
-}
-
 function DayHeading({ date, isToday, count }) {
   if (!date) {
     return (
@@ -81,7 +67,9 @@ function DayHeading({ date, isToday, count }) {
     <div className={`agday__head${isToday ? ' agday__head--today' : ''}`}>
       <div className="agday__date">
         <span className="agday__dow">{isToday ? 'Today' : LONG_DAYS[d.getDay()]}</span>
-        <span className="agday__dm">{d.getDate()} {LONG_MONTHS[d.getMonth()]}</span>
+        <span className="agday__dm">
+          <span className="agday__num">{d.getDate()}</span> {LONG_MONTHS[d.getMonth()]}
+        </span>
       </div>
       <span className="agday__count mono">
         {count} {count === 1 ? 'item' : 'items'}
@@ -112,7 +100,7 @@ function AgendaEvent({ event, onOpen, today }) {
           {event.venue
             ? <span className="agev__bit"><IconPin size={13} />{event.venue}</span>
             : <span className="agev__bit agev__bit--absent">Venue not specified</span>}
-          <Proximity event={event} today={today} />
+          <DueLabel event={event} today={today} />
           {event.completed && <Completion done />}
         </span>
       </span>

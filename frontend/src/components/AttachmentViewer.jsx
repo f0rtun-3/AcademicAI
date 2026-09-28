@@ -64,7 +64,7 @@ const NO_PREVIEW = {
   'image/heic': 'HEIC photos',
 };
 
-export default function AttachmentViewer({ file, path, onClose }) {
+export default function AttachmentViewer({ file, path, onClose, leaving = false }) {
   const [state, setState] = useState({ status: 'loading' });
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function AttachmentViewer({ file, path, onClose }) {
   }, [file.content_type, path]);
 
   return (
-    <Modal title={file.filename} onClose={onClose}
+    <Modal title={file.filename} onClose={onClose} leaving={leaving}
            className="modal--viewer"
            actions={<>
              <button type="button" className="btn btn--secondary" onClick={onClose}>

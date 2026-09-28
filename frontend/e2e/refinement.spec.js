@@ -149,6 +149,41 @@ test('Manage is a Community sub-route with a working sub-navigation', async ({ p
   await expect(page.locator('.sidenav a.active')).toHaveText('Community');
 });
 
+test('the top bar fits at tablet widths, where it used to overflow', async ({ page }) => {
+  // 640-799px carries the wordmark, four tabs, Add message, the bell and the
+  // account control in one bar; it overflowed by up to 150px before the bar
+  // tightened and Add message became its glyph at these widths.
+  await page.setViewportSize({ width: 1000, height: 800 });
+  await open(page, { path: '/dashboard', session: STUDENT, ready: 'Needs attention' });
+  for (const width of [640, 700, 768]) {
+    await page.setViewportSize({ width, height: 800 });
+    expect(await horizontalOverflow(page), `${width}px`).toBeLessThanOrEqual(0);
+    await expect(page.getByRole('button', { name: /^Account/ })).toBeInViewport();
+    await expect(page.locator('.topbar').getByRole('link', { name: 'Add message' })).toBeVisible();
+  }
+});
+
+test('a suggested reminder sits in the conversation, clear of the composer', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const api = await open(page, { path: '/chat', session: STUDENT, ready: 'AcademicAI Assistant' });
+  api.suggestion = { title: 'Prepare for Programming II Quiz 1',
+                     remind_at_local: '2026-09-27T08:00', timezone: 'Africa/Lagos', event_id: 2 };
+  const input = page.getByLabel('Your question');
+  await input.fill('What is my next deadline?');
+  await input.press('Enter');
+  const card = page.getByRole('region', { name: 'Suggested reminder' });
+  await expect(card).toBeVisible();
+  // Inside the log, so it is announced and scrolled to with its answer...
+  await expect(page.getByRole('log').getByRole('region', { name: 'Suggested reminder' }))
+    .toHaveCount(1);
+  // ...and not underneath the sticky composer once the transcript settles.
+  await expect.poll(async () => {
+    const cardBox = await card.boundingBox();
+    const composer = await page.locator('.composer').boundingBox();
+    return cardBox.y + cardBox.height <= composer.y + 1;
+  }).toBe(true);
+});
+
 test('the top bar keeps its height on a short page', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   const api = await installMockApi(page, { session: STUDENT });

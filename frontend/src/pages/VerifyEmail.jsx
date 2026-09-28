@@ -157,6 +157,7 @@ export default function VerifyEmail() {
           </div>
 
           <button type="submit" className="btn btn--primary btn--block"
+                  aria-busy={busy || undefined}
                   disabled={busy || digits.length !== LENGTH}>
             {busy ? 'Verifying…' : 'Verify email'}
           </button>
@@ -165,7 +166,8 @@ export default function VerifyEmail() {
         {/* The two ways out. Resending is the common one, so it reads as an
             action; logging out is quiet. */}
         <div className="row-x stackable">
-          <button type="button" className="btn btn--secondary" onClick={resend}
+          <button type="button" className="btn btn--secondary"
+                  aria-busy={resending || undefined} onClick={resend}
                   disabled={resending || cooldown > 0}>
             {resending ? 'Sending…'
               : cooldown > 0 ? `Resend in ${cooldown}s`

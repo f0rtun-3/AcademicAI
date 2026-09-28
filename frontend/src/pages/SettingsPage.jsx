@@ -96,7 +96,8 @@ export default function SettingsPage() {
                    value={email} onChange={(e) => setEmail(e.target.value)}
                    disabled={busy} />
             <div className="row-x stackable">
-              <button type="submit" className="btn btn--primary" disabled={busy}>
+              <button type="submit" className="btn btn--primary" disabled={busy}
+                      aria-busy={busy || undefined}>
                 {busy ? 'Changing…' : 'Change email'}
               </button>
               <button type="button" className="btn btn--secondary" disabled={busy}

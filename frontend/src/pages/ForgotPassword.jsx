@@ -86,7 +86,8 @@ export default function ForgotPassword() {
                  autoComplete="username" value={email}
                  onChange={(e) => setEmail(e.target.value)}
                  hint="We email a reset code to the address on the account." />
-          <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
+          <button type="submit" className="btn btn--primary btn--block" disabled={busy}
+                  aria-busy={busy || undefined}>
             {busy ? 'Sending…' : 'Email me a reset code'}
           </button>
         </form>
@@ -108,7 +109,8 @@ export default function ForgotPassword() {
             <PasswordInput id="reset-confirm" label="Confirm new password" required
                            autoComplete="new-password" value={form.confirm_password}
                            onChange={(e) => setForm({ ...form, confirm_password: e.target.value })} />
-            <button type="submit" className="btn btn--primary btn--block" disabled={busy}>
+            <button type="submit" className="btn btn--primary btn--block" disabled={busy}
+                    aria-busy={busy || undefined}>
               {busy ? 'Saving…' : 'Set new password'}
             </button>
           </form>

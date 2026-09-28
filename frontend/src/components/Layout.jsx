@@ -22,6 +22,7 @@ import { initials } from './ui.jsx';
 import Brand from './Brand.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import NotificationBell from './NotificationBell.jsx';
+import { usePresence } from './motion.js';
 import {
   IconAdd, IconBell, IconCalendar, IconChat, IconCommunity, IconDashboard, IconUser,
 } from './icons.jsx';
@@ -60,6 +61,8 @@ export default function Layout() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  // Kept mounted for its closing animation (usePresence), then removed.
+  const [menuShown, menuLeaving] = usePresence(menuOpen);
   const onChat = pathname.startsWith('/chat');
 
   useEffect(() => { setMenuOpen(false); }, [pathname]);
@@ -145,9 +148,11 @@ export default function Layout() {
             page heading already says the same thing. */}
         <span className="topbar__title" aria-hidden="true">{titleFor(pathname)}</span>
 
-        <Link className="btn btn--primary topbar__add" to="/add-message">
+        {/* The words go at tablet widths, where the bar would otherwise
+            overflow; the aria-label keeps the link's name either way. */}
+        <Link className="btn btn--primary topbar__add" to="/add-message" aria-label="Add message">
           <IconAdd size={18} />
-          Add message
+          <span className="topbar__addword">Add message</span>
         </Link>
 
         {/* Phones, Chat only. The floating Add message is withheld there
@@ -171,8 +176,8 @@ export default function Layout() {
                   onClick={() => setMenuOpen((open) => !open)}>
             {initials(user?.full_name)}
           </button>
-          {menuOpen && (
-            <div className="menu" role="menu">
+          {menuShown && (
+            <div className="menu" role="menu" data-state={menuLeaving ? 'closed' : 'open'}>
               <div className="menu__who">
                 <strong>{user?.full_name ?? 'You'}</strong>
                 <span className="mono">{user?.email}</span>

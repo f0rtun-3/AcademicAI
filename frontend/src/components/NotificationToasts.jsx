@@ -19,23 +19,39 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { IconBell, IconClose } from './icons.jsx';
+import { EXIT_MS, motionAllowed } from './motion.js';
 
 // Long enough to read a title and reach a button, short enough not to linger.
 const DISMISS_MS = 7000;
 
 function Toast({ toast, onView, onDismiss, paused }) {
   const timer = useRef(null);
+  const [leaving, setLeaving] = useState(false);
+
+  // Every way out - the timer, or the close button - plays the exit first
+  // (styles.css .toast--leaving) and removes the toast when it has finished.
+  // Under reduced motion it goes at once.
+  const leave = useCallback(() => {
+    if (!motionAllowed()) { onDismiss(toast.id); return; }
+    setLeaving(true);
+  }, [onDismiss, toast.id]);
 
   useEffect(() => {
-    if (paused) return undefined;
-    timer.current = setTimeout(() => onDismiss(toast.id), DISMISS_MS);
+    if (!leaving) return undefined;
+    const gone = setTimeout(() => onDismiss(toast.id), EXIT_MS);
+    return () => clearTimeout(gone);
+  }, [leaving, onDismiss, toast.id]);
+
+  useEffect(() => {
+    if (paused || leaving) return undefined;
+    timer.current = setTimeout(leave, DISMISS_MS);
     return () => clearTimeout(timer.current);
     // `paused` flipping restarts the countdown, which is the intent: leaving
     // the stack gives you the full time again rather than a remnant.
-  }, [paused, toast.id, onDismiss]);
+  }, [paused, leaving, leave]);
 
   return (
-    <div className="toast">
+    <div className={`toast${leaving ? ' toast--leaving' : ''}`} data-kind={toast.kind}>
       <span className="toast__icon" aria-hidden="true"><IconBell size={16} /></span>
       <div className="toast__body">
         {toast.kindLabel && <p className="toast__kind">{toast.kindLabel}</p>}
@@ -55,7 +71,7 @@ function Toast({ toast, onView, onDismiss, paused }) {
           the bell must still be holding it. */}
       <button type="button" className="toast__close"
               aria-label={`Dismiss ${toast.subject}`}
-              onClick={() => onDismiss(toast.id)}>
+              onClick={leave}>
         <IconClose size={15} />
       </button>
     </div>

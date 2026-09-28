@@ -12,8 +12,7 @@ export default function RemindersPage() {
     <div className="stack stack--loose">
       <PageHeader
         title="Your reminders"
-        lede="Private notes AcademicAI emails back to you at a time you choose.
-              They are yours alone and never become part of the community's record." />
+        lede="Private notes AcademicAI emails back to you at a time you choose." />
 
       <Notice tone="info" label="Private to you">
         These are personal. They are not official academic records and nobody else

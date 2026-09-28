@@ -3,7 +3,8 @@
 // The page answers one question first: what do I need to know or do right
 // now? So the order is
 //
-//   header        a compact greeting, the community it greets you into, and
+//   header        the day on one surface: date, greeting, a one-line pulse
+//                 (due today / changes / reminders), the week at a glance, and
 //                 the way into Ask AcademicAI
 //   ① Needs attention   what changed on work that is close - omitted
 //                        entirely when empty rather than showing a zero
@@ -21,10 +22,14 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { useResource } from '../components/useResource.js';
 import { EmptyState, ErrorState, Loading } from '../components/States.jsx';
 import {
-  Board, CommunityStatus, Completion, Facts, Notice, PageHeader, Row, StateChip,
+  Board, CommunityStatus, Completion, DueLabel, Facts, Notice, PageHeader, Row, StateChip,
   StatusBadge, daysUntil, localTime, longDate, todayISO, whenParts,
 } from '../components/ui.jsx';
-import { IconChat } from '../components/icons.jsx';
+import {
+  IconAlert, IconBell, IconCalendar, IconChat, IconCommunity, IconMegaphone, IconUser,
+} from '../components/icons.jsx';
+import WeekStrip from '../components/WeekStrip.jsx';
+import { isAssessment } from '../lib/calendar.js';
 import { needsAttention } from '../lib/attention.js';
 import { describeChange, eventTypeLabel, eventTypeNoun } from '../lib/vocabulary.js';
 import { reminderLocal } from '../lib/academicTime.js';
@@ -52,16 +57,19 @@ function attentionLine(item) {
   return details[0] ?? sentence;
 }
 
-function AttentionRow({ item, onOpen }) {
+function AttentionRow({ item, onOpen, today }) {
   const { event, state } = item;
   const title = event?.title ?? 'An official record changed';
   return (
     <Row when={whenParts(item.date)} title={title}
+         today={state !== 'CANCELLED' && item.date === today}
          onClick={event ? () => onOpen(item.eventId) : undefined}
          meta={<>
            {event?.course_code && <span>{event.course_code} · </span>}
            {attentionLine(item)}
-           {event?.completed ? <> · <Completion done /></> : null}
+           {/* Its own line: the change is a sentence ending in a full stop,
+               and a " · " after it printed "B107. · Done". */}
+           {event?.completed ? <span className="brow__by"><Completion done /></span> : null}
          </>}
          side={<StateChip value={state} />} />
   );
@@ -110,31 +118,49 @@ export default function Dashboard() {
   const pendingReminders = (reminders ?? []).filter((r) => r.status === 'PENDING');
   const archived = community.status === 'ARCHIVED';
 
+  // The day in one line: what is due today, what changed, what you set.
+  const dueToday = upcoming.filter((e) => e.event_date === today && !e.completed).length;
+  const eventsForWeek = allEvents ?? upcoming;
+
   return (
-    <div className="stack stack--loose">
-      {/* A header, not a card. The greeting, the date, and the four facts that
-        * say which community this is - labelled, so no value has to be
-        * guessed. The community's status is shown only when it is not the
-        * normal one: an "Active" badge on every visit says nothing. */}
+    // `dash`: a "today" header across the top, then the record in a main
+    // column and the personal and community side in a narrower one. Content
+    // arrives in three short beats (styles.css §31).
+    <div className="stack stack--loose dash">
+      {/* The day, on one surface: the date and greeting, the three facts that
+        * matter this morning, and the week ahead at a glance. The one lit
+        * element on the dashboard is today in the week strip. */}
       <PageHeader
+        surface
         className="dashhead"
         eyebrow={longDate(today)}
         title={greeting}
         action={(
-          <Link className="btn btn--secondary" to="/chat">
+          <Link className="btn btn--ai" to="/chat">
             <IconChat size={18} />
             Ask AcademicAI
           </Link>
         )}
         meta={<>
-          <Facts items={[
-            { label: 'University', value: community.university },
-            { label: 'Department', value: community.department },
-            { label: 'Level', value: community.level, mono: true },
-            { label: 'Session', value: community.academic_session, mono: true },
-          ]} />
+          <ul className="pulse" aria-label="Today at a glance">
+            <li className={dueToday ? 'pulse--warn' : undefined}>
+              {dueToday ? `${dueToday} due today` : 'Nothing due today'}
+            </li>
+            {attention.items.length > 0 && (
+              <li className="pulse--info">
+                {attention.items.length} change{attention.items.length === 1 ? '' : 's'} to check
+              </li>
+            )}
+            {pendingReminders.length > 0 && (
+              <li className="pulse--pos">
+                {pendingReminders.length} reminder{pendingReminders.length === 1 ? '' : 's'} set
+              </li>
+            )}
+          </ul>
           {community.status !== 'ACTIVE' && <CommunityStatus status={community.status} />}
-        </>} />
+        </>}>
+        <WeekStrip events={eventsForWeek} today={today} />
+      </PageHeader>
 
       {archived && (
         <Notice tone="none" label="Session archived">
@@ -142,67 +168,84 @@ export default function Dashboard() {
         </Notice>
       )}
 
-      {/* ① Needs attention — omitted entirely when empty. */}
-      {attention.items.length > 0 && (
-        <Board title="Needs attention"
-               action={<span className="t-meta">
-                 {attention.items.length} change{attention.items.length === 1 ? '' : 's'}
-               </span>}
-               foot={attention.more > 0 ? (
-                 <Link className="linkish" to="/calendar">
-                   {attention.more} more change{attention.more === 1 ? '' : 's'} in the calendar
-                 </Link>
-               ) : null}>
-          {attention.items.map((item) => (
-            <AttentionRow key={item.key} item={item} onOpen={openEvent} />
-          ))}
+      {/* The record: what needs you, what blocks others, what is coming. */}
+      <div className="dash__main">
+        {/* ① Needs attention — omitted entirely when empty. The one raised
+            board on the screen: elevation is how priority is shown here, so
+            nothing else on the dashboard carries it. */}
+        {attention.items.length > 0 && (
+          <Board title="Needs attention" raised icon={IconAlert}
+                 action={<span className="count">
+                   {attention.items.length}
+                   <span className="sr-only">
+                     {' '}change{attention.items.length === 1 ? '' : 's'}
+                   </span>
+                 </span>}
+                 foot={attention.more > 0 ? (
+                   <Link className="linkish" to="/calendar">
+                     {attention.more} more change{attention.more === 1 ? '' : 's'} in the calendar
+                   </Link>
+                 ) : null}>
+            {attention.items.map((item) => (
+              <AttentionRow key={item.key} item={item} onOpen={openEvent} today={today} />
+            ))}
+          </Board>
+        )}
+
+        {/* ② Rep only: the queue that blocks other people. */}
+        {isRep && rep && rep.pending_requests?.length > 0 && (
+          <Board title="Awaiting your decision" icon={IconUser}
+                 action={<Link className="linkish" to="/community/manage">Open Manage</Link>}>
+            {rep.pending_requests.map((request) => (
+              <Row key={request.user_id} when={whenParts(request.requested_at)}
+                   title={request.full_name}
+                   meta="Asked to join your community" />
+            ))}
+          </Board>
+        )}
+
+        {/* ③ Coming up: today and the next seven days, once each, on the
+            time spine - it IS a sequence in time. */}
+        <Board title="Coming up" icon={IconCalendar} className="board--timeline"
+               action={<span className="t-meta">Today and the next {NEXT_DAYS} days</span>}>
+          {comingUp.length === 0 ? (
+            attention.items.length > 0 ? (
+              <EmptyState title="Nothing else coming up" icon={IconCalendar}
+                          message="Everything due in the next week is listed under Needs attention." />
+            ) : (
+              <EmptyState title="Nothing due in the next week" icon={IconCalendar}
+                          message="Deadlines, quizzes and exams appear here as your reps publish them." />
+            )
+          ) : comingUp.map((event) => {
+            const days = daysUntil(event.event_date);
+            return (
+              <Row key={event.id} when={whenParts(event.event_date)} title={event.title}
+                   today={days === 0}
+                   onClick={() => openEvent(event.id)}
+                   meta={<>{eventMeta(event)}{event.completed ? <> · <Completion done /></> : null}</>}
+                   side={<>
+                     <StatusBadge value={event.status} />
+                     {/* Work with a deadline says so the way the calendar
+                         does; anything else states only its distance. Today
+                         and Tomorrow are already named in the date column. */}
+                     {isAssessment(event)
+                       ? <DueLabel event={event} />
+                       : days > 1 && <span className="t-meta">in {days} days</span>}
+                   </>} />
+            );
+          })}
         </Board>
-      )}
+      </div>
 
-      {/* ② Rep only: the queue that blocks other people. */}
-      {isRep && rep && rep.pending_requests?.length > 0 && (
-        <Board title="Awaiting your decision"
-               action={<Link className="linkish" to="/community/manage">Open Manage</Link>}>
-          {rep.pending_requests.map((request) => (
-            <Row key={request.user_id} when={whenParts(request.requested_at)}
-                 title={request.full_name}
-                 meta="Asked to join your community" />
-          ))}
-        </Board>
-      )}
-
-      {/* ③ Coming up: today and the next seven days, once each. */}
-      <Board title="Coming up"
-             action={<span className="t-meta">Today and the next {NEXT_DAYS} days</span>}>
-        {comingUp.length === 0 ? (
-          attention.items.length > 0 ? (
-            <EmptyState title="Nothing else coming up"
-                        message="Everything due in the next week is listed under Needs attention." />
-          ) : (
-            <EmptyState title="Nothing due in the next week"
-                        message="Deadlines, quizzes and exams appear here as your reps publish them." />
-          )
-        ) : comingUp.map((event) => {
-          const days = daysUntil(event.event_date);
-          return (
-            <Row key={event.id} when={whenParts(event.event_date)} title={event.title}
-                 onClick={() => openEvent(event.id)}
-                 meta={<>{eventMeta(event)}{event.completed ? <> · <Completion done /></> : null}</>}
-                 side={<>
-                   <StatusBadge value={event.status} />
-                   {/* Today and Tomorrow are already named in the date column. */}
-                   {days > 1 && <span className="t-meta">in {days} days</span>}
-                 </>} />
-          );
-        })}
-      </Board>
-
-      <div className="bands bands--2">
-        {/* ④ Your reminders */}
-        <Board title="Your reminders"
-               action={<Link className="linkish" to="/reminders">See all reminders</Link>}>
+      {/* Yours and your community's: reminders, announcements, who runs it. */}
+      <aside className="dash__aside" aria-label="Your reminders and your community">
+        {/* ④ Your reminders - also a sequence in time. */}
+        <Board title="Your reminders" icon={IconBell} className="board--timeline"
+               action={<Link className="linkish" to="/reminders">
+                 See all<span className="sr-only"> reminders</span>
+               </Link>}>
           {pendingReminders.length === 0 ? (
-            <EmptyState title="No reminders yet"
+            <EmptyState title="No reminders yet" icon={IconBell}
                         message="Reminders are personal — nobody else sees them."
                         action={<Link className="btn btn--secondary" to="/reminders">
                           Add a reminder
@@ -212,6 +255,7 @@ export default function Dashboard() {
                row has, goes in the meta. A scheduled reminder is the normal
                case, so it carries no badge. */
             <Row key={reminder.id} when={whenParts(reminderLocal(reminder))}
+                 today={whenParts(reminderLocal(reminder)).top === 'Today'}
                  title={reminder.title}
                  meta={localTime(reminderLocal(reminder))}
                  side={<StatusBadge value={reminder.status} context="reminder" />} />
@@ -219,9 +263,9 @@ export default function Dashboard() {
         </Board>
 
         {/* ⑤ Announcements */}
-        <Board title="Announcements">
+        <Board title="Announcements" icon={IconMegaphone}>
           {(!announcements || announcements.length === 0) ? (
-            <EmptyState title="No announcements"
+            <EmptyState title="No announcements" icon={IconMegaphone}
                         message="Announcements your reps publish appear here." />
           ) : announcements.slice(0, 4).map((item) => (
             /* Attribution, where the backend has it. An announcement is
@@ -233,18 +277,28 @@ export default function Dashboard() {
                  side={<StatusBadge value={item.status ?? 'PUBLISHED'} />} />
           ))}
         </Board>
-      </div>
 
-      {/* ⑥ Your community - secondary, so it takes the same board and heading
-          as everything else rather than a larger heading of its own. */}
-      <Board title="Your community"
-             action={<Link className="linkish" to="/community">Open Community</Link>}>
-        <Row title={community.reps.length === 0
-                      ? 'No verified course rep yet'
-                      : `Course rep${community.reps.length === 1 ? '' : 's'}: `
-                        + community.reps.map((r) => r.full_name).join(', ')}
-             meta={`${community.member_count} member${community.member_count === 1 ? '' : 's'}`} />
-      </Board>
+        {/* ⑥ Your community: which community this is - labelled, so no value
+            has to be guessed - and who runs it. */}
+        <Board title="Your community" icon={IconCommunity}
+               action={<Link className="linkish" to="/community">
+                 Open<span className="sr-only"> Community</span>
+               </Link>}>
+          <div className="dash__facts">
+            <Facts items={[
+              { label: 'University', value: community.university },
+              { label: 'Department', value: community.department },
+              { label: 'Level', value: community.level, mono: true },
+              { label: 'Session', value: community.academic_session, mono: true },
+            ]} />
+          </div>
+          <Row title={community.reps.length === 0
+                        ? 'No verified course rep yet'
+                        : `Course rep${community.reps.length === 1 ? '' : 's'}: `
+                          + community.reps.map((r) => r.full_name).join(', ')}
+               meta={`${community.member_count} member${community.member_count === 1 ? '' : 's'}`} />
+        </Board>
+      </aside>
     </div>
   );
 }

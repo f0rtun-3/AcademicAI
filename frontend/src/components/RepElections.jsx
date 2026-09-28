@@ -17,7 +17,9 @@ import { EmptyState, ErrorBanner, Loading, SuccessBanner } from './States.jsx';
 import {
   Board, Modal, Notice, Panel, Row, StateChip, Tally, longDate, remaining,
 } from './ui.jsx';
+import { IconShield, IconUser } from './icons.jsx';
 import { voteWord } from '../lib/vocabulary.js';
+import { usePresence } from './motion.js';
 
 function VoteButtons({ onVote, busy, idPrefix }) {
   return (
@@ -63,6 +65,9 @@ export default function RepElections({ community, membership, onChanged }) {
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
   const [confirmRemoval, setConfirmRemoval] = useState(null);
+  // `removal` is the member being confirmed, kept through the dialog's
+  // closing animation so its words do not vanish as it fades (usePresence).
+  const [removal, removalLeaving] = usePresence(confirmRemoval);
 
   const load = useCallback(async () => {
     try {
@@ -177,7 +182,7 @@ export default function RepElections({ community, membership, onChanged }) {
         </Panel>
       )}
 
-      <Board title="Candidacies">
+      <Board title="Candidacies" icon={IconUser}>
         {candidates.length === 0 ? (
           <EmptyState title="No nominations yet"
                       message="Any member of this community can stand for election." />
@@ -202,7 +207,7 @@ export default function RepElections({ community, membership, onChanged }) {
         * pieces of explanation dressed as records. Explanation is now the
         * board's footnote and the action is a footer control; the rows are
         * ballots and nothing else. */}
-      <Board title="Rep removal"
+      <Board title="Rep removal" icon={IconShield}
              foot={<div className="stack stack--tight">
                <span className="prose">
                  {isRep && otherReps.length > 0
@@ -241,8 +246,9 @@ export default function RepElections({ community, membership, onChanged }) {
         )}
       </Board>
 
-      {confirmRemoval && (
-        <Modal title={`Start a removal vote for ${confirmRemoval.full_name}?`}
+      {removal && (
+        <Modal title={`Start a removal vote for ${removal.full_name}?`}
+               leaving={removalLeaving}
                onClose={() => setConfirmRemoval(null)}
                actions={<>
                  <button type="button" className="btn btn--secondary"
@@ -250,6 +256,9 @@ export default function RepElections({ community, membership, onChanged }) {
                  <button type="button" className="btn btn--danger" disabled={busy}
                          onClick={() => {
                            const target = confirmRemoval;
+                           // A second press while the dialog is closing
+                           // has nobody to act on.
+                           if (!target) return;
                            setConfirmRemoval(null);
                            act(() => api.post('/rep/removals', { target_user_id: target.id }),
                                `A removal vote for ${target.full_name} is now open.`);
@@ -260,10 +269,10 @@ export default function RepElections({ community, membership, onChanged }) {
           {/* A consequence list, not an "are you sure". Never truncated. */}
           <Notice tone="crit" label="What happens">
             <ul>
-              <li>Every verified member of this community except {confirmRemoval.full_name} may vote.</li>
+              <li>Every verified member of this community except {removal.full_name} may vote.</li>
               <li>Voting is open for 24 hours.</li>
               <li>Enough people must vote, and yes must exceed no.</li>
-              <li>If it passes, {confirmRemoval.full_name} loses rep authority immediately and
+              <li>If it passes, {removal.full_name} loses rep authority immediately and
                 stays in the community as a student.</li>
               <li>If it fails, no further vote against them for the cooldown period.</li>
             </ul>

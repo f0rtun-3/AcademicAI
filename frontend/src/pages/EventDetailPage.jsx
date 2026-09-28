@@ -17,15 +17,16 @@ import {
   EmptyState, ErrorBanner, ErrorState, Loading, SuccessBanner,
 } from '../components/States.jsx';
 import {
-  Board, Completion, Field, Modal, Notice, Panel, Row, StatusBadge,
+  Board, Completion, DateTile, DueLabel, Field, Modal, Notice, Panel, Row, StatusBadge,
   longDate, todayISO, whenParts,
 } from '../components/ui.jsx';
 import {
   PRIORITIES, dateLabel, describeChange, eventTypeNoun, priorityLabel, statusLabel,
 } from '../lib/vocabulary.js';
-import { IconBack, IconPaperclip } from '../components/icons.jsx';
+import { IconBack, IconClock, IconPaperclip } from '../components/icons.jsx';
 import { EventType } from '../components/calendar/AgendaView.jsx';
 import AttachmentViewer, { canPreview } from '../components/AttachmentViewer.jsx';
+import { usePresence } from '../components/motion.js';
 
 // One row of this event's history, in words. The change is described from the
 // event's own point of view ("The deadline was updated.") because the event's
@@ -80,6 +81,9 @@ export default function EventDetailPage() {
   const [reminder, setReminder] = useState(null);
   const [file, setFile] = useState(null);
   const [viewing, setViewing] = useState(null);
+  // Both dialogs stay mounted for their closing animation (usePresence).
+  const [viewerFile, viewerLeaving] = usePresence(viewing);
+  const [cancelShown, cancelLeaving] = usePresence(confirmCancel);
 
   if (status === 'loading') return <Loading label="Loading this record…" />;
   if (status === 'error') {
@@ -195,18 +199,25 @@ export default function EventDetailPage() {
         </Link>
       </p>
 
-      <header className="page__head">
-        <div className="row-x" style={{ justifyContent: 'space-between' }}>
-          <h1 className="t-display">{event.title}</h1>
-          {/* Only a state worth noticing earns the badge; "Scheduled" is
-              stated in the details below instead. */}
-          <StatusBadge value={event.status} />
+      {/* The record's header: its date as a calendar leaf beside the title -
+          when it is is the first thing anyone opening a record looks for. */}
+      <header className="page__head evhead">
+        <DateTile value={event.event_date} />
+        <div className="evhead__text">
+          <div className="row-x" style={{ justifyContent: 'space-between' }}>
+            <h1 className="t-display">{event.title}</h1>
+            {/* Only a state worth noticing earns the badge; "Scheduled" is
+                stated in the details below instead. */}
+            <StatusBadge value={event.status} />
+          </div>
+          <p className="evmeta">
+            <EventType type={event.event_type} />
+            {event.course_code && <span className="evmeta__course">{event.course_code}</span>}
+            {event.priority === 'HIGH' && <span className="evmeta__pri">High priority</span>}
+            {/* The same proximity label the calendar and dashboard show. */}
+            {!event.completed && <DueLabel event={event} />}
+          </p>
         </div>
-        <p className="evmeta">
-          <EventType type={event.event_type} />
-          {event.course_code && <span className="evmeta__course mono">{event.course_code}</span>}
-          {event.priority === 'HIGH' && <span className="evmeta__pri">High priority</span>}
-        </p>
       </header>
 
       <SuccessBanner message={notice} onDismiss={() => setNotice(null)} />
@@ -259,7 +270,8 @@ export default function EventDetailPage() {
                   what changed against your name.
                 </Notice>
                 <div className="row-x stackable">
-                  <button type="submit" className="btn btn--primary" disabled={busy}>
+                  <button type="submit" className="btn btn--primary" disabled={busy}
+                          aria-busy={busy || undefined}>
                     {busy ? 'Saving…' : 'Save and notify students'}
                   </button>
                   <button type="button" className="btn btn--secondary" disabled={busy}
@@ -268,20 +280,40 @@ export default function EventDetailPage() {
               </form>
             ) : (
               <>
-                {/* The instructions, when a rep typed any. They come first
-                    because they are what the work actually is; the dates and
-                    the venue qualify them. Absent is normal and prints
-                    nothing rather than an empty heading. */}
+                {/* When and where come first, as a grid a student reads at a
+                    glance: "is it today, what time, which room" is the first
+                    question anyone opening a record asks. A value the record
+                    does not have is stated, in the quieter voice. */}
+                <dl className="kv kv--facts">
+                  <div className="kv__item">
+                    <dt>{dateLabel(event.event_type)}</dt>
+                    <dd className={event.event_date ? undefined : 'is-absent'}>
+                      {longDate(event.event_date)}
+                    </dd>
+                  </div>
+                  <div className="kv__item">
+                    <dt>Time</dt>
+                    <dd className={event.event_time ? 'mono' : 'is-absent'}>
+                      {event.event_time ?? 'Not specified'}
+                    </dd>
+                  </div>
+                  <div className="kv__item">
+                    <dt>Venue</dt>
+                    <dd className={event.venue ? undefined : 'is-absent'}>
+                      {event.venue ?? 'Not specified'}
+                    </dd>
+                  </div>
+                  <div className="kv__item">
+                    <dt>Status</dt><dd>{statusLabel(event.status)}</dd>
+                  </div>
+                </dl>
+
+                {/* The instructions, when a rep typed any: what the work
+                    actually is, beneath the facts that schedule it. Absent is
+                    normal and prints nothing rather than an empty heading. */}
                 {event.description && (
                   <div className="prose evdesc">{event.description}</div>
                 )}
-
-                <dl className="kv">
-                  <dt>{dateLabel(event.event_type)}</dt><dd>{longDate(event.event_date)}</dd>
-                  <dt>Time</dt><dd>{event.event_time ?? 'Not specified'}</dd>
-                  <dt>Venue</dt><dd>{event.venue ?? 'Not specified'}</dd>
-                  <dt>Status</dt><dd>{statusLabel(event.status)}</dd>
-                </dl>
 
                 {cancelled && (
                   <Notice tone="crit" label={`This ${noun} was cancelled`}
@@ -445,7 +477,7 @@ export default function EventDetailPage() {
                              onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
                     )}
                   </Field>
-                  <button type="submit" className="btn btn--secondary"
+                  <button type="submit" className="btn btn--secondary" aria-busy={busy || undefined}
                           disabled={busy || !file}>
                     {busy ? 'Uploading…' : 'Add attachment'}
                   </button>
@@ -456,7 +488,9 @@ export default function EventDetailPage() {
         </div>
 
         <div className="stack">
-          <Board title="What changed">
+          {/* History is a sequence in time: it hangs on the spine, every node
+              filled - all of it has already happened. */}
+          <Board title="What changed" icon={IconClock} className="board--timeline board--past">
             {history.length === 0 ? (
               <EmptyState title="No changes yet"
                           message="Nothing has changed since this was published." />
@@ -480,13 +514,14 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      {viewing && (
-        <AttachmentViewer file={viewing} onClose={() => setViewing(null)}
-                          path={`/events/${event.id}/attachments/${viewing.id}`} />
+      {viewerFile && (
+        <AttachmentViewer file={viewerFile} onClose={() => setViewing(null)}
+                          leaving={viewerLeaving}
+                          path={`/events/${event.id}/attachments/${viewerFile.id}`} />
       )}
 
-      {confirmCancel && (
-        <Modal title={`Cancel ${event.title}?`}
+      {cancelShown && (
+        <Modal title={`Cancel ${event.title}?`} leaving={cancelLeaving}
                onClose={() => setConfirmCancel(false)}
                actions={<>
                  <button type="button" className="btn btn--secondary"

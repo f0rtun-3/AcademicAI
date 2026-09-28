@@ -113,6 +113,7 @@ export default function CommunityMembership({ community, membership }) {
                 button stretched the full width of the panel — the only
                 full-bleed button in the product. */}
             <button type="submit" className="btn btn--primary" disabled={busy}
+                    aria-busy={busy || undefined}
                     style={{ alignSelf: 'flex-start' }}>
               {busy ? 'Requesting…' : 'Request transfer'}
             </button>
@@ -141,7 +142,8 @@ export default function CommunityMembership({ community, membership }) {
               without a new membership request.
             </p>
             <div className="row-x stackable">
-              <button type="button" className="btn btn--danger" disabled={busy} onClick={leave}>
+              <button type="button" className="btn btn--danger" disabled={busy}
+                      aria-busy={busy || undefined} onClick={leave}>
                 {busy ? 'Leaving…' : 'Yes, leave'}
               </button>
               <button type="button" className="btn btn--secondary" disabled={busy}
