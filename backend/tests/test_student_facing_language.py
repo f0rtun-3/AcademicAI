@@ -12,6 +12,9 @@ the sign-up form can put the message beside that field.
 import json
 
 from academicai.ai.prompts import CHAT_SYSTEM_PROMPT, build_chat_prompt
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 RAW = ["change_type", "old_value", "new_value", "entity_id", "MEMBERSHIP_APPROVED",
        "PENDING_APPROVAL", "EVENT_CANCELLED", "DEADLINE_CHANGED", "SCHEDULED", "->"]
@@ -116,6 +119,7 @@ def test_recent_changes_name_the_record_they_are_about(client, academic_communit
 
 def _payload(**overrides):
     payload = {
+        **TERMS_ACCEPTED,
         "full_name": "Ada Student", "email": "ada@student.babcock.edu.ng",
         "password": "Password123", "confirm_password": "Password123",
         "university": "Babcock University", "department": "Software Engineering",

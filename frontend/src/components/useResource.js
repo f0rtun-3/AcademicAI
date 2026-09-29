@@ -18,5 +18,19 @@ export function useResource(loader, deps = []) {
 
   useEffect(() => { run(); }, [run]);
 
-  return { ...state, reload: run };
+  // Re-read in place: the page keeps showing what it has, then swaps in the
+  // new data - no loading screen, and a failed refresh changes nothing. For
+  // updates the reader did not ask for (a reminder firing), where a flash of
+  // "Loading…" would be worse than a moment of old data.
+  const refresh = useCallback(async () => {
+    try {
+      const data = await loader();
+      setState({ status: 'ready', data, error: null });
+    } catch {
+      /* keep what is on screen */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  return { ...state, reload: run, refresh };
 }

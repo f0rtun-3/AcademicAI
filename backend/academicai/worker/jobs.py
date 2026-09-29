@@ -49,6 +49,15 @@ JOBS = (
 )
 
 
+REMINDER_JOBS = frozenset({"process_event_reminders", "process_personal_reminders"})
+
+
+def reminders_due():
+    """True when a reminder is waiting to be processed now. A read, not a job:
+    the loop asks it between cycles so a reminder fires as it comes due."""
+    return reminder_service.any_due()
+
+
 def run_once(jobs=JOBS):
     """Run every job once. Returns {job_name: result_or_error}."""
     results = {}

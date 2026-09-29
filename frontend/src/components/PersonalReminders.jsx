@@ -15,9 +15,20 @@ import { IconBell, IconCheck } from './icons.jsx';
 import { useFlash } from './motion.js';
 import { EmptyState, ErrorBanner } from './States.jsx';
 import {
-  Board, Field, Panel, Row, StatusBadge, localTime, whenParts,
+  Board, Field, Panel, Row, StatusBadge, localTime, longDate, whenParts,
 } from './ui.jsx';
 import { reminderLocal } from '../lib/academicTime.js';
+import { listen, NOTIFICATIONS_ARRIVED } from '../lib/liveEvents.js';
+
+// A picked time, read back in full - weekday, date AND year - so what was
+// chosen is what is seen. A date picker's year is one arrow-key press from
+// being next year, and "Wed 29 Sep" alone did not show it.
+// `local` is the datetime-local value, "2027-09-29T11:54".
+function readBack(local) {
+  const [day, time] = String(local ?? '').split('T');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !/^\d{2}:\d{2}/.test(time ?? '')) return undefined;
+  return `${longDate(day)} at ${time.slice(0, 5)}`;
+}
 
 const PRIVACY = 'These are personal. They are not official academic records and '
               + 'nobody else sees them.';
@@ -33,6 +44,8 @@ export default function PersonalReminders({ caption = PRIVACY }) {
   const [editing, setEditing] = useState(null);
   const [draft, setDraft] = useState({ title: '', remind_at: '' });
   const [creating, setCreating] = useState({ title: '', remind_at: '' });
+  // What the last reminder added was set for, said in full until the next edit.
+  const [confirmed, setConfirmed] = useState(null);
   const [added, flashAdded] = useFlash();
 
   const load = useCallback(async () => {
@@ -46,6 +59,11 @@ export default function PersonalReminders({ caption = PRIVACY }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  // One of these reminders just fired (the bell saw its notification arrive):
+  // re-read, so it reads "Sent" as its toast appears, not after a reload.
+  useEffect(() => listen(NOTIFICATIONS_ARRIVED, (event) => {
+    if (event.detail?.kinds?.includes('PERSONAL_REMINDER')) load();
+  }), [load]);
 
   // Resolves true when the change was made, so a caller can confirm it.
   async function act(fn) {
@@ -86,14 +104,21 @@ export default function PersonalReminders({ caption = PRIVACY }) {
 
   async function create(event) {
     event.preventDefault();
-    const ok = await act(() => api.post('/reminders', {
-      title: creating.title,
-      remind_at_local: creating.remind_at,
-    }));
+    let created = null;
+    const ok = await act(async () => {
+      created = (await api.post('/reminders', {
+        title: creating.title,
+        remind_at_local: creating.remind_at,
+      }))?.reminder ?? null;
+    });
     setCreating({ title: '', remind_at: '' });
     // The new row is in the list above; the button confirms it worked with a
-    // check that draws in and settles away (§31).
-    if (ok) flashAdded();
+    // check that draws in and settles away (§31), and the line beside it says
+    // when it is for - from what the SERVER stored, not what was typed.
+    if (ok) {
+      flashAdded();
+      setConfirmed(readBack(created?.remind_at_local) ?? null);
+    }
   }
 
   if (reminders === null) return <p className="t-meta">Loading reminders…</p>;
@@ -125,6 +150,7 @@ export default function PersonalReminders({ caption = PRIVACY }) {
                        onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
                 <Field id={`r-when-${reminder.id}`} label="Remind me at" type="datetime-local"
                        required value={draft.remind_at} disabled={busy}
+                       hint={readBack(draft.remind_at) && `You'll be reminded on ${readBack(draft.remind_at)}.`}
                        onChange={(e) => setDraft({ ...draft, remind_at: e.target.value })} />
                 <div className="row-x stackable">
                   <button type="submit" className="btn btn--primary" disabled={busy}
@@ -167,10 +193,11 @@ export default function PersonalReminders({ caption = PRIVACY }) {
         <form onSubmit={create} className="form-grid form-grid--2">
           <Field id="new-reminder-title" label="Reminder title" required
                  value={creating.title} disabled={busy}
-                 onChange={(e) => setCreating({ ...creating, title: e.target.value })} />
+                 onChange={(e) => { setConfirmed(null); setCreating({ ...creating, title: e.target.value }); }} />
           <Field id="new-reminder-when" label="Remind me at" type="datetime-local" required
                  value={creating.remind_at} disabled={busy}
-                 onChange={(e) => setCreating({ ...creating, remind_at: e.target.value })} />
+                 hint={readBack(creating.remind_at) && `You'll be reminded on ${readBack(creating.remind_at)}.`}
+                 onChange={(e) => { setConfirmed(null); setCreating({ ...creating, remind_at: e.target.value }); }} />
           <div style={{ gridColumn: '1 / -1' }}>
             <button type="submit" className={`btn btn--primary${added ? ' btn--done' : ''}`}
                     disabled={busy} aria-busy={busy || undefined}>
@@ -179,8 +206,11 @@ export default function PersonalReminders({ caption = PRIVACY }) {
               )}
               {busy ? 'Saving…' : 'Add reminder'}
             </button>
-            {/* Said once for a screen reader; the check is the same fact. */}
-            <span className="sr-only" role="status">{added ? 'Reminder added.' : ''}</span>
+            {/* Seen AND announced: what was set, in full, with its year. The
+                region is always mounted so its first message is read out. */}
+            <p className="t-meta reminder-confirm" role="status">
+              {confirmed ? `Reminder added for ${confirmed}.` : ''}
+            </p>
           </div>
         </form>
       </Panel>

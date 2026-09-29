@@ -26,6 +26,7 @@ import ChatPage from './pages/ChatPage.jsx';
 import RemindersPage from './pages/RemindersPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SettingsPage from './pages/SettingsPage.jsx';
+import TermsPage from './pages/TermsPage.jsx';
 
 const STEP_ROUTES = {
   [STEPS.VERIFY_EMAIL]: '/verify-email',
@@ -81,6 +82,9 @@ export default function App() {
           offers "Open AcademicAI" instead of "Log in" when there is a
           session, so nobody is asked to sign in twice. */}
       <Route path="/" element={<Landing />} />
+      {/* Public, like the landing page: read before signing up, and linked
+          from the sign-up form and the footer. */}
+      <Route path="/terms" element={<TermsPage />} />
 
       <Route path="/login" element={<AnonymousOnly><Login /></AnonymousOnly>} />
       <Route path="/sign-up" element={<AnonymousOnly><SignUp /></AnonymousOnly>} />

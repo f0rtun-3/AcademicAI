@@ -24,7 +24,7 @@ from flask import Blueprint, g
 
 from ..errors import NotFoundError
 from ..security import authz
-from ..services import notification_service
+from ..services import notification_service, reminder_service
 from .helpers import int_arg, ok
 
 bp = Blueprint("notifications", __name__, url_prefix="/api/notifications")
@@ -33,10 +33,16 @@ bp = Blueprint("notifications", __name__, url_prefix="/api/notifications")
 @bp.get("")
 @authz.require_auth
 def list_notifications():
-    """The bell's payload: recent rows plus the unread badge.
+    """The bell's payload: recent rows, the unread badge, and when to look next.
 
-    Both in one response because the client polls this, and two round trips to
+    All in one response because the client polls this, and two round trips to
     render one bell is one too many.
+
+    `next_reminder_at` is the soonest reminder still waiting to fire for this
+    user (UTC ISO-8601), or null. It is a hint for WHEN to ask again - the bell
+    polls just after it, so a reminder's notification is seen the moment the
+    worker creates it. It decides nothing: the notification still exists only
+    once the worker has processed the reminder.
     """
     user_id = g.current_user["id"]
     limit = int_arg("limit", default=20, maximum=50)
@@ -44,6 +50,7 @@ def list_notifications():
     return ok({
         "notifications": [notification_service.notification_payload(r) for r in rows],
         "unread": notification_service.unread_count(user_id),
+        "next_reminder_at": reminder_service.next_due_for_user(user_id),
     })
 
 

@@ -47,9 +47,9 @@
    * `--surface-2` is deliberately a shade darker than a pure-neutral reading
    * would suggest: at #f8f9f8 a board's head is seven points off white and
    * stops registering as a band at all. */
-  --paper: #f1f3f2;
+  --paper: #f3f5f3;
   --surface: #ffffff;
-  --surface-2: #f4f6f5;
+  --surface-2: #f6f8f6;
   --ink: #141a22;
   --slate: #5a6472;
 
@@ -58,8 +58,8 @@
    *   --line   an internal hairline: row dividers, a head's underside.
    *   --edge   the boundary of an elevated surface. Noticeably darker, so a
    *            card is a container and not a faint suggestion of one. */
-  --line: #d9dedc;
-  --edge: #c9d0cc;
+  --line: #e0e5e2;
+  --edge: #d3dad6;
   /* The edge of the one RAISED surface: a step darker than --edge so the lift
    * is seated, never as dark as a control's border. */
   --edge-strong: #b3bbb7;
@@ -114,8 +114,8 @@
   /* Radius rises with the size of the thing. A 10px surface holding an 8px
    * control holding a 6px chip reads as one family; all three are still
    * corners, and nothing here becomes a pill. */
-  --r-control: 6px;
-  --r-panel: 12px;
+  --r-control: 7px;
+  --r-panel: 18px;
   --r-pill: 999px;
 
   /* ── Control system ───────────────────────────────────────────────────
@@ -126,7 +126,7 @@
    * 6px, not the 4px of a chip: a chip is a reading and a control is a
    * thing you press, and the softer corner is what separates them. It is
    * still a corner — nothing here becomes a pill. */
-  --r-btn: 8px;
+  --r-btn: 10px;
   --ctl-h: 40px;        /* every button */
   --ctl-h-sm: 34px;     /* a contextual action inside a row */
   --ctl-h-lg: 46px;     /* a block/marketing action */
@@ -179,12 +179,14 @@
   /* What lifts an elevated surface off the page. Two stops: a hairline that
    * seats the border, and one soft diffuse shadow that does the separating.
    * Not a glow, and nothing floats. */
-  --e-surface: 0 1px 2px rgba(23, 29, 24, .055), 0 4px 12px rgba(23, 29, 24, .06);
+  /* Depth comes mostly from the edge and the step from paper to white; the
+   * shadow only seats the surface. */
+  --e-surface: 0 1px 2px rgba(16, 32, 27, .04), 0 2px 6px rgba(16, 32, 27, .03);
 
   /* Marketing surfaces carry a larger radius than application controls. A
    * 4px control inside a 16px card still reads as one family. */
-  --r-lg: 12px;
-  --r-xl: 18px;
+  --r-lg: 18px;
+  --r-xl: 28px;
 
   /* A tint of the accent, for section grounds that must not compete with a
    * card resting on them. Never placed behind small body copy. */
@@ -208,7 +210,11 @@
    * character by character — table numerals, counts, codes. Not labels. */
   --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
         Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --display: var(--ui);
+  /* HEADINGS AND NUMERALS: Schibsted Grotesk, an editorial grotesk drawn for
+   * news media - confident at heavy weights, never quirky. One face, used
+   * for page titles, section heads and the large date numerals; everything
+   * a student reads at length stays in the system face above. */
+  --display: 'Schibsted Grotesk Variable', var(--ui);
   --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
           "Liberation Mono", monospace;
 
@@ -231,9 +237,9 @@
   --fs-lg: 16px;
   --fs-xl: 18px;
   --fs-2xl: 22px;
-  --fs-3xl: 32px;
+  --fs-3xl: 44px;
   /* Headings tighten as they grow; body text keeps the face's own spacing. */
-  --track-head: -.024em;
+  --track-head: -.032em;
 
   /* MOTION. "Static at rest, alive during interaction." Motion answers
    * something the reader did, or marks something that genuinely arrived;
@@ -262,6 +268,35 @@
   /* The gap between beats when a few related things arrive together. Used for
    * at most three beats - never one per item down a list. */
   --stagger: 40ms;
+
+  /* PROPORTION: the editorial scale, by ROLE, set for each device tier.
+   * These are the PHONE sizes; the tablet (640px), laptop (1024px) and large
+   * desktop (1440px) sizes are set in the blocks right after :root. Each tier
+   * is designed, not scaled: a phone heading is sized to be read in a thumb's
+   * scroll, not shrunk from a poster.
+   *
+   *   hero        the landing page's one headline
+   *   h1          a page's title in the app
+   *   h2          a landing section's statement; h2-split beside other content
+   *   h3          a sub-heading inside a section or panel
+   *   group       a Manage group's title
+   *   day-num     the dashboard's date numeral; day-title its greeting
+   *   num         a figure in a row of figures (calendar summary, Manage)
+   *   step-num    the numbers on the how-it-works spine
+   *   kicker      a feature panel's title; hello the chat's welcome
+   * Spacing follows the same tiers: section padding, a section head's gap to
+   * its content, a feature panel's padding and corner. */
+  --t-hero: 34px;       --t-hero-lede: 16px;
+  --t-h1: 27px;         --t-h2: 27px;         --t-h2-split: 26px;
+  --t-h3: 18.5px;       --t-group: 21px;      --t-lede: 15.5px;
+  --t-day-num: 64px;    --t-day-title: 23px;
+  --t-num: 26px;        --t-step-num: 34px;
+  --t-kicker: 25px;     --t-hello: 26px;      --t-chat-name: 20px;
+  --t-auth-h1: 27px;    --t-cta: 26px;
+  --tr-display: -.026em;
+  --sp-section: 56px;   --sp-head: 28px;
+  --sp-hero-top: 32px;  --sp-hero-bottom: 56px;
+  --sp-feature: 22px;   --r-feature: 20px;
 
   /* RAISED. One step above a resting surface, reserved for the board that
    * holds what needs the reader's attention. Elevation is how priority is
@@ -414,6 +449,50 @@
   --hairline: rgba(255, 255, 255, .06);
 }
 
+
+/* ── Proportion: tablet, laptop, large desktop ─────────────────────────────
+ * Phone sizes are the :root defaults above. */
+@media (min-width: 640px) {
+  :root {
+    --t-hero: 46px;     --t-hero-lede: 17px;
+    --t-h1: 32px;       --t-h2: 36px;       --t-h2-split: 32px;
+    --t-h3: 20.5px;     --t-group: 24px;    --t-lede: 16px;
+    --t-day-num: 88px;  --t-day-title: 30px;
+    --t-num: 32px;      --t-step-num: 44px;
+    --t-kicker: 32px;   --t-hello: 34px;    --t-chat-name: 22px;
+    --t-auth-h1: 30px;  --t-cta: 34px;
+    --tr-display: -.03em;
+    --sp-section: 80px; --sp-head: 40px;
+    --sp-hero-top: 56px; --sp-hero-bottom: 72px;
+    --sp-feature: 32px; --r-feature: 24px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --t-hero: 54px;     --t-hero-lede: 18px;
+    --t-h1: 36px;       --t-h2: 42px;       --t-h2-split: 36px;
+    --t-h3: 22px;       --t-group: 26px;    --t-lede: 16.5px;
+    --t-day-num: 100px; --t-day-title: 33px;
+    --t-num: 36px;      --t-step-num: 52px;
+    --t-kicker: 36px;   --t-hello: 40px;    --t-chat-name: 24px;
+    --t-auth-h1: 32px;  --t-cta: 40px;
+    --tr-display: -.034em;
+    --sp-section: 96px; --sp-head: 48px;
+    --sp-hero-top: 72px; --sp-hero-bottom: 88px;
+    --sp-feature: 40px; --r-feature: 28px;
+  }
+}
+@media (min-width: 1440px) {
+  :root {
+    --t-hero: 62px;     --t-h1: 40px;       --t-h2: 46px;       --t-h2-split: 40px;
+    --t-day-num: 112px; --t-day-title: 36px;
+    --t-num: 38px;      --t-step-num: 56px;
+    --t-kicker: 40px;   --t-hello: 44px;    --t-cta: 44px;
+    --tr-display: -.036em;
+    --sp-section: 104px;
+  }
+}
+
 /* ── Base ───────────────────────────────────────────────────────────────── */
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -463,7 +542,7 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 .t-display {
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(25px, 4.2vw, var(--fs-3xl));
+  font-size: var(--t-h1);
   line-height: 1.15;
   letter-spacing: var(--track-head);
   text-wrap: balance;
@@ -1994,33 +2073,12 @@ tr:last-child td { border-bottom: none; }
 }
 .hero h1 {
   font-family: var(--display); font-weight: 600; letter-spacing: -.02em;
-  font-size: clamp(34px, 6vw, 56px); line-height: 1.08;
+  font-size: var(--t-hero); line-height: 1.08;
   margin: var(--s4) 0 0;
 }
-.hero__lede { font-size: clamp(16px, 2vw, 18.5px); line-height: 1.6; color: var(--slate); max-width: 46ch; margin-top: var(--s4); }
+.hero__lede { font-size: var(--t-hero-lede); line-height: 1.6; color: var(--slate); max-width: 46ch; margin-top: var(--s4); }
 .hero__cta { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s5); }
 .hero__note { margin-top: var(--s4); font-size: 13px; color: var(--slate); }
-
-/* ── Product preview ────────────────────────────────────────────────────────
- * Built from the application's own primitives rather than a screenshot: it
- * cannot go stale, costs no image bytes, and is honest about what the product
- * looks like. Inert by construction - nothing inside is focusable. */
-
-.preview {
-  border: 1px solid var(--line); border-radius: var(--r-xl);
-  background: var(--surface); box-shadow: var(--e2); overflow: hidden;
-}
-.preview__bar {
-  display: flex; align-items: center; gap: var(--s2);
-  padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line);
-  background: var(--surface-2);
-}
-.preview__dot { width: 9px; height: 9px; border-radius: var(--r-pill); background: var(--line-strong); opacity: .5; }
-.preview__label {
-  margin-left: var(--s2); font-size: 11.5px; color: var(--slate);
-}
-.preview__body { padding: var(--s4); display: grid; gap: var(--s3); }
-.preview .board { box-shadow: none; }
 
 /* ── Sections ───────────────────────────────────────────────────────────── */
 
@@ -2029,7 +2087,7 @@ tr:last-child td { border-bottom: none; }
 .section__head { max-width: 62ch; margin-bottom: var(--s6); }
 .section__head h2 {
   font-family: var(--display); font-weight: 600; letter-spacing: -.015em;
-  font-size: clamp(26px, 3.6vw, 36px); line-height: 1.15;
+  font-size: var(--t-h2); line-height: 1.15;
 }
 .section__head p { margin-top: var(--s3); color: var(--slate); font-size: 16.5px; line-height: 1.6; }
 
@@ -2096,7 +2154,7 @@ tr:last-child td { border-bottom: none; }
   background: var(--accent); color: var(--accent-ink);
   border-radius: var(--r-xl); padding: var(--s8) var(--s5); text-align: center;
 }
-.cta h2 { font-family: var(--display); font-weight: 600; font-size: clamp(24px, 3.4vw, 34px); line-height: 1.15; }
+.cta h2 { font-family: var(--display); font-weight: 600; font-size: var(--t-cta); line-height: 1.15; }
 .cta p { margin: var(--s4) auto 0; max-width: 52ch; opacity: .9; font-size: 16px; }
 .cta__row { display: flex; gap: var(--s3); justify-content: center; margin-top: var(--s5); flex-wrap: wrap; }
 /* On the accent ground the primary button inverts: surface-on-accent. */
@@ -2106,7 +2164,7 @@ tr:last-child td { border-bottom: none; }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 
-.pubfooter { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s7) 0 var(--s5); }
+.pubfooter { border-top: 1px solid var(--line); background: var(--surface); padding: var(--s7) 0; }
 .pubfooter__grid { display: grid; gap: var(--s6); }
 @media (min-width: 760px) { .pubfooter__grid { grid-template-columns: 2fr 1fr 1fr; } }
 .pubfooter h4 {
@@ -2115,11 +2173,6 @@ tr:last-child td { border-bottom: none; }
 .pubfooter ul { display: grid; gap: var(--s2); list-style: none; }
 .pubfooter a { color: var(--slate); text-decoration: none; font-size: 14px; }
 .pubfooter a:hover { color: var(--ink); text-decoration: underline; }
-.pubfooter__base {
-  margin-top: var(--s6); padding-top: var(--s4); border-top: 1px solid var(--line);
-  display: flex; flex-wrap: wrap; gap: var(--s3); justify-content: space-between;
-  font-size: 13px; color: var(--slate);
-}
 
 /* ══ 20 · Authentication screens ════════════════════════════════════════════
  *
@@ -2131,26 +2184,22 @@ tr:last-child td { border-bottom: none; }
 .authpage { min-height: 100dvh; display: grid; background: var(--paper); }
 @media (min-width: 960px) { .authpage { grid-template-columns: 1fr 1fr; } }
 
-.authbrand {
-  display: none; padding: var(--s7) var(--s7) var(--s8);
-  background: var(--wash); border-right: 1px solid var(--line);
-  flex-direction: column; gap: var(--s6);
-}
-@media (min-width: 960px) { .authbrand { display: flex; } }
-.authbrand__body { margin-top: auto; }
+/* The column is only the ground; its content is `.authbrand__panel`, laid
+ * out against the viewport (section 42). */
+.authbrand { display: none; background: var(--wash); border-right: 1px solid var(--line); }
+@media (min-width: 960px) { .authbrand { display: block; } }
 /* Scoped to __body, NOT to `.authbrand h2`. The unscoped selector beat
  * `.t-label` on specificity and restyled the product preview's own board
  * headings into 30px serif. Marketing type must never reach into an embedded
  * piece of the application. */
 .authbrand__pitch {
   font-family: var(--display); font-weight: 650; letter-spacing: var(--track-head);
-  font-size: var(--fs-3xl); line-height: 1.15; max-width: 24ch;
+  font-size: var(--t-h1); line-height: 1.12; max-width: 22ch;
 }
 .authbrand__body p { margin-top: var(--s3); color: var(--slate); max-width: 40ch; line-height: 1.6; }
 /* The pitch is a <p> too, and the rule above greyed it: the one headline on
  * the screen was rendering in the secondary-text colour. */
 .authbrand__body .authbrand__pitch { margin-top: 0; color: var(--ink); max-width: 24ch; line-height: 1.15; }
-.authbrand__foot { margin-top: auto; }
 
 /* The form column is the white surface and the brand column the tinted
  * ground: two planes, one for reading about the product and one for using
@@ -2415,24 +2464,7 @@ tr:last-child td { border-bottom: none; }
 .topbar__add { margin-left: auto; }
 .topbar__brand { display: inline-flex; }
 
-/* The account menu gained an identity block and a theme row, so it needs
- * internal structure rather than a flat list of items. */
-.menu__who {
-  display: grid; gap: 2px; padding: var(--s3);
-  border-bottom: 1px solid var(--line); margin-bottom: var(--s2);
-}
-.menu__who strong { font-size: var(--fs-md); font-weight: 600; }
-.menu__who span {
-  font-size: var(--fs-sm); color: var(--slate);
-  /* break-word, not anywhere: an address should split at the dots, not
-   * mid-character. */
-  overflow-wrap: break-word; word-break: normal;
-}
-.menu__theme {
-  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
-  padding: var(--s2) var(--s3); margin-top: var(--s2);
-  border-top: 1px solid var(--line);
-}
+/* The account menu's structure lives in section 46 (.acct__*). */
 
 .sidebar__quiet { font-size: var(--fs-sm); color: var(--night-slate); text-decoration: none; padding: var(--s2); }
 .sidebar__quiet:hover { color: var(--night-ink); text-decoration: underline; }
@@ -2459,7 +2491,6 @@ tr:last-child td { border-bottom: none; }
    * states where you are. Duplicating any of them was the same control twice. */
   .shell--rail .topbar__brand { display: none; }
   .shell--rail .topbar__add { display: none; }
-  .shell--rail .menu__theme { display: none; }
   .shell--rail .topbar { gap: var(--s4); }
   .shell--rail .topbar__title { flex: 1; }
 }
@@ -2492,7 +2523,7 @@ tr:last-child td { border-bottom: none; }
 
 /* ══ 23 · Mobile public menu ════════════════════════════════════════════════ */
 
-@media (max-width: 899px) {
+@media (max-width: 1059px) {
   .pubnav__links { display: none; }
   /* Width budget. The public bar carries the wordmark, the theme control and
    * the burger with nothing it can drop, so at phone widths the gaps tighten
@@ -3010,34 +3041,7 @@ html { scroll-behavior: smooth; }
 }
 .prose a, .prose .linkish { color: var(--accent); }
 
-/* ══ 27 · Identity surface ══════════════════════════════════════════════════
- * Profile's header. The name and email were bare text on the page ground,
- * which is the clearest instance of the "text placed onto a page rather than
- * an application component" problem the redesign exists to fix. */
-
-.identity {
-  display: flex; align-items: center; gap: var(--s5); flex-wrap: wrap;
-  padding: var(--s5) var(--s6); background: var(--surface);
-  border: 1px solid var(--edge); border-radius: var(--r-panel);
-  box-shadow: var(--e-surface);
-}
-.identity__avatar {
-  width: 64px; height: 64px; flex: none; border-radius: var(--r-pill);
-  display: inline-grid; place-items: center;
-  background: var(--accent-bg); color: var(--accent);
-  font-size: 21px; font-weight: 600; letter-spacing: .02em;
-}
-.identity__body { min-width: 0; flex: 1; }
-.identity__name {
-  font-family: var(--display); font-size: 26px; font-weight: 650; line-height: 1.15;
-  letter-spacing: var(--track-head);
-}
-.identity__mail { margin-top: 3px; font-size: var(--fs-sm); color: var(--slate); overflow-wrap: anywhere; }
-@media (max-width: 639px) {
-  .identity { gap: var(--s4); padding: var(--s4); }
-  .identity__avatar { width: 52px; height: 52px; font-size: 17px; }
-  .identity__name { font-size: 21px; }
-}
+/* ══ 27 · Identity surface - moved: Profile's header is now .pid (section 47). */
 
 /* A section heading with its explanation and, optionally, the one action that
  * acts on the whole section. Used where a screen has named parts that are not
@@ -3219,13 +3223,6 @@ html { scroll-behavior: smooth; }
 .chdetails { list-style: none; display: grid; gap: 2px; margin-top: 2px; }
 .chdetails li { overflow-wrap: break-word; }
 
-/* The dashboard's greeting is a header, not a card: the first screen belongs
- * to what needs attention. */
-.dashhead .phead__meta { margin-top: calc(var(--s1) * -1); }
-@media (max-width: 639px) {
-  .dashhead .t-display { font-size: 24px; }
-  .dashhead .facts { gap: var(--s2) var(--s4); }
-}
 
 /* ══ 31 · Motion and micro-interaction ══════════════════════════════════════
  *
@@ -3408,6 +3405,8 @@ button.brow:active, .agev:active, button.bellrow__main:active {
   letter-spacing: -.02em; line-height: 1.1;
 }
 .brow__when--today strong, .brow__when--today .brow__num { color: var(--accent); }
+/* A far date's year: a quiet third line, so the column keeps its width. */
+.brow__when .brow__year { margin-top: 0; font-size: var(--fs-xs); font-weight: 600; color: var(--slate); }
 
 /* ── Board heads carry a small glyph tile ────────────────────────────────
  * So a screen of boards can be told apart before a heading is read, and a
@@ -3512,12 +3511,6 @@ button.brow:active, .agev:active, button.bellrow__main:active {
   .dash > :not(.dash__main):not(.dash__aside) { grid-column: 1 / -1; }
 }
 
-/* The day header. The pulse sits directly under the greeting; the week strip
- * is set off below a hairline. */
-.dashhead.phead--surface { padding: var(--s6) var(--s6) var(--s5); }
-.dashhead .phead__meta { padding-top: 0; border-top: none; margin-top: calc(var(--s1) * -1); }
-.dashhead .t-display { font-size: clamp(27px, 4.4vw, 36px); }
-@media (max-width: 639px) { .dashhead.phead--surface { padding: var(--s5) var(--s4) var(--s4); } }
 
 /* The pulse: three readings of the day, each with its tone's dot and its
  * words - a sentence broken into parts, not a row of statistic cards. */
@@ -3745,7 +3738,7 @@ button.brow:active, .agev:active, button.bellrow__main:active {
 
 .evhead { display: flex; align-items: flex-start; gap: var(--s5); }
 .evhead__text { min-width: 0; flex: 1; }
-.evhead .t-display { font-size: clamp(25px, 3.8vw, 32px); }
+.evhead .t-display { font-size: calc(var(--t-h1) * .88); }
 .evhead .evmeta { margin-top: var(--s2); }
 @media (max-width: 639px) {
   .evhead { gap: var(--s4); }
@@ -3764,13 +3757,14 @@ button.brow:active, .agev:active, button.bellrow__main:active {
 /* ══ 36 · Night surfaces outside the app: the auth brand column, the hero ═══
  *
  * The same ground as the rail, so the first screen anyone sees and the
- * product they sign into are recognisably one thing. A ruled texture - one
- * hairline every 32px, at a whisper - is the only decoration: the product's
- * ruled mark, spread across the ground like the lines of a notebook. */
+ * product they sign into are recognisably one thing. Plain night, with no
+ * texture: a hairline ruling every 32px used to sit on every night surface,
+ * and it read as screen banding - behind the phone most of all.
+ * The SHORTHAND, not background-color: both elements carry an earlier
+ * `background: var(--wash)`, a gradient image, and a colour alone leaves it
+ * painted on top (the ruling used to hide it). */
 .authbrand, .hero {
-  background-color: var(--night);
-  background-image: repeating-linear-gradient(to bottom,
-    transparent 0 31px, rgba(233, 246, 240, .045) 31px 32px);
+  background: var(--night);
   color: var(--night-ink);
 }
 .authbrand { border-right: none; }
@@ -3779,11 +3773,6 @@ button.brow:active, .agev:active, button.bellrow__main:active {
 .authbrand__body .authbrand__pitch { color: #fff; }
 .authbrand__body p, .authbrand__foot { color: var(--night-slate); }
 .authbrand :focus-visible, .hero :focus-visible { outline-color: var(--signal); }
-/* The product preview is a lit page set on the night ground. */
-.authbrand .preview, .hero .preview {
-  border-color: transparent;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 28px 60px -24px rgba(0, 0, 0, .55);
-}
 
 .hero { border-bottom: none; }
 .hero h1 { color: #fff; }
@@ -3807,6 +3796,1792 @@ button.brow:active, .agev:active, button.bellrow__main:active {
   background: var(--night-2); border-color: color-mix(in srgb, var(--night-ink) 45%, transparent);
   color: #fff;
 }
-/* The preview is a piece of the LIGHT application; it must not inherit the
- * night ground's text colour, or its rows wash out to nothing. */
-.authbrand .preview, .hero .preview { color: var(--ink); }
+
+/* ══ 37 · The editorial layer ═══════════════════════════════════════════════
+ *
+ * Typography becomes part of the composition: one heading face (Schibsted
+ * Grotesk) set heavy and tight for titles and the large numerals, a small
+ * tracked section label in the record's forest above what it introduces, and
+ * a much wider step between a page's title and everything under it.
+ */
+
+/* ── The heading face ─────────────────────────────────────────────────── */
+.t-display, .t-section, .board__title, .modal__title, .state h2, .chathead__name,
+.chatstart__title, .authform h1, .authbrand__pitch, .hero h1,
+.section__head h2, .cta h2, .card h3, .step h3, .brand__word, .topbar__title,
+.agday__dm, .setrow__name, .suggest__title, .calempty h3, .today__title {
+  font-family: var(--display);
+  /* The body's tabular figures would reach headings too, and in this face
+   * "tnum" also sets punctuation to figure width - "afternoon ," with a gap
+   * before the comma. Headings take the face's own proportional spacing; only
+   * the numerals below keep tabular figures. */
+  font-variant-numeric: normal;
+}
+.t-display {
+  font-weight: 800; font-size: var(--t-h1);
+  line-height: 1.08; letter-spacing: var(--tr-display);
+}
+.t-section, .board__title { font-weight: 700; font-size: 17px; letter-spacing: -.014em; }
+.modal__title { font-weight: 700; font-size: 21px; letter-spacing: -.02em; }
+.brand__word { font-weight: 800; letter-spacing: -.03em; }
+.topbar__title { font-weight: 700; letter-spacing: -.01em; }
+
+/* Numerals in the heading face: the dates are figures you read by shape. */
+.brow__num, .wkstrip__num, .datetile__num, .agday__num, .tile__n, .calsum__n,
+.week__dnum, .today__num, .glance__n {
+  font-family: var(--display); font-feature-settings: "tnum" 1, "lnum" 1;
+}
+.brow__num { font-weight: 800; }
+
+/* ── The section label ────────────────────────────────────────────────
+ * Small, tracked, in the record's forest: it names what follows. It is the
+ * one uppercase treatment in the product, and it only ever carries a name
+ * ("Today", "Academic records") - never a status or a value. */
+.eyebrow-label, .phead__eyebrow {
+  display: block; margin: 0;
+  font-family: var(--ui); font-size: 11.5px; font-weight: 700; line-height: 1.4;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--accent);
+}
+.phead__eyebrow { margin-bottom: var(--s3); }
+.phead__lede { font-size: 16px; line-height: 1.6; margin-top: var(--s3); }
+.page__head { margin-bottom: var(--s6); }
+
+/* ── The day (dashboard header) ───────────────────────────────────────── */
+.today {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end; gap: var(--s4) var(--s6);
+  padding: var(--s2) 0 var(--s2);
+}
+.today__date { display: flex; align-items: flex-end; gap: var(--s3); margin: 0; }
+.today__num {
+  font-size: var(--t-day-num); font-weight: 800; line-height: .8;
+  letter-spacing: -.06em; color: var(--ink);
+}
+.today__cal { display: grid; gap: 2px; padding-bottom: 6px; }
+.today__dow {
+  font-family: var(--display); font-size: max(16px, calc(var(--t-day-title) * .6));
+  font-weight: 700; letter-spacing: -.02em; color: var(--accent);
+}
+.today__month { font-size: var(--fs-sm); font-weight: 500; color: var(--slate); }
+.today__main {
+  display: grid; gap: var(--s3); min-width: 0;
+  padding-left: var(--s6); border-left: 1px solid var(--line);
+}
+.today__title {
+  font-size: var(--t-day-title); font-weight: 800; line-height: 1.1;
+  letter-spacing: var(--tr-display); margin: 0;
+}
+.today__action { padding-bottom: 4px; }
+.pulse li.pulse--plain { padding: 0; background: none; border: none; }
+.pulse li.pulse--plain::before { display: none; }
+.pulse li.pulse--plain .substate { margin-left: 0; padding-left: 0; border-left: none; }
+@media (max-width: 899px) {
+  .today { grid-template-columns: auto minmax(0, 1fr); }
+  .today__action { grid-column: 1 / -1; }
+}
+@media (max-width: 639px) {
+  .today { grid-template-columns: 1fr; gap: var(--s4); }
+  .today__main { padding-left: 0; border-left: none; }
+  .today__action .btn { min-height: 44px; }
+}
+
+/* The week as its own feature surface: a label, a way onward, the days. */
+.weekpanel {
+  background: var(--surface); border: 1px solid var(--edge);
+  border-radius: var(--r-xl); padding: var(--s5) var(--s5) var(--s5);
+  box-shadow: var(--e-surface);
+}
+.weekpanel__head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.weekpanel__head .linkish { font-size: var(--fs-sm); }
+.weekpanel .wkstrip { padding-top: 0; border-top: none; }
+.wkstrip__day { border-radius: 14px; padding: 12px 2px 14px; }
+.wkstrip__num { font-size: 26px; font-weight: 800; }
+@media (max-width: 639px) {
+  .weekpanel { padding: var(--s4) var(--s3); border-radius: var(--r-lg); }
+  .weekpanel__head { padding: 0 var(--s1); }
+  .wkstrip__num { font-size: 20px; }
+}
+
+/* ── Boards: the display face in the head, a softer, larger corner ────── */
+.board, .panel, .agday, .weekwrap, .caltoolbar, .calsum__card, .state--page,
+.phead--surface, .chatstart, .gate__card { border-radius: var(--r-panel); }
+.board__head { padding: 18px var(--s5) 15px; }
+.panel { padding: var(--s5) var(--s5) var(--s5); }
+
+/* ── Phones: the tab bar is a floating night dock ─────────────────────
+ * The rail's material, carried to the bottom of the phone: a rounded night
+ * bar held off the screen edge, the current tab lit with signal. Its total
+ * height (bar + gap) is the same 76px the composer, toasts and the floating
+ * button already clear. */
+@media (max-width: 639px) {
+  .tabbar {
+    left: 10px; right: 10px; bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-bottom: 0; border: 1px solid var(--night-line); border-top: 1px solid var(--night-line);
+    background: var(--night); border-radius: 20px;
+    box-shadow: 0 12px 30px -12px rgba(8, 20, 16, .55);
+  }
+  .tabbar a { color: var(--night-slate); min-height: 60px; border-radius: 16px; }
+  .tabbar a.active { color: #fff; }
+  .tabbar a.active svg { color: var(--signal); }
+  .tabbar a.active::before { top: 0; background: var(--signal); }
+  .tabbar a:focus-visible { outline-color: var(--signal); outline-offset: -3px; }
+}
+
+/* ══ 38 · The public site, editorial ════════════════════════════════════════
+ *
+ * One narrative, read in order, each section a different ground so the page
+ * moves rather than repeats: night hero, paper, white, paper, white, night,
+ * paper, then a night call to action. Headlines are the design: heavy, tight,
+ * and large enough to lead. Nothing here is a grid of identical cards.
+ */
+
+.section { padding: var(--sp-section) 0; }
+.section--white { background: var(--surface); border-block: 1px solid var(--line); }
+.section--night {
+  background-color: var(--night);
+  color: var(--night-ink);
+}
+
+/* A section's place in the narrative: its number, a hairline, its name. */
+.smark {
+  display: flex; align-items: center; gap: var(--s3); margin: 0 0 var(--s5);
+  font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--accent);
+}
+.smark__n { font-family: var(--display); font-size: 13px; letter-spacing: .04em; }
+.smark::after { content: ""; flex: 0 0 48px; height: 1px; background: currentColor; opacity: .45; order: 1; }
+.smark__label { order: 2; }
+.section--night .smark, .hero .smark { color: var(--signal); }
+
+.ed-h2 {
+  font-family: var(--display); font-weight: 800; letter-spacing: var(--tr-display);
+  font-size: var(--t-h2); line-height: 1.08; margin: 0; max-width: 20ch;
+  font-variant-numeric: normal;
+}
+.ed-h3 {
+  font-family: var(--display); font-weight: 700; letter-spacing: -.02em;
+  font-size: var(--t-h3); line-height: 1.2; margin: 0;
+  font-variant-numeric: normal;
+}
+.ed-lede {
+  margin-top: var(--s4); max-width: 52ch;
+  font-size: var(--t-lede); line-height: 1.6; color: var(--slate);
+}
+.section--night .ed-h2 { color: #fff; }
+.section--night .ed-lede { color: var(--night-slate); }
+.ed-head { margin-bottom: var(--sp-head); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+.hero { padding: var(--sp-hero-top) 0 var(--sp-hero-bottom); overflow: hidden; }
+.hero__grid { align-items: center; }
+@media (min-width: 960px) { .hero__grid { grid-template-columns: 1.08fr .92fr; gap: var(--s8); } }
+.hero h1 {
+  font-weight: 800; letter-spacing: -.045em; line-height: .98;
+  font-size: var(--t-hero); max-width: 15ch; margin-top: var(--s4);
+  font-variant-numeric: normal;
+}
+.hero__lede { font-size: var(--t-hero-lede); max-width: 46ch; margin-top: var(--s4); }
+.hero__cta { margin-top: var(--s6); }
+.hero__cta .btn { min-height: 50px; padding: 0 var(--s5); font-size: 15px; border-radius: 12px; }
+/* The opening sequence - the page's one orchestrated moment: label, headline,
+ * lede, actions, then the product, a beat apart. */
+.hero__copy > * { animation: rise-in var(--dur-slow) var(--ease-out) backwards; }
+.hero__copy > :nth-child(2) { animation-delay: calc(var(--stagger) * 2); }
+.hero__copy > :nth-child(3) { animation-delay: calc(var(--stagger) * 4); }
+.hero__copy > :nth-child(n + 4) { animation-delay: calc(var(--stagger) * 6); }
+.hero__visual {
+  position: relative; animation: rise-in calc(var(--dur-slow) * 1.6) var(--ease-out) calc(var(--stagger) * 5) backwards;
+}
+
+/* ── 01 · The problem: an editorial split ─────────────────────────────── */
+.split-ed { display: grid; gap: var(--s7); align-items: start; }
+@media (min-width: 960px) { .split-ed { grid-template-columns: 5fr 6fr; gap: var(--s8); } }
+.edlist { list-style: none; display: grid; border-top: 1px solid var(--edge); }
+.edlist__item {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--s4);
+  padding: var(--s5) 0; border-bottom: 1px solid var(--edge);
+}
+.edlist__icon {
+  display: inline-grid; place-items: center; width: 40px; height: 40px;
+  border-radius: 12px; background: var(--surface); border: 1px solid var(--edge); color: var(--accent);
+}
+.edlist__title { font-family: var(--display); font-size: var(--t-h3); font-weight: 700; letter-spacing: -.018em; }
+.edlist__body { margin-top: 6px; color: var(--slate); line-height: 1.6; max-width: 48ch; }
+
+/* ── 02 · How it works: three steps on one spine ─────────────────────── */
+.spine3 { list-style: none; display: grid; gap: var(--s6); position: relative; }
+@media (min-width: 860px) {
+  .spine3 { grid-template-columns: repeat(3, 1fr); gap: var(--s6); }
+  /* The spine runs through the three nodes. */
+  .spine3::before {
+    content: ""; position: absolute; left: 7px; right: 0; top: 7px; height: 2px;
+    background: linear-gradient(to right, var(--line-strong), var(--signal) 50%, var(--accent));
+    opacity: .6;
+  }
+}
+.spine3__step { position: relative; display: grid; gap: var(--s2); align-content: start; }
+.spine3__node {
+  width: 16px; height: 16px; border-radius: var(--r-pill); position: relative; z-index: 1;
+  background: var(--surface); border: 2px solid var(--line-strong); margin-bottom: var(--s4);
+}
+.spine3__step--signal .spine3__node {
+  background: var(--signal); border-color: var(--signal);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--signal) 22%, transparent);
+}
+.spine3__step--record .spine3__node { background: var(--accent); border-color: var(--accent); }
+.spine3__n {
+  font-family: var(--display); font-size: var(--t-step-num); font-weight: 800;
+  line-height: .9; letter-spacing: -.05em; color: var(--line-strong); opacity: .55;
+}
+.spine3 h3 { font-family: var(--display); font-size: var(--t-h3); font-weight: 700; letter-spacing: -.018em; margin-top: var(--s1); }
+.spine3 p { color: var(--slate); line-height: 1.6; max-width: 36ch; }
+
+/* ── 03 · What is in it: the record and the signal, side by side ───────── */
+.duo { display: grid; gap: var(--s4); }
+@media (min-width: 960px) { .duo { grid-template-columns: 1.15fr 1fr; gap: var(--s5); } }
+.duo__panel {
+  border-radius: var(--r-feature); padding: var(--sp-feature);
+  display: grid; gap: var(--s4); align-content: start;
+}
+.duo__panel--record { background: var(--surface); border: 1px solid var(--edge); box-shadow: var(--e-surface); }
+.duo__panel--signal {
+  background-color: var(--night); color: var(--night-ink); border: 1px solid var(--night-line);
+}
+.duo__kicker {
+  font-family: var(--display); font-weight: 800; letter-spacing: -.035em; line-height: 1;
+  font-size: var(--t-kicker); color: var(--ink);
+}
+.duo__panel--signal .duo__kicker { color: #fff; }
+.duo__line { color: var(--slate); font-size: 16px; max-width: 34ch; margin-top: calc(var(--s2) * -1); }
+.duo__panel--signal .duo__line { color: var(--night-slate); }
+.duo__list { list-style: none; display: grid; margin-top: var(--s3); border-top: 1px solid var(--line); }
+.duo__panel--signal .duo__list { border-top-color: var(--night-line); }
+.duo__list li {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--s4);
+  padding: var(--s4) 0; border-bottom: 1px solid var(--line);
+}
+.duo__panel--signal .duo__list li { border-bottom-color: var(--night-line); }
+.duo__list li:last-child { border-bottom: none; padding-bottom: 0; }
+.duo__icon {
+  display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 11px;
+  background: var(--accent-bg); color: var(--accent);
+}
+.duo__panel--signal .duo__icon { background: color-mix(in srgb, var(--signal) 16%, transparent); color: var(--signal); }
+.duo__list h3 { font-family: var(--display); font-size: 18px; font-weight: 700; letter-spacing: -.015em; }
+.duo__list p { margin-top: 4px; color: var(--slate); font-size: 14.5px; line-height: 1.6; }
+.duo__panel--signal .duo__list p { color: var(--night-slate); }
+/* The glimpse of the assistant, in its own materials. */
+.duo__chat { display: grid; gap: var(--s2); margin: var(--s2) 0; }
+.duo__q {
+  justify-self: end; max-width: 80%;
+  padding: 9px 14px; border-radius: 14px 14px 4px 14px;
+  background: var(--night-2); color: var(--night-ink); font-size: 14.5px;
+  border: 1px solid var(--night-line);
+}
+.duo__a {
+  position: relative; max-width: 92%;
+  padding: 12px 16px 12px 19px; border-radius: 4px 14px 14px 14px;
+  /* Theme tokens, not a literal white: in dark mode a literal white bubble
+   * carried the theme's light ink - white on white. */
+  background: var(--surface); color: var(--ink); font-size: 14.5px; line-height: 1.5;
+}
+.duo__a::before {
+  content: ""; position: absolute; left: 0; top: 12px; bottom: 12px; width: var(--mark);
+  border-radius: 0 var(--mark) var(--mark) 0; background: var(--signal);
+}
+
+/* ── 04 · Who it is for: two open columns ─────────────────────────────── */
+.roles { display: grid; gap: var(--s6); }
+@media (min-width: 860px) {
+  .roles { grid-template-columns: 1fr 1fr; gap: 0; }
+  .roles__col + .roles__col { border-left: 1px solid var(--line); padding-left: var(--s7); }
+  .roles__col:first-child { padding-right: var(--s7); }
+}
+.roles__col { display: grid; gap: var(--s3); align-content: start; }
+.roles__icon {
+  display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 13px;
+  background: var(--accent-bg); color: var(--accent); margin-bottom: var(--s2);
+}
+.roles__lede { color: var(--slate); line-height: 1.6; max-width: 44ch; margin-bottom: var(--s2); }
+
+/* ── 05 · Trust: the chain along one line, on night ───────────────────── */
+.chain { list-style: none; display: grid; gap: var(--s5); position: relative; }
+@media (min-width: 900px) {
+  .chain { grid-template-columns: repeat(4, 1fr); gap: var(--s5); }
+  .chain::before {
+    content: ""; position: absolute; left: 7px; right: 7px; top: 7px; height: 2px;
+    background: linear-gradient(to right, var(--signal), var(--night-slate) 40%, var(--accent));
+    opacity: .5;
+  }
+}
+.chain__link {
+  position: relative; padding: 0; background: none; border: none; border-radius: 0;
+  box-shadow: none; display: grid; gap: var(--s2); align-content: start;
+}
+.chain__node {
+  width: 16px; height: 16px; border-radius: var(--r-pill); z-index: 1; margin-bottom: var(--s3);
+  background: var(--night); border: 2px solid var(--night-slate);
+}
+.chain__link--signal .chain__node {
+  background: var(--signal); border-color: var(--signal);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--signal) 20%, transparent);
+}
+.chain__link--truth .chain__node { background: var(--night-ink); border-color: var(--night-ink); }
+.chain__link h4 { font-family: var(--display); font-size: calc(var(--t-h3) - 1px); font-weight: 700; letter-spacing: -.018em; color: #fff; }
+.chain__link p { color: var(--night-slate); font-size: 14.5px; line-height: 1.6; }
+.chain__link--truth { border-left: none; }
+
+.limits {
+  display: grid; gap: var(--s5); margin-top: calc(var(--sp-head) * 1.5);
+  padding-top: var(--sp-head); border-top: 1px solid var(--night-line);
+}
+@media (min-width: 900px) { .limits { grid-template-columns: 5fr 6fr; gap: var(--s8); } }
+.section--night .ed-h3 { color: #fff; }
+.limits__lede { margin-top: var(--s3); color: var(--night-slate); line-height: 1.6; max-width: 44ch; }
+.ticks--night span { color: var(--night-slate); }
+.ticks--night strong { color: #fff; }
+.ticks--night svg { color: var(--signal); }
+
+/* ── The closing call to action: one night surface ─────────────────────── */
+.cta {
+  background-color: var(--night); color: var(--night-ink); border-radius: var(--r-xl);
+  padding: calc(var(--sp-section) * .72) var(--s5); border: 1px solid var(--night-line);
+}
+.cta h2 {
+  font-weight: 800; letter-spacing: -.04em; line-height: 1.02; color: #fff;
+  font-size: var(--t-cta); max-width: 18ch; margin: 0 auto;
+  font-variant-numeric: normal;
+}
+.cta p { color: var(--night-slate); opacity: 1; font-size: 17px; }
+.cta .btn--onaccent {
+  background: var(--signal); border-color: var(--signal); color: var(--signal-ink);
+  font-weight: 600; min-height: 50px; padding: 0 var(--s5); border-radius: 12px;
+}
+.cta .btn--ghostaccent { min-height: 50px; padding: 0 var(--s5); border-radius: 12px; color: var(--night-ink);
+  border-color: color-mix(in srgb, var(--night-ink) 30%, transparent); }
+.cta :focus-visible { outline-color: var(--signal); }
+
+/* ── The public nav and footer, quieter ───────────────────────────────── */
+.pubnav__links a { font-size: 14px; }
+.pubfooter { background: var(--paper); }
+.pubfooter h4 { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+
+/* ── Scroll reveal ─────────────────────────────────────────────────────
+ * The hidden starting state applies only once the page has switched it on
+ * (html.reveal-on, set by Landing's useReveal) - without JavaScript, without
+ * IntersectionObserver or under reduced motion, every section is simply
+ * there. */
+.reveal-on [data-reveal] {
+  opacity: 0; transform: translateY(18px);
+  transition: opacity calc(var(--dur-slow) * 1.5) var(--ease-out),
+              transform calc(var(--dur-slow) * 1.5) var(--ease-out);
+}
+.reveal-on [data-reveal].is-revealed { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-on [data-reveal] { opacity: 1; transform: none; }
+}
+/* Every heading set in the display face takes its proportional spacing (see
+ * section 37: the face's tabular feature widens punctuation). */
+.edlist__title, .spine3 h3, .duo__list h3, .duo__kicker, .chain__link h4,
+.roles__col h3, .today__dow { font-variant-numeric: normal; }
+/* Headlines sized to their column: the hero at a measure that sets it in
+ * three or four lines, the split sections a step smaller than a full-width
+ * head, so a statement never stacks into a tower. */
+.split-ed .ed-h2 { font-size: var(--t-h2-split); max-width: 20ch; }
+
+/* ── The public site on a phone ────────────────────────────────────────
+ * Built for the thumb: the bar keeps only the wordmark and a bordered menu
+ * button (the theme control moves into the sheet), the sheet's items are
+ * large and ruled, and the hero's actions are full-width, tall targets. */
+.pubsheet__theme { display: none; }
+@media (max-width: 1059px) {
+  .pubnav__burger {
+    width: 44px; min-width: 44px; min-height: 44px; border-radius: 12px;
+    border-color: var(--accent); color: var(--accent); box-shadow: none;
+  }
+  .pubsheet { padding: var(--s2) var(--s4) var(--s5); gap: 0; }
+  .pubsheet a {
+    font-family: var(--display); font-size: 17px; font-weight: 600; letter-spacing: -.01em;
+    padding: var(--s3) var(--s1); min-height: 52px; border-radius: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .pubsheet a:hover { background: none; color: var(--accent); }
+  .pubsheet__theme {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--s4) var(--s1); border-bottom: 1px solid var(--line);
+  }
+  .pubsheet__actions { border-top: none; padding-top: var(--s5); gap: var(--s3); }
+  .pubsheet__actions .btn { min-height: 48px; border-radius: 13px; font-size: 15px; }
+}
+@media (max-width: 560px) {
+  .pubnav__actions .themetoggle { display: none; }
+  .hero__cta { flex-direction: column; align-items: stretch; }
+  .hero__cta { gap: var(--s2); }
+  .hero__cta .btn { width: 100%; min-height: 48px; border-radius: 13px; font-size: 15px; }
+  .cta__row { flex-direction: column; align-items: stretch; }
+  .cta__row { gap: var(--s2); }
+  .cta .btn { width: 100%; min-height: 48px; border-radius: 13px; font-size: 15px; }
+}
+/* The menu button is a .btn inside .pubnav__actions, so the rule that hides
+ * the bar's Log in / Get started below 900px (.pubnav__actions .btn) hid it
+ * too - on a phone the public page had no menu at all. Named at the same
+ * specificity, later, so it wins. */
+@media (max-width: 1059px) { .pubnav__actions .pubnav__burger { display: inline-flex; } }
+
+/* On a phone the two sequences (how it works, the trust chain) hang on a
+ * VERTICAL spine: the nodes sit on a line down the left edge, the words beside
+ * them. */
+@media (max-width: 859px) {
+  .spine3 { padding-left: 34px; gap: var(--s6); }
+  .spine3::before {
+    content: ""; position: absolute; left: 7px; top: 10px; bottom: 10px; width: 2px;
+    background: linear-gradient(to bottom, var(--line-strong), var(--signal) 50%, var(--accent));
+    opacity: .5;
+  }
+  .spine3__node { position: absolute; left: -34px; top: 14px; margin: 0; }
+}
+@media (max-width: 899px) {
+  .chain { padding-left: 34px; }
+  .chain::before {
+    content: ""; position: absolute; left: 7px; top: 10px; bottom: 10px; width: 2px;
+    background: linear-gradient(to bottom, var(--signal), var(--night-slate) 40%, var(--accent));
+    opacity: .5;
+  }
+  .chain__node { position: absolute; left: -34px; top: 4px; margin: 0; }
+}
+@media (max-width: 1059px) { .pubnav__actions { margin-left: auto; } }
+
+/* ══ 39 · The assistant and the calendar, elevated ══════════════════════════ */
+
+/* ── Chat ─────────────────────────────────────────────────────────────── */
+.chathead__label { color: var(--accent); margin-bottom: 4px; }
+.chathead__name { font-size: var(--t-chat-name); font-weight: 800; letter-spacing: -.025em; }
+.answer { font-size: 15.5px; line-height: 1.65; }
+.bubble--ai { padding: 18px 22px 18px 26px; border-radius: 6px 20px 20px 20px; }
+.bubble--user { padding: 11px 18px; border-radius: 20px 20px 6px 20px; font-size: 15.5px; }
+.turn__who { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; }
+
+/* The opening: an assistant's home. A large heading in the display face, and
+ * the questions as designed objects - glyph, words, and an arrow that steps
+ * forward - in a grid that reads as a menu of what it can answer. */
+.chatstart {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: var(--r-xl);
+  padding: calc(var(--sp-head) * 1.25) var(--sp-feature);
+}
+.chatstart__title { font-size: var(--t-hello); font-weight: 800; letter-spacing: var(--tr-display); line-height: 1.08; }
+.chatstart__lede { font-size: 16.5px; max-width: 44ch; }
+.promptgrid { max-width: 44rem; gap: var(--s3); margin-top: var(--s5); }
+.promptcard {
+  position: relative; min-height: 64px; padding: 14px 40px 14px 14px;
+  border-radius: var(--r-panel); font-family: var(--display); font-size: 15.5px; font-weight: 600;
+  letter-spacing: -.01em; font-variant-numeric: normal;
+}
+.promptcard::after {
+  content: ""; position: absolute; right: 18px; top: 50%; width: 8px; height: 8px;
+  border-top: 2px solid currentColor; border-right: 2px solid currentColor;
+  transform: translateY(-50%) rotate(45deg); color: var(--line-strong);
+  transition: transform var(--dur-fast) var(--ease-out), color var(--dur-fast) ease;
+}
+.promptcard:hover:not(:disabled)::after { color: var(--accent); transform: translate(3px, -50%) rotate(45deg); }
+.promptcard__icon { width: 40px; height: 40px; border-radius: 12px; }
+
+/* The composer: taller, rounder, raised - the one control the screen is for. */
+.askbar__box { border-radius: 20px; padding: 6px 6px 6px 18px; min-height: 58px; }
+.askbar__input { font-size: 16px; min-height: 48px; }
+.askbar__send { min-height: 44px; min-width: 44px; border-radius: 14px; padding: 0 16px; }
+@media (max-width: 639px) {
+  .askbar__send { width: 48px; padding: 0; }
+  .promptcard { min-height: 64px; }
+}
+.suggest { border-radius: var(--r-panel); padding: 16px 18px; }
+
+/* ── Calendar ─────────────────────────────────────────────────────────── */
+/* The summary as an open row of figures between rules, not four boxes. */
+.calsum {
+  gap: 0; background: var(--surface); border: 1px solid var(--edge);
+  border-radius: var(--r-panel); box-shadow: var(--e-surface); overflow: hidden;
+}
+.calsum__card {
+  border: none; border-radius: 0; box-shadow: none; background: none;
+  padding: var(--s5) var(--s5) var(--s4);
+}
+.calsum__card + .calsum__card { border-left: 1px solid var(--line); }
+.calsum__n { font-size: var(--t-num); font-weight: 800; letter-spacing: -.035em; margin-bottom: 6px; }
+@media (max-width: 899px) {
+  .calsum__card + .calsum__card { border-left: none; }
+  .calsum__card:nth-child(even) { border-left: 1px solid var(--line); }
+  .calsum__card:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+.caltoolbar { border-radius: var(--r-panel); padding: 10px; }
+.caltoolbar__views { border-radius: 12px; }
+.caltoolbar__views button { border-radius: 9px; }
+/* A day: a large numeral in the head, today's card edged in the record's
+ * forest with the signal halo - the current day found at a glance. */
+.agday__head { padding: 16px var(--s5); }
+.agday__num { font-size: var(--t-num); font-weight: 800; letter-spacing: -.04em; }
+.agday__dm { font-size: 19px; font-weight: 700; }
+.agday--today {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--edge));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--signal) 14%, transparent), var(--e-surface);
+}
+.agday { animation: rise-in var(--dur) var(--ease-out) backwards; }
+.agday:nth-child(2) { animation-delay: var(--stagger); }
+.agday:nth-child(n + 3) { animation-delay: calc(var(--stagger) * 2); }
+/* Times stay in the UI face: the display face's tabular figures widen the
+ * colon ("23 : 59"); the system face's do not. */
+.agev__time { font-size: 15px; font-weight: 700; letter-spacing: -.005em; }
+.agev__title { font-family: var(--display); font-weight: 700; font-size: 16.5px; letter-spacing: -.012em; font-variant-numeric: normal; }
+
+/* ══ 40 · Manage, organised ═════════════════════════════════════════════════
+ *
+ * A section index beside the work on a desktop (sticky, so any group is one
+ * click away down a long page), a scrolling row of the same links on a
+ * phone. The counts are an open row of figures. Each group is named by a
+ * label, a heading and one sentence of purpose, and wide screens set its
+ * boards side by side instead of in one column.
+ */
+.manage { display: grid; gap: var(--s5); }
+@media (min-width: 1100px) {
+  .manage { grid-template-columns: 188px minmax(0, 1fr); gap: var(--s6); align-items: start; }
+}
+.manage__nav { display: flex; gap: var(--s2); }
+@media (min-width: 1100px) {
+  .manage__nav {
+    position: sticky; top: 84px; flex-direction: column; gap: 2px;
+    padding-left: var(--s3); border-left: 1px solid var(--line);
+  }
+}
+.manage__nav a {
+  position: relative; display: flex; align-items: center; min-height: 40px;
+  padding: 0 var(--s3); border-radius: var(--r-btn);
+  font-size: var(--fs-md); font-weight: 500; color: var(--slate); text-decoration: none;
+  transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.manage__nav a:hover { color: var(--ink); background: var(--surface); }
+@media (max-width: 1099px) {
+  .manage__nav {
+    position: sticky; top: 0; z-index: 6; overflow-x: auto; scrollbar-width: none;
+    margin: 0 calc(var(--s4) * -1); padding: var(--s2) var(--s4);
+    background: color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .manage__nav::-webkit-scrollbar { display: none; }
+  .manage__nav a {
+    flex: none; background: var(--surface); border: 1px solid var(--edge); border-radius: var(--r-pill);
+  }
+}
+.manage__body { display: grid; gap: var(--sp-head); min-width: 0; }
+
+/* The counts: figures between rules. */
+.glance {
+  gap: 0; background: var(--surface); border: 1px solid var(--edge);
+  border-radius: var(--r-panel); box-shadow: var(--e-surface); overflow: hidden;
+}
+.glance .tile { border: none; border-radius: 0; box-shadow: none; padding: var(--s5); }
+.glance .tile + .tile { border-left: 1px solid var(--line); }
+.glance .tile__n { font-size: var(--t-num); font-weight: 800; letter-spacing: -.035em; }
+@media (max-width: 719px) {
+  .glance .tile + .tile { border-left: none; }
+  .glance .tile:nth-child(even) { border-left: 1px solid var(--line); }
+  .glance .tile:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+
+/* A group: label, heading, purpose - then its boards. */
+.mgroup { display: grid; gap: var(--s5); scroll-margin-top: 84px; }
+.mgroup__head { display: grid; gap: var(--s2); max-width: 60ch; }
+.mgroup__title {
+  font-family: var(--display); font-size: var(--t-group); font-weight: 800;
+  letter-spacing: -.032em; line-height: 1.1; margin: 0; font-variant-numeric: normal;
+}
+.mgroup__lede { color: var(--slate); line-height: 1.6; }
+.mgroup__grid { display: grid; gap: var(--s5); align-items: start; }
+@media (min-width: 1280px) { .mgroup__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* The fold-away add form: a button until it is wanted. */
+.addform { display: grid; gap: var(--s4); justify-items: start; }
+.addform__body { width: 100%; animation: rise-in var(--dur) var(--ease-out) backwards; }
+.addform--open .addform__toggle { color: var(--slate); }
+
+/* ── Forms and the auth screens, on the same scale ─────────────────────── */
+.fset > legend {
+  font-family: var(--display); font-size: 17px; font-weight: 700; letter-spacing: -.015em;
+  margin-bottom: var(--s3); font-variant-numeric: normal;
+}
+.authform h1 { font-size: var(--t-auth-h1); font-weight: 800; letter-spacing: var(--tr-display); }
+.btn--block { min-height: 52px; border-radius: 12px; }
+
+/* ══ 41 · Proportion and responsive composition ═════════════════════════════
+ *
+ * The type scale is the proportion tokens in :root, set per tier. This
+ * section is the COMPOSITION that goes with each tier - what a component
+ * becomes on a phone, not merely how small it gets. A phone is read in a
+ * thumb's scroll: tighter gaps, a smaller corner on smaller surfaces, compact
+ * metadata, and nothing that makes a heading the whole first screen.
+ */
+
+/* ── The app on a phone ─────────────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .eyebrow-label, .phead__eyebrow, .smark { font-size: 11px; letter-spacing: .12em; }
+  .main { padding-top: var(--s4); }
+  .page__head { margin-bottom: var(--s4); }
+  .phead__eyebrow { margin-bottom: var(--s2); }
+  .phead__lede { font-size: 15px; margin-top: var(--s2); }
+  .stack--loose { gap: var(--s4); }
+
+  /* Surfaces: a smaller corner and a tighter inside - a panel on a phone is a
+   * section of the screen, not an object floating on it. */
+  .board, .panel, .agday, .caltoolbar, .calsum, .glance, .phead--surface,
+  .state--page, .weekpanel, .chatstart { border-radius: 16px; }
+  .board__head { padding: 14px var(--s4) 12px; min-height: 50px; }
+  .brow { padding: 12px var(--s4); min-height: 56px; }
+  .board__foot { padding: var(--s3) var(--s4); }
+  .panel { padding: var(--s4); }
+  .state { padding: var(--s4); gap: var(--s3); }
+  .state__glyph { width: 32px; height: 32px; }
+  .board__icon { width: 26px; height: 26px; border-radius: 8px; }
+  .t-section, .board__title { font-size: 16px; }
+  .brow__title { font-size: 14.5px; }
+  .brow__num { font-size: 17px; }
+
+  /* Dashboard: the day in a compact block - numeral, greeting, pulse, one
+   * ordinary button - so the week and what needs you are on the first screen. */
+  .dash, .dash__main, .dash__aside { gap: var(--s4); }
+  .today { gap: var(--s3); padding: 0; }
+  .today__date { gap: var(--s2); }
+  .today__cal { padding-bottom: 3px; }
+  .pulse { gap: 6px; }
+  .pulse li { font-size: 12.5px; padding: 4px 9px 4px 8px; }
+  .weekpanel__head { margin-bottom: var(--s3); }
+
+  /* Chat: the conversation gets the room. */
+  .chatpage { gap: var(--s4); }
+  .chathead { padding-bottom: var(--s3); }
+  .chathead__label { display: none; }
+  .chathead__lede { font-size: 13px; }
+  .chatstart { padding: var(--s6) var(--s4); }
+  .chatstart__lede { font-size: 15px; }
+  .promptgrid { gap: var(--s2); margin-top: var(--s4); }
+  .promptcard { min-height: 56px; font-size: 14.5px; padding: 11px 36px 11px 11px; }
+  .promptcard__icon { width: 34px; height: 34px; border-radius: 10px; }
+  .bubble--ai { padding: 14px 16px 14px 20px; }
+  .bubble--user { padding: 10px 14px; font-size: 15px; }
+  .answer { font-size: 15px; }
+  .askbar__box { min-height: 54px; border-radius: 18px; padding-left: 16px; }
+
+  /* Calendar, Manage, a record. */
+  .calsum__card { padding: var(--s4); }
+  .calsum__label { font-size: 13.5px; }
+  .agday__head { padding: 12px var(--s4); }
+  .agday__dm { font-size: 16.5px; }
+  .agev { padding: 12px var(--s4); }
+  .agev__title { font-size: 15.5px; }
+  .glance .tile { padding: var(--s4); }
+  .mgroup { gap: var(--s4); }
+  .mgroup__lede { font-size: 14.5px; }
+  .manage__nav a { font-size: 13.5px; }
+  .evhead { gap: var(--s3); }
+  .datetile { width: 52px; min-height: 60px; border-radius: 14px; }
+  .datetile__num { font-size: 22px; }
+
+  /* The floating dock: 56px targets on a 4px inset, the current tab lit by a
+   * signal-tinted pill behind it (clearer on a floating bar than a rule along
+   * an edge it does not have). Total height, with its gap to the screen edge,
+   * stays inside the 76px everything else clears. */
+  .tabbar {
+    left: 8px; right: 8px; bottom: calc(6px + env(safe-area-inset-bottom));
+    border-radius: 18px; padding: 4px;
+  }
+  .tabbar a { min-height: 56px; border-radius: 14px; gap: 2px; font-size: 11px; }
+  .tabbar a svg { width: 22px; height: 22px; }
+  .tabbar a.active { background: color-mix(in srgb, var(--signal) 15%, transparent); }
+  .tabbar a.active::before { display: none; }
+}
+
+/* ── The public site on a phone ─────────────────────────────────────────── */
+@media (max-width: 639px) {
+  .pubnav__in { min-height: 60px; }
+  .hero h1 { max-width: none; line-height: 1.08; }
+  .hero__lede { font-size: 15.5px; line-height: 1.55; }
+  .hero__cta { margin-top: var(--s5); }
+  .hero__note { font-size: 12.5px; margin-top: var(--s3); }
+  .hero__visual { margin-top: var(--s6); }
+
+  .smark { margin-bottom: var(--s3); }
+  .smark::after { flex-basis: 32px; }
+  .split-ed { gap: var(--s5); }
+  .edlist__item { padding: var(--s4) 0; gap: var(--s3); }
+  .edlist__icon { width: 34px; height: 34px; border-radius: 10px; }
+  .edlist__body { font-size: 14.5px; }
+  .spine3 { gap: var(--s5); }
+  .spine3 p { font-size: 14.5px; }
+  .duo { gap: var(--s3); }
+  .duo__panel { gap: var(--s3); }
+  .duo__list li { padding: var(--s3) 0; gap: var(--s3); }
+  .duo__icon { width: 32px; height: 32px; border-radius: 10px; }
+  .duo__list h3 { font-size: 16.5px; }
+  .duo__list p { font-size: 14px; }
+  .duo__q, .duo__a { font-size: 14px; }
+  .roles { gap: var(--s6); }
+  .roles__icon { width: 38px; height: 38px; border-radius: 11px; }
+  .chain { gap: var(--s4); }
+  .chain__link p { font-size: 14px; }
+    .cta p { font-size: 15px; }
+  .reveal-on [data-reveal] { transform: translateY(10px); }
+}
+
+
+/* The public bar: every link on one line. Below 1060px the links move into
+ * the menu sheet (the bar cannot hold the wordmark, five links and three
+ * actions); from 1060px to 1180px they tighten rather than wrapping "How it
+ * works" onto two lines. */
+.pubnav__links a { white-space: nowrap; }
+@media (min-width: 1060px) and (max-width: 1180px) {
+  .pubnav__in { gap: var(--s4); }
+  .pubnav__links { gap: var(--s4); margin-left: var(--s4); }
+  .pubnav__links a { font-size: 13.5px; }
+  .pubnav__actions { gap: var(--s2); }
+}
+
+/* ── Touch targets ─────────────────────────────────────────────────────
+ * Standalone links (a board's "See all", the week's "Open the calendar", a
+ * record's way back) and the original-message toggle are targets in their
+ * own right, not words inside a sentence, so on a touch screen they get a
+ * 40px hit area. The padding is invisible; the type is unchanged. */
+@media (pointer: coarse), (max-width: 639px) {
+  .board__head .linkish, .weekpanel__head .linkish, .panel__head .linkish,
+  .page__head ~ * .linkish:only-child, p.t-meta > .linkish {
+    display: inline-flex; align-items: center; min-height: 40px; padding: 0;
+  }
+  details > summary { display: flex; align-items: center; min-height: 40px; cursor: pointer; }
+}
+@media (pointer: coarse), (max-width: 639px) {
+  .board__head .linkish { min-width: 40px; justify-content: flex-end; }
+}
+
+/* ══ 42 · The phone ═════════════════════════════════════════════════════════
+ *
+ * A current iPhone as the product's hero object: a titanium band, a black
+ * bezel, the Dynamic Island, side buttons, and a clipped screen running the
+ * real AcademicAI UI (components/PhoneMockup.jsx).
+ *
+ * SIZE is two numbers per variant: --phone-w, the device's width, and
+ * --phone-scale, the factor that fits a true 390px phone layout into its
+ * screen: (width - 22px of band and bezel) / 390. They are set together,
+ * per variant and tier, because CSS cannot divide one length by another.
+ */
+.phone {
+  --phone-w: 300px; --phone-scale: .7128;
+  --phone-r: calc(var(--phone-w) * .17);
+  position: relative; flex: none;
+  width: var(--phone-w); aspect-ratio: 1 / 2.06;
+  padding: 3px; border-radius: var(--phone-r);
+  /* Brushed titanium: a cool grey band, lighter where the light catches
+   * its rounded edge. The only gradient in the product, because it is a
+   * material, not decoration. */
+  background: linear-gradient(145deg, #9aa39f 0%, #4a524f 16%, #2b312f 48%, #454d4a 80%, #8e9794 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .22), inset 0 0 0 2px rgba(0, 0, 0, .35),
+    0 50px 80px -34px rgba(2, 12, 9, .72), 0 26px 40px -26px rgba(2, 12, 9, .6);
+}
+.phone__btn {
+  position: absolute; width: 3px; border-radius: 2px 0 0 2px;
+  background: linear-gradient(to right, #6c7571, #3a413f);
+}
+.phone__btn--action  { left: -2px; top: 16%; height: 4.4%; }
+.phone__btn--volup   { left: -2px; top: 23.5%; height: 8%; }
+.phone__btn--voldown { left: -2px; top: 33.5%; height: 8%; }
+.phone__btn--power   { right: -2px; top: 26%; height: 12.5%; border-radius: 0 2px 2px 0;
+                       background: linear-gradient(to left, #6c7571, #3a413f); }
+.phone__bezel {
+  height: 100%; padding: 8px; border-radius: calc(var(--phone-r) - 3px);
+  background: #050807;
+}
+.phone__screen {
+  position: relative; height: 100%; overflow: hidden; isolation: isolate;
+  border-radius: calc(var(--phone-r) - 11px); background: var(--paper);
+}
+/* A faint sheen across the glass - one diagonal, never a glare. */
+.phone__screen::after {
+  content: ""; position: absolute; inset: 0; z-index: 8; pointer-events: none;
+  background: linear-gradient(118deg, rgba(255, 255, 255, .09) 0%, rgba(255, 255, 255, 0) 30%);
+}
+.phone__island {
+  position: absolute; z-index: 9; left: 50%; top: calc(var(--phone-w) * .034);
+  width: 32%; height: calc(var(--phone-w) * .093); transform: translateX(-50%);
+  background: #000; border-radius: var(--r-pill);
+}
+.phone__island i {
+  position: absolute; right: 13%; top: 50%; width: 26%; aspect-ratio: 1; max-width: 12px;
+  transform: translateY(-50%); border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #2c3b4d 0%, #0b1016 62%);
+}
+/* The screen's content at a real phone's width, scaled to the device. */
+.phone__viewport {
+  position: absolute; left: 0; top: 0; width: 390px;
+  height: calc((var(--phone-w) * 2.06 - 22px) / var(--phone-scale));
+  transform: scale(var(--phone-scale)); transform-origin: 0 0;
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--paper); color: var(--ink); font-family: var(--ui); font-size: 15px;
+  text-align: left;
+}
+.phone__status {
+  flex: none; height: 54px; padding: 19px 30px 0 36px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  font-size: 16px; font-weight: 600; letter-spacing: -.01em; color: var(--ink);
+}
+.phone__glyphs { display: inline-flex; align-items: center; gap: 6px; padding-top: 2px; }
+.phone__glyphs svg { fill: currentColor; }
+.phone__battery {
+  position: relative; width: 25px; height: 12px; border-radius: 4px;
+  border: 1.5px solid color-mix(in srgb, currentColor 45%, transparent);
+}
+.phone__battery i { position: absolute; inset: 1.5px; right: 5px; border-radius: 2px; background: currentColor; }
+.phone__battery::after {
+  content: ""; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px;
+  border-radius: 0 1px 1px 0; background: color-mix(in srgb, currentColor 45%, transparent);
+}
+.phone__homebar {
+  position: absolute; left: 50%; bottom: 8px; width: 134px; height: 5px;
+  transform: translateX(-50%); border-radius: var(--r-pill);
+  background: var(--ink); opacity: .75;
+}
+
+/* ── AcademicAI on the phone ────────────────────────────────────────────── */
+.papp { flex: 1; display: grid; grid-template-rows: auto 1fr; gap: 10px; padding: 4px 16px 108px; min-height: 0; }
+.papp__bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 2px 6px; }
+.papp__brand {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--display); font-size: 18px; font-weight: 800; letter-spacing: -.03em;
+}
+.papp__avatar {
+  width: 34px; height: 34px; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--accent-bg); color: var(--accent); font-size: 13px; font-weight: 700;
+}
+.papp__scenes { display: grid; min-height: 0; }
+.papp__scene { grid-area: 1 / 1; display: grid; gap: 14px; align-content: start; }
+.papp .board { box-shadow: none; }
+/* The phone is a phone: its rows lay out as they do on one, whatever the
+ * width of the page around it - no reserved status column, the title given
+ * the width. */
+.papp .brow { grid-template-columns: auto minmax(0, 1fr) auto; padding: 12px 16px; }
+.papp .brow__side { min-width: 0; }
+.papp .brow__side:empty { display: none; }
+.papp .brow:has(> .brow__side:empty) { grid-template-columns: auto minmax(0, 1fr); }
+.papp .board__head { padding: 14px 16px 12px; min-height: 0; }
+.papp .eyebrow-label { font-size: 11.5px; }
+
+/* The next reminder, in the signal's material: it is live and personal. */
+.pnext {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 16px; border-radius: 20px; background: var(--deep); color: var(--night-ink);
+}
+.pnext__icon {
+  flex: none; display: inline-grid; place-items: center; width: 42px; height: 42px;
+  border-radius: 12px; color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 18%, transparent);
+}
+.pnext__when { font-size: 13px; font-weight: 700; color: var(--signal); }
+.pnext__title {
+  margin-top: 3px; font-family: var(--display); font-size: 21px; font-weight: 800;
+  letter-spacing: -.025em; line-height: 1.15; color: #fff;
+}
+.pnext__meta { margin-top: 4px; font-size: 13.5px; color: var(--night-slate); }
+
+/* The record behind it. */
+.precord__head { display: flex; align-items: center; gap: 14px; }
+.precord__title {
+  font-family: var(--display); font-size: 22px; font-weight: 800; letter-spacing: -.025em; line-height: 1.15;
+}
+.precord__head .evmeta { margin-top: 6px; gap: 8px; }
+.precord__change {
+  font-size: 13.5px; line-height: 1.5; color: var(--slate);
+  padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--edge);
+}
+.precord__change span { display: block; margin-top: 4px; font-size: 12px; }
+/* The reminder attached to the record - the thread back to scene one. */
+.precord__remind {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
+  background: var(--accent-bg); color: var(--slate); font-size: 13.5px;
+}
+.precord__remind svg { flex: none; color: var(--accent); }
+.precord__remind b { display: block; font-size: 14px; font-weight: 700; color: var(--ink); }
+
+/* The notification, as the phone would show it. */
+.pnotif {
+  position: absolute; z-index: 4; top: 58px; left: 10px; right: 10px;
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 22px;
+  /* Opaque, not frosted: Chrome does not paint a backdrop-filter inside the
+   * tilted (3D-transformed) device, and the notification vanished. */
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 34px -14px rgba(8, 20, 16, .38);
+}
+.pnotif__icon .brand__mark { background: var(--deep); color: var(--signal); }
+.pnotif__body { min-width: 0; flex: 1; }
+.pnotif__top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--slate); }
+.pnotif__title { margin-top: 2px; font-size: 15px; font-weight: 700; color: var(--ink); }
+.pnotif__text { margin-top: 1px; font-size: 14px; line-height: 1.4; color: var(--slate); }
+
+/* The app's tab dock (section 36's floating night bar), at the phone's foot
+ * and clear of the home indicator. */
+.ptabs {
+  position: absolute; z-index: 3; left: 10px; right: 10px; bottom: 30px;
+  display: flex; padding: 4px; border-radius: 20px;
+  background: var(--night); border: 1px solid var(--night-line);
+  box-shadow: 0 12px 30px -12px rgba(8, 20, 16, .55);
+}
+.ptabs span {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px; min-height: 56px; border-radius: 16px;
+  font-size: 11px; font-weight: 500; color: var(--night-slate);
+}
+.ptabs .is-on { color: #fff; font-weight: 600; background: color-mix(in srgb, var(--signal) 15%, transparent); }
+.ptabs .is-on svg { color: var(--signal); }
+
+/* The cycle - 14s, restrained. The notification drops in at 1.4s and lifts
+ * at 6s; then the screen turns from the reminder to the record, holds, and
+ * turns back. Nothing else on the page moves on its own. */
+@keyframes pnotif-cycle {
+  0%, 8%    { transform: translateY(-150%); opacity: 0; }
+  12%, 40%  { transform: none; opacity: 1; }
+  45%, 100% { transform: translateY(-150%); opacity: 0; }
+}
+/* A fade-THROUGH, not a crossfade: one screen has left before the next
+ * arrives, so the two never show through each other. */
+@keyframes pscene-next {
+  0%, 45%   { opacity: 1; transform: none; }
+  48%, 97%  { opacity: 0; transform: translateY(-8px); }
+  100%      { opacity: 1; transform: none; }
+}
+@keyframes pscene-record {
+  0%, 48%   { opacity: 0; transform: translateY(8px); }
+  51%, 95%  { opacity: 1; transform: none; }
+  98%, 100% { opacity: 0; transform: translateY(8px); }
+}
+.pnotif { animation: pnotif-cycle 14s var(--ease-out) infinite; }
+.papp__scene--next { animation: pscene-next 14s var(--ease-move) infinite; }
+.papp__scene--record { animation: pscene-record 14s var(--ease-move) infinite; }
+
+/* ── Placing the object ─────────────────────────────────────────────────
+ * The device sits at a slight angle - enough to read as an object, never
+ * enough to read as a 3D effect - and floats a few pixels, slowly. */
+.phone-stage { position: relative; display: flex; justify-content: center; }
+.phone-float { animation: phone-float 8s ease-in-out infinite; }
+@keyframes phone-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+.phone--hero { transform: perspective(1800px) rotateY(-9deg) rotateX(3deg) rotate(1.5deg); }
+.phone--auth { transform: perspective(1800px) rotateY(8deg) rotateX(3deg) rotate(-2deg); }
+/* Where the browser supports scroll-driven animation, the hero's phone
+ * drifts a little against the page as it scrolls - parallax, measured in
+ * tens of pixels. Elsewhere it simply stays put. */
+@supports (animation-timeline: view()) {
+  @keyframes phone-parallax { from { transform: translateY(18px); } to { transform: translateY(-28px); } }
+  .hero .phone-stage { animation: phone-parallax linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+}
+
+/* The landing hero: the message as it arrives, beside the phone. */
+.hero__visual { position: relative; display: flex; justify-content: center; }
+.hero__raw {
+  /* Its right edge rests on the phone's band (half the 300px device, less
+   * 12px), so it touches the object without covering anything on screen. */
+  position: absolute; z-index: 2; right: calc(50% + 138px); top: 64%; width: 13.25rem; margin: 0;
+  padding: 12px 14px 13px; border-radius: 16px 16px 16px 5px;
+  background: var(--surface); color: var(--ink); font-size: 13.5px; line-height: 1.45;
+  box-shadow: 0 0 0 1px var(--line), 0 22px 44px -22px rgba(0, 0, 0, .6);
+  transform: rotate(-3deg);
+  animation: rise-in var(--dur-slow) var(--ease-out) calc(var(--stagger) * 9) backwards;
+}
+.hero__raw-who { display: block; margin-bottom: 4px; font-size: 11.5px; font-weight: 600; color: var(--slate); }
+
+/* Tablet: text above, the phone centred below it and cropped by the hero's
+ * lower edge, the message to its left. */
+@media (min-width: 640px) and (max-width: 959px) {
+  .phone--hero { --phone-w: 272px; --phone-scale: .641; }
+  .hero__visual {
+    margin-top: var(--s6); height: 440px; overflow: hidden; align-items: flex-start;
+    margin-bottom: calc(var(--sp-hero-bottom) * -1); padding-top: 12px;
+  }
+  /* The 272px device: the same 12px onto its band, and never wider than the
+   * space to its left. */
+  .hero__raw { right: calc(50% + 124px); top: 30%; width: min(13.25rem, calc(50% - 124px)); }
+}
+/* Phone: the device straight on and a size smaller, rising from the hero's
+ * edge - the notification and the next reminder in view, the rest implied.
+ * The message beside it would crowd a 360px screen, so it goes. */
+@media (max-width: 639px) {
+  .phone--hero { --phone-w: 236px; --phone-scale: .5487; transform: none; }
+  .hero__visual {
+    margin-top: var(--s6); height: 300px; overflow: hidden; align-items: flex-start;
+    margin-bottom: calc(var(--sp-hero-bottom) * -1);
+  }
+  .hero__raw { display: none; }
+  .hero .phone-float { animation: none; }
+}
+
+/* ── The auth screens ────────────────────────────────────────────────────
+ * Composed against the SCREEN, never against the form. The form's height is
+ * the page's business: sign-in is short, sign-up is nine fields. The brand
+ * content used to live in a column stretched to the form's height, with
+ * auto margins splitting the surplus - on sign-up, 320px above the copy,
+ * 320px under it, and the phone below the fold. */
+
+/* Laptop: a panel one viewport tall, sticky, so sign-up's long form scrolls
+ * past it and the composition holds. Brand, copy, then the phone straight
+ * after the copy, cropped by the panel's foot - never by an offset. */
+.authbrand__panel {
+  position: sticky; top: 0; height: 100vh; height: 100dvh;
+  display: flex; flex-direction: column;
+  padding: var(--s7) var(--s7) 0; overflow: hidden;
+}
+/* The one flexible gap, brand to copy: it grows with the screen's height,
+ * within bounds, so a tall screen reads as composed rather than stretched. */
+.authbrand__body { margin-top: clamp(var(--s6), 8vh, 80px); }
+.authbrand__foot { margin-top: var(--s4); }
+/* No phone (password reset): the copy is the whole composition, so it sits
+ * in the panel's middle, level with the centred form beside it. */
+.authbrand__panel--plain .authbrand__body { margin-block: auto; }
+.authbrand__phone {
+  flex: none; display: flex; justify-content: center;
+  margin-top: clamp(var(--s5), 4.5vh, var(--s7));
+}
+/* The phone steps with the screen's height, so the crop is always the lower
+ * part of the device: the island, the notification and the week in view. */
+@media (min-width: 960px) and (min-height: 1000px) { .phone--auth { --phone-w: 340px; --phone-scale: .8154; } }
+@media (min-width: 960px) and (max-height: 819px)  { .phone--auth { --phone-w: 270px; --phone-scale: .6359; } }
+@media (min-width: 960px) and (max-height: 719px) {
+  .authbrand__panel { padding-top: var(--s6); }
+  .phone--auth { --phone-w: 240px; --phone-scale: .559; }
+}
+/* On a short laptop screen the blurb goes: the pitch, the disclaimer and
+ * the phone carry the column, and the phone keeps more than half its height. */
+@media (min-width: 960px) and (max-height: 699px) { .authbrand__blurb { display: none; } }
+/* The form's first line sits on the brand's line when it starts at the top
+ * (sign-up); sign-in is centred, and the padding is only its minimum. */
+@media (min-width: 960px) { .authform { padding-top: var(--s7); } }
+
+/* Below laptop width: the card. Hidden on a laptop, where the column says it. */
+.authcard { display: none; }
+.authcard__pitch {
+  font-family: var(--display); font-weight: 800; letter-spacing: var(--tr-display);
+  font-size: var(--t-h1); line-height: 1.1; color: #fff; font-variant-numeric: normal;
+}
+.authcard__blurb { margin-top: var(--s3); font-size: 14.5px; line-height: 1.55; color: var(--night-slate); }
+
+/* Tablet: a landscape card - the copy, and the phone rising from the card's
+ * foot beside it - with the form straight after, at the same measure. */
+@media (min-width: 600px) and (max-width: 959px) {
+  .authform__in { max-width: 560px; }
+  /* The wider tablets give the card's copy room beside the phone, so the
+   * pitch keeps its lines whole ("university email." never breaks apart). */
+  @media (min-width: 720px) { .authform__in { max-width: 600px; } }
+  .authcard {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s5); align-items: start;
+    height: 276px; overflow: hidden; margin-bottom: var(--s6);
+    padding: var(--s6) var(--s6) 0; border-radius: 22px;
+    background-color: var(--night); color: var(--night-ink);
+  }
+  .authcard__copy { padding-bottom: var(--s6); }
+  .authcard__pitch { max-width: 13ch; }
+  .authcard__phone { padding-top: 2px; }
+  .phone--card {
+    --phone-w: 204px; --phone-scale: .4667;
+    transform: perspective(1400px) rotateY(-8deg) rotateX(3deg) rotate(1.5deg);
+  }
+}
+
+/* A tall tablet (an iPad upright) has the height to give the phone more of
+ * the card. */
+@media (min-width: 600px) and (max-width: 959px) and (min-height: 1000px) {
+  .authcard { height: 320px; }
+  .phone--card { --phone-w: 224px; --phone-scale: .5179; }
+}
+
+/* The band: the top of the phone alone - the notification arriving - with
+ * the form straight after. Sign-in's on a phone, and on a tablet too short
+ * for the card (720-799px tall, where the card would push Sign in below the
+ * fold). Sign-up needs only its first field in view, so it keeps the card
+ * on a tablet, and on a phone (nine fields) goes without. */
+@media (max-width: 599px), (max-width: 959px) and (max-height: 799px) {
+  .authcard:not(.authcard--wide) {
+    display: flex; justify-content: center; height: 140px; overflow: hidden;
+    margin-bottom: var(--s5); padding: 20px 0 0; border-radius: 20px;
+    background-color: var(--night);
+  }
+  .authcard:not(.authcard--wide) .authcard__copy { display: none; }
+  .authcard:not(.authcard--wide) .phone--card { --phone-w: 188px; --phone-scale: .4256; transform: none; }
+}
+/* The screen, not a scroll: sign-in with its band fits a 390 x 844 phone. */
+@media (max-width: 599px) { .authform { padding-bottom: var(--s6); } }
+/* At 320px the brand and the theme control (three 40px targets) needed 302px
+ * of 288 and the control wrapped to a second line. The word gives, not the
+ * targets. */
+@media (max-width: 359px) {
+  .authform__brand { flex-wrap: nowrap; }
+  .authform__brand .brand { gap: var(--s2); }
+  .authform__brand .brand__word { font-size: 17px; }
+}
+
+/* A short screen gives its height to the form: no card and no band, so the
+ * first field and the submit button are never pushed below the fold.
+ * (`.authpage` lifts it over the band rule's :not() specificity.) */
+@media (max-width: 959px) and (max-height: 719px) { .authpage .authcard { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-float, .hero .phone-stage { animation: none; }
+  .pnotif { animation: none; transform: none; opacity: 1; }
+  .papp__scene--next { animation: none; opacity: 1; transform: none; }
+  .papp__scene--record { animation: none; opacity: 0; }
+}
+
+/* The reminder form's confirmation: under the button, in the meta voice. */
+.reminder-confirm { margin-top: var(--s3); }
+/* Empty, it takes no space - but stays displayed: a live region hidden with
+ * display:none may not announce the message that first fills it. */
+.reminder-confirm:empty { margin: 0; }
+
+/* ══ 43 · The last word: Help shape AcademicAI ══════════════════════════════
+ *
+ * The landing page's final section. It answers the hero: the page opens on
+ * night with a statement and closes on night with one, in the same face, at
+ * the same scale and tracking - so the ending reads as the other half of the
+ * opening rather than a footer with an address in it.
+ *
+ * One action (the mint button, the only one on this ground) and three
+ * reasons below a hairline - ruled columns, not
+ * cards, each opening the same email with its subject filled in.
+ */
+.shape__title {
+  margin-top: var(--s4); max-width: 12ch;
+  font-family: var(--display); font-weight: 800; font-size: var(--t-hero);
+  letter-spacing: -.045em; line-height: .98; color: #fff;
+  font-variant-numeric: normal;
+}
+.shape__body { display: grid; gap: var(--s5); margin-top: var(--s5); }
+.shape__lede {
+  max-width: 46ch; font-size: var(--t-hero-lede); line-height: 1.6; color: var(--night-slate);
+}
+.shape__act { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s3); }
+
+.shape a.shape__cta {
+  display: inline-flex; align-items: center; gap: var(--s3);
+  min-height: 52px; padding: 0 var(--s5) 0 var(--s6); border-radius: 12px;
+  background: var(--signal); border-color: var(--signal); color: var(--signal-ink);
+  font-size: 15.5px; font-weight: 600; box-shadow: none; text-decoration: none;
+}
+.shape a.shape__cta:hover {
+  background: color-mix(in srgb, var(--signal) 86%, #fff); border-color: transparent; box-shadow: none;
+}
+/* The arrow answers the pointer: it leans the way the button goes. */
+.shape__cta svg, .shape__reason-title svg { transition: transform var(--dur) var(--ease-out); }
+.shape a.shape__cta:hover svg { transform: translateX(3px); }
+
+
+/* The three reasons: secondary, and ruled like the rest of the page. */
+.shape__reasons {
+  list-style: none; margin: var(--sp-head) 0 0; padding: 0;
+  display: grid; border-top: 1px solid var(--night-line);
+}
+.shape__reasons li { border-bottom: 1px solid var(--night-line); }
+.shape__reason {
+  display: grid; gap: 4px; padding: var(--s4) 0; min-height: 44px;
+  color: inherit; text-decoration: none; border-radius: 6px;
+}
+.shape__reason-title {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  font-family: var(--display); font-weight: 700; font-size: var(--t-h3);
+  letter-spacing: -.015em; line-height: 1.2; color: #fff; font-variant-numeric: normal;
+}
+.shape__reason-title svg { color: var(--signal); flex: none; }
+.shape__reason-body { font-size: 14.5px; line-height: 1.5; color: var(--night-slate); }
+.shape__reason:hover .shape__reason-title svg { transform: translateX(4px); }
+.shape__reason:hover .shape__reason-body { color: var(--night-ink); }
+.shape :focus-visible { outline: 2px solid var(--signal); outline-offset: 4px; }
+
+@media (min-width: 768px) {
+  /* Three columns under one rule; each column's own hairline is its top. */
+  .shape__reasons { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s6); border-top: none; }
+  .shape__reasons li { border-bottom: none; border-top: 1px solid var(--night-line); }
+  .shape__reason { padding: var(--s5) 0 var(--s2); }
+}
+@media (min-width: 960px) {
+  /* The lede and the action on one line under the headline: statement on the
+   * left, the thing to do on the right, both hung from the same baseline. */
+  .shape__body {
+    grid-template-columns: minmax(0, 46ch) auto; justify-content: space-between;
+    align-items: end; gap: var(--s7); margin-top: var(--s6);
+  }
+  .shape__act { align-items: flex-end; }
+  .shape__reasons { margin-top: calc(var(--sp-head) * 1.25); }
+}
+/* Phones: the headline at the hero's phone measure, the button full width -
+ * a thumb target first - and the address a tappable line of its own. */
+@media (max-width: 639px) {
+  /* The 12ch measure stays: it is what breaks the line as "Help shape /
+   * AcademicAI." at every width, rather than on one line at 430px. */
+  .shape__title { line-height: 1.04; }
+  .shape__lede { font-size: 15.5px; line-height: 1.55; }
+  .shape__act { align-items: stretch; }
+  .shape a.shape__cta { justify-content: center; padding: 0 var(--s5); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shape__cta svg, .shape__reason-title svg { transition: none; }
+  .shape a.shape__cta:hover svg, .shape__reason:hover .shape__reason-title svg { transform: none; }
+}
+
+/* ══ 44 · Terms & Conditions ════════════════════════════════════════════════
+ *
+ * A document: one reading column at ~68 characters, numbered sections, and a
+ * contents list that sits beside the text on a laptop (sticky, because the
+ * document is long and the list is how you move through it) and folds to one
+ * line on a phone. Ruled between sections like the rest of the record; no
+ * card around any paragraph.
+ */
+.terms { padding: var(--sp-hero-top) 0 var(--sp-section); }
+/* The rule under the head spans the whole layout below it, contents and
+ * text; the words inside keep their own measures. */
+.terms__head { padding-bottom: var(--s6); border-bottom: 1px solid var(--edge); }
+.terms__title {
+  font-family: var(--display); font-weight: 800; letter-spacing: -.04em; line-height: 1;
+  font-size: calc(var(--t-hero) * .86); color: var(--ink); font-variant-numeric: normal;
+}
+.terms__date { margin-top: var(--s4); font-size: 14px; font-weight: 600; color: var(--accent); }
+.terms__lede { margin-top: var(--s3); max-width: 60ch; font-size: var(--t-lede); line-height: 1.6; color: var(--slate); }
+
+.terms__layout { display: grid; gap: var(--s5); margin-top: var(--s5); }
+.terms__toc { display: none; }
+.terms__toclist { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.terms__toclist a {
+  display: flex; gap: var(--s3); align-items: baseline; padding: 6px var(--s2) 6px 0;
+  font-size: 14px; line-height: 1.4; color: var(--slate); text-decoration: none; border-radius: 6px;
+  transition: color var(--dur-fast) ease;
+}
+.terms__toclist a:hover { color: var(--accent); }
+.terms__tocn { flex: 0 0 1.6em; font-size: 12px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+.terms__toclabel { font-size: 12.5px; font-weight: 700; color: var(--ink); margin-bottom: var(--s2); }
+
+/* Phone and tablet: the contents fold to a single row. */
+.terms__tocfold { border-bottom: 1px solid var(--edge); }
+.terms__tocfold > summary {
+  display: flex; align-items: center; gap: var(--s2); min-height: 48px; cursor: pointer;
+  font-size: 15px; font-weight: 600; color: var(--ink); list-style: none;
+}
+.terms__tocfold > summary::-webkit-details-marker { display: none; }
+.terms__tocfold > summary::after {
+  content: ""; margin-left: auto; width: 8px; height: 8px;
+  border-right: 1.5px solid var(--slate); border-bottom: 1.5px solid var(--slate);
+  transform: translateY(-2px) rotate(45deg); transition: transform var(--dur) var(--ease-out);
+}
+.terms__tocfold[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.terms__tocfold .terms__toclist { padding-bottom: var(--s4); }
+.terms__tocfold .terms__toclist a { min-height: 40px; align-items: center; }
+
+.terms__doc { max-width: 68ch; min-width: 0; }
+.terms__sec { padding: var(--s6) 0; border-bottom: 1px solid var(--line); scroll-margin-top: 84px; }
+.terms__sec:first-child { padding-top: var(--s2); }
+.terms__sec:last-child { border-bottom: none; }
+.terms__sec h2 {
+  display: flex; gap: var(--s3); align-items: baseline;
+  font-family: var(--display); font-weight: 700; font-size: var(--t-h3);
+  letter-spacing: -.015em; line-height: 1.25; color: var(--ink); font-variant-numeric: normal;
+}
+.terms__n { flex: none; min-width: 1.6em; font-size: .78em; font-weight: 800; color: var(--accent); }
+.terms__sec p, .terms__sec li { font-size: 16px; line-height: 1.72; color: var(--ink); }
+.terms__sec p { margin-top: var(--s3); }
+.terms__sec h2 + p, .terms__sec h2 + ul { margin-top: var(--s3); }
+.terms__sec ul { list-style: none; margin: var(--s3) 0 0; padding: 0; display: grid; gap: var(--s2); }
+.terms__sec li { position: relative; padding-left: 1.4em; }
+.terms__sec li::before {
+  content: ""; position: absolute; left: .2em; top: .82em; width: .55em; height: 1.5px;
+  background: var(--accent); border-radius: 1px;
+}
+.terms__sec strong { font-weight: 650; }
+.terms__sec a, .terms__lede a {
+  color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1024px) {
+  /* Contents beside the text, held in view while reading. */
+  .terms__layout { grid-template-columns: 250px minmax(0, 68ch); gap: var(--s8); margin-top: var(--s7); }
+  .terms__toc { display: block; position: sticky; top: 92px; align-self: start;
+                max-height: calc(100vh - 120px); overflow: auto; }
+  .terms__tocfold { display: none; }
+  .terms__sec:first-child { padding-top: 0; }
+}
+@media (max-width: 639px) {
+  .terms__sec { padding: var(--s5) 0; }
+  .terms__sec p, .terms__sec li { font-size: 15.5px; line-height: 1.68; }
+  .terms__title { line-height: 1.04; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terms__tocfold > summary::after, .terms__toclist a { transition: none; }
+}
+/* The sign-up form's agreement line, under its button. */
+/* The sign-up agreement: a real checkbox, its whole row the target. Unticked
+ * it is quiet; ticked, the row takes the record's tint; refused, the critical
+ * colour with the reason under it. */
+.agree { margin-top: var(--s5); }
+.agree__row {
+  display: flex; align-items: flex-start; gap: var(--s3);
+  min-height: 52px; padding: 14px var(--s4); cursor: pointer;
+  border: 1px solid var(--line-strong); border-radius: var(--r-btn); background: var(--field-bg);
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.agree__row:hover { border-color: var(--line-hover); }
+.agree__box {
+  -webkit-appearance: none; appearance: none; flex: none; margin: 0;
+  width: 22px; height: 22px; display: grid; place-content: center; cursor: pointer;
+  border: 1.5px solid var(--line-strong); border-radius: 6px; background: var(--field-bg);
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+.agree__box::after {
+  content: ""; width: 11px; height: 6px;
+  border-left: 2px solid var(--surface); border-bottom: 2px solid var(--surface);
+  transform: translateY(-1px) rotate(-45deg) scale(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.agree__box:checked { background: var(--accent); border-color: var(--accent); }
+.agree__box:checked::after { transform: translateY(-1px) rotate(-45deg) scale(1); }
+.agree__box:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.agree__row:has(.agree__box:checked) { border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong)); background: var(--accent-bg); }
+.agree__label { font-size: 15px; line-height: 1.45; color: var(--ink); padding-top: 1px; }
+.agree__label a { color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.agree__label a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+.agree--error .agree__row { border-color: var(--crit); background: var(--crit-bg); }
+.agree--error .agree__box { border-color: var(--crit); }
+/* The same voice as every field error (.field .err), since this is one. */
+.agree__err { margin-top: 6px; font-size: var(--fs-sm); color: var(--crit); font-weight: 500; }
+/* Sign-up's button, until the box is ticked: plainly not ready, still
+ * pressable so it can say why. */
+.signup__submit { margin-top: var(--s4); }
+/* Opacity on the real button, not a new colour: right in either theme. */
+.signup__submit.btn--waiting { opacity: .5; box-shadow: none; cursor: default; }
+.signup__submit.btn--waiting:hover:not(:disabled) { filter: none; box-shadow: none; }
+.agree__need { margin-top: var(--s2); text-align: center; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) {
+  .agree__row, .agree__box, .agree__box::after { transition: none; }
+}
+
+/* ══ 45 · Community · Members ═══════════════════════════════════════════════
+ *
+ * A directory, not a table: a face (initials), a name set in the heading face,
+ * and one line saying what the person is here. Ruled rows, like every list of
+ * like things in the product. Authority is forest (a rep's filled avatar and
+ * shield); the only signal in the list is you.
+ */
+.mdir { padding: 0; overflow: hidden; }
+.mdir__head {
+  display: flex; align-items: flex-end; justify-content: space-between; gap: var(--s4);
+  padding: var(--s5) var(--s5) var(--s4); border-bottom: 1px solid var(--line);
+}
+.mdir__title {
+  font-family: var(--display); font-weight: 800; font-size: var(--t-group);
+  letter-spacing: -.025em; line-height: 1.1; color: var(--ink); font-variant-numeric: normal;
+}
+.mdir__where { margin-top: 4px; font-size: 14px; color: var(--slate); }
+.mdir__count { font-size: 14px; color: var(--slate); white-space: nowrap; }
+.mdir__count strong {
+  font-family: var(--display); font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+  color: var(--ink); font-variant-numeric: normal; margin-right: 2px;
+}
+
+.mdir__tools {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--s3);
+  padding: var(--s4) var(--s5); border-bottom: 1px solid var(--line); background: var(--surface-2);
+}
+.msearch { position: relative; flex: 1 1 260px; max-width: 440px; }
+.msearch > svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--slate); pointer-events: none; }
+.msearch input {
+  width: 100%; min-height: 44px; padding: 10px 44px 10px 38px;
+  border: 1px solid var(--line-strong); border-radius: var(--r-btn);
+  background: var(--field-bg); color: var(--ink); font: inherit; font-size: 15px;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.msearch input::placeholder { color: var(--slate); opacity: 1; }
+.msearch input:hover { border-color: var(--line-hover); }
+.msearch input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+.msearch input::-webkit-search-cancel-button { display: none; }
+.msearch__clear {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: none; border-radius: 8px; background: none; color: var(--slate); cursor: pointer;
+}
+.msearch__clear:hover { background: var(--line); color: var(--ink); }
+
+.mfilter {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-pill);
+}
+.mfilter button {
+  min-height: 38px; padding: 0 14px; border: none; border-radius: var(--r-pill);
+  background: none; color: var(--slate); font: inherit; font-size: 13.5px; font-weight: 500; cursor: pointer;
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.mfilter button:hover { color: var(--ink); }
+.mfilter button[aria-pressed="true"] { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+.mfilter button:focus-visible, .msearch__clear:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Changing the filter or the search re-draws the list: a short settle, so the
+ * change reads as the list answering rather than jumping. */
+.mdir__list { animation: rise-in var(--dur) var(--ease-out) backwards; }
+.mgroup-dir { padding: var(--s4) 0 0; }
+.mgroup-dir + .mgroup-dir { border-top: 1px solid var(--line); }
+.mgroup-dir__label {
+  display: flex; align-items: baseline; gap: var(--s2); padding: 0 var(--s5) var(--s2);
+  font-size: 13px; font-weight: 700; color: var(--ink); font-family: var(--ui);
+}
+.mgroup-dir__n { font-weight: 600; color: var(--slate); font-variant-numeric: tabular-nums; }
+
+.members { list-style: none; margin: 0; padding: 0; display: grid; }
+.member {
+  display: flex; align-items: center; gap: var(--s3);
+  min-height: 64px; padding: 12px var(--s5);
+  border-top: 1px solid var(--line);
+}
+.member__avatar {
+  flex: none; width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent-bg); color: var(--accent);
+  font-size: 13.5px; font-weight: 700; letter-spacing: .02em;
+}
+.member__avatar--rep { background: var(--accent); color: var(--surface); }
+.member--you .member__avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--signal); }
+.member__body { min-width: 0; flex: 1; }
+.member__name {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--s2);
+  font-family: var(--display); font-weight: 650; font-size: 15.5px; letter-spacing: -.01em;
+  color: var(--ink); line-height: 1.3; overflow-wrap: anywhere; font-variant-numeric: normal;
+}
+.member__you {
+  font-family: var(--ui); font-size: 11.5px; font-weight: 600; line-height: 1;
+  padding: 4px 8px; border-radius: var(--r-pill); color: var(--ink);
+  border: 1px solid color-mix(in srgb, var(--signal) 70%, transparent);
+}
+.member__role {
+  display: flex; align-items: center; gap: 6px; margin-top: 3px;
+  font-size: 13.5px; color: var(--slate);
+}
+.member__avatar--rep + .member__body .member__role { color: var(--accent); font-weight: 600; }
+
+/* A big room reads as two columns on a laptop - flowing DOWN, then across,
+ * so A to Z reads the way a directory is read (a grid ran it along the rows:
+ * Adaeze, Amaka, then Chinedu, Emeka). Each column keeps its rules. */
+@media (min-width: 1024px) {
+  .members { display: block; columns: 2; column-gap: var(--s6); padding: 0 var(--s5); }
+  .members .member { padding-inline: 0; break-inside: avoid; }
+}
+@media (max-width: 639px) {
+  .mdir__head { padding: var(--s4); align-items: flex-start; }
+  .mdir__tools { padding: var(--s3) var(--s4); }
+  .msearch { flex-basis: 100%; max-width: none; }
+  .mfilter { width: 100%; }
+  .mfilter button { flex: 1; min-height: 40px; }
+  .mgroup-dir__label { padding-inline: var(--s4); }
+  .member { padding: 12px var(--s4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mdir__list { animation: none; }
+  .msearch input, .mfilter button { transition: none; }
+}
+
+/* ══ 46 · The account menu ══════════════════════════════════════════════════
+ *
+ * A popover under the avatar on a laptop or tablet; a bottom sheet over a
+ * dimmed page on a phone (components/AccountMenu.jsx). Identity on night at
+ * the top - the rail's material - then plain rows: an icon, a label, and a
+ * chevron that leans on hover. Log out is its own group, in the critical
+ * colour, because it is the one row that ends something.
+ */
+@keyframes acct-fade { from { opacity: 0; } to { opacity: 1; } }
+.acct { position: relative; }
+.acct__scrim, .acct__handle { display: none; }
+.acct .menu.acct__menu {
+  width: 320px; min-width: 0; max-width: calc(100vw - var(--s4) * 2);
+  top: calc(100% + 10px); padding: 0; gap: 0; overflow: hidden;
+  border-radius: 18px; border: 1px solid var(--edge);
+}
+.acct__who {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s4); background: var(--deep); color: var(--night-ink);
+}
+/* You, in the signal: the one lit thing in the menu. */
+.acct__avatar {
+  flex: none; width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--signal) 16%, transparent); color: var(--signal);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--signal) 38%, transparent);
+  font-size: 16px; font-weight: 700; letter-spacing: .02em;
+}
+.acct__id { min-width: 0; }
+.acct__name {
+  font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -.015em;
+  line-height: 1.2; color: #fff; overflow-wrap: anywhere; font-variant-numeric: normal;
+}
+.acct__role { margin-top: 3px; font-size: 13px; font-weight: 600; color: var(--signal); }
+/* Its own line, so a wrap can never start with a separator. */
+.acct__where { margin-top: 1px; font-size: 13px; color: var(--night-slate); }
+.acct__mail { margin-top: 2px; font-size: 12.5px; color: var(--night-slate); overflow-wrap: break-word; }
+
+.acct__group { display: grid; gap: 2px; padding: var(--s2); }
+.acct__group--end { border-top: 1px solid var(--line); }
+.acct .acct__item {
+  gap: var(--s3); min-height: 44px; padding: 10px var(--s3); border-radius: 10px;
+  font-size: 14.5px; color: var(--ink);
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, transform var(--dur-instant) ease;
+}
+.acct__item > svg:first-child { flex: none; color: var(--slate); transition: color var(--dur-fast) ease; }
+.acct__label { flex: 1; min-width: 0; }
+.acct__item > svg:last-child:not(:first-child) {
+  flex: none; color: var(--line-strong); transition: transform var(--dur) var(--ease-out), color var(--dur-fast) ease;
+}
+.acct .acct__item:hover, .acct .acct__item:focus-visible { background: var(--surface-2); }
+.acct__item:hover > svg:first-child, .acct__item:focus-visible > svg:first-child { color: var(--accent); }
+.acct__item:hover > svg:last-child:not(:first-child),
+.acct__item:focus-visible > svg:last-child:not(:first-child) { transform: translateX(2px); color: var(--slate); }
+.acct .acct__item:active { background: var(--line); transform: scale(.99); }
+.acct .acct__item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+/* The page you are on. */
+.acct .acct__item--here { color: var(--accent); font-weight: 600; }
+.acct__item--here > svg:first-child { color: var(--accent); }
+.acct .acct__item--out { color: var(--crit); }
+.acct__item--out > svg:first-child { color: var(--crit); }
+.acct .acct__item--out:hover, .acct .acct__item--out:focus-visible { background: var(--crit-bg); }
+.acct .acct__item--out:focus-visible { outline-color: var(--crit); }
+
+.acct__theme {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  margin: 0 var(--s2); padding: var(--s3) var(--s3);
+  border-top: 1px solid var(--line); font-size: 14px; color: var(--slate);
+}
+/* The rail carries its own theme control; the menu does not repeat it. */
+@media (min-width: 1024px) { .shell--rail .acct__theme { display: none; } }
+
+/* Phones: a bottom sheet. Full width, under the thumb, over a dimmed page;
+ * the handle says it is a sheet, and the rows are a full thumb tall. */
+@media (max-width: 639px) {
+  .acct__scrim {
+    display: block; position: fixed; inset: 0; z-index: 60;
+    background: rgba(5, 14, 11, .5);
+    animation: acct-fade var(--dur) var(--ease-out) backwards;
+  }
+  .acct__scrim[data-state="closed"] { animation: fade-out var(--dur-fast) var(--ease-in) both; pointer-events: none; }
+  .acct .menu.acct__menu {
+    position: fixed; z-index: 61; top: auto; left: 0; right: 0; bottom: 0;
+    width: auto; max-width: none; max-height: calc(100dvh - 40px); overflow-y: auto;
+    border-radius: 22px 22px 0 0; border-bottom: none;
+    padding-bottom: env(safe-area-inset-bottom);
+    transform-origin: bottom center;
+    animation: sheet-in var(--dur) var(--ease-out) backwards;
+  }
+  .acct .menu.acct__menu[data-state="closed"] { animation: sheet-out var(--dur-fast) var(--ease-in) both; }
+  .acct__handle {
+    display: block; position: absolute; z-index: 1; top: 8px; left: 50%;
+    width: 36px; height: 4px; margin-left: -18px; border-radius: 2px;
+    background: color-mix(in srgb, var(--night-ink) 38%, transparent);
+  }
+  .acct__who { padding: var(--s6) var(--s4) var(--s4); }
+  .acct__avatar { width: 52px; height: 52px; font-size: 17px; }
+  .acct__name { font-size: 18px; }
+  .acct__group { padding: var(--s2) var(--s3); }
+  .acct .acct__item { min-height: 52px; font-size: 15.5px; }
+  .acct__theme { margin: 0 var(--s3); padding: var(--s3) var(--s3); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .acct__scrim, .acct .menu.acct__menu, .acct .menu.acct__menu[data-state="closed"] { animation: none; }
+  .acct .acct__item, .acct__item > svg { transition: none; }
+  .acct .acct__item:active { transform: none; }
+}
+
+/* ══ 47 · Profile ═══════════════════════════════════════════════════════════
+ *
+ * Identity on night at the top (the account menu's header, at page scale);
+ * then the record - read-only, and labelled so - beside the community you
+ * belong to; then the account, whose every row leads to where it is changed.
+ * Ruled rows inside each block, like the rest of the record.
+ */
+.pid {
+  display: flex; align-items: center; gap: var(--s5);
+  padding: var(--s6); border-radius: var(--r-feature, 22px);
+  background: var(--deep); color: var(--night-ink);
+  border: 1px solid var(--night-line);
+}
+.pid__avatar {
+  flex: none; width: 76px; height: 76px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--signal) 16%, transparent); color: var(--signal);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--signal) 40%, transparent);
+  font-family: var(--display); font-size: 26px; font-weight: 800; letter-spacing: .01em;
+}
+.pid__body { min-width: 0; }
+.pid__name {
+  font-family: var(--display); font-weight: 800; font-size: var(--t-h1);
+  letter-spacing: -.035em; line-height: 1.05; color: #fff; overflow-wrap: anywhere;
+  font-variant-numeric: normal;
+}
+.pid__role { display: grid; gap: 2px; margin-top: var(--s2); font-size: 15px; color: var(--night-slate); }
+.pid__rolename { color: var(--signal); font-weight: 600; }
+@media (min-width: 640px) {
+  /* Wide enough for one line: role, then where, with a separator between. */
+  .pid__role { display: flex; flex-wrap: wrap; gap: 2px 8px; }
+  .pid__where::before { content: "·"; margin-right: 8px; }
+}
+.pid__mail { display: flex; flex-wrap: wrap; align-items: center; gap: 4px var(--s3); margin-top: var(--s2); font-size: 14px; color: var(--night-slate); }
+.pid__addr { overflow-wrap: anywhere; }
+.pid__verified, .pid__unverified {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12.5px; font-weight: 600; white-space: nowrap;
+}
+.pid__verified { color: var(--signal); }
+.pid__unverified { color: var(--night-ink); opacity: .8; }
+
+.profile__grid { display: grid; gap: var(--s5); }
+@media (min-width: 900px) { .profile__grid { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); align-items: start; } }
+
+.pblock {
+  background: var(--surface); border: 1px solid var(--edge); border-radius: var(--r-panel);
+  padding: var(--s5) var(--s5) var(--s4);
+}
+.pblock__head {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--s2) var(--s3);
+  padding-bottom: var(--s3); border-bottom: 1px solid var(--line);
+}
+.pblock__head h2 {
+  font-family: var(--display); font-weight: 700; font-size: var(--t-h3);
+  letter-spacing: -.015em; line-height: 1.2; color: var(--ink); font-variant-numeric: normal;
+}
+/* Read-only is a property of the block, said once on it. */
+.pblock__tag {
+  font-size: 12px; font-weight: 600; color: var(--slate);
+  padding: 3px 9px; border-radius: var(--r-pill); border: 1px solid var(--line-strong);
+}
+.pblock__note { font-size: 13px; color: var(--slate); }
+.pblock__foot { margin-top: var(--s3); font-size: 14px; line-height: 1.55; color: var(--slate); }
+.pblock__foot a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+.pfacts { display: grid; }
+.pfact {
+  display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: var(--s3);
+  align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line);
+}
+.pfact dt { font-size: 13.5px; color: var(--slate); }
+.pfact dd { font-size: 15.5px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.pfact__none { font-weight: 400; color: var(--slate); }
+
+.pcomm { padding-top: var(--s4); }
+.pcomm__name {
+  font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -.015em;
+  line-height: 1.25; color: var(--ink); font-variant-numeric: normal;
+}
+.pcomm__sub { margin-top: 3px; font-size: 14px; color: var(--slate); }
+.pcomm__lede { font-size: 15px; color: var(--slate); margin-bottom: var(--s4); }
+.pfacts--inline { margin-top: var(--s3); border-top: 1px solid var(--line); }
+.pfacts--inline .pfact { grid-template-columns: minmax(0, 7rem) minmax(0, 1fr); }
+.pcomm__links { display: grid; margin-top: var(--s2); }
+.plink {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  min-height: 44px; padding: 0 var(--s2); margin: 0 calc(var(--s2) * -1); border-radius: 10px;
+  color: var(--accent); font-weight: 600; font-size: 14.5px; text-decoration: none;
+  transition: background-color var(--dur-fast) ease;
+}
+.plink svg { transition: transform var(--dur) var(--ease-out); }
+.plink:hover { background: var(--accent-bg); }
+.plink:hover svg { transform: translateX(2px); }
+.plink:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; }
+
+.pacts { list-style: none; margin: 0; padding: 0; display: grid; }
+.pact {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s4);
+  padding: 14px 0; border-bottom: 1px solid var(--line); min-height: 68px;
+}
+.pact:last-child { border-bottom: none; }
+.pact__text { min-width: 0; }
+.pact__k { font-size: 15px; font-weight: 600; color: var(--ink); }
+.pact__v { margin-top: 2px; font-size: 13.5px; color: var(--slate); overflow-wrap: anywhere; }
+.pact .btn { flex: none; }
+.pact__logout { gap: 6px; color: var(--crit); border-color: color-mix(in srgb, var(--crit) 35%, var(--line-strong)); }
+.btn.pact__logout:hover:not(:disabled) { background: var(--crit-bg); border-color: var(--crit); color: var(--crit); }
+
+@media (max-width: 639px) {
+  .pid { flex-direction: column; align-items: flex-start; gap: var(--s4); padding: var(--s5); }
+  .pid__avatar { width: 60px; height: 60px; font-size: 21px; }
+  .pblock { padding: var(--s4) var(--s4) var(--s3); }
+  .pfact { grid-template-columns: 1fr; gap: 2px; padding: 10px 0; }
+  .pfacts--inline .pfact { grid-template-columns: 1fr; }
+  /* A row's action goes under its words, full width - a thumb target. */
+  .pact { flex-direction: column; align-items: stretch; gap: var(--s3); }
+  .pact .btn { width: 100%; justify-content: center; min-height: 44px; }
+  .pact .themetoggle { align-self: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plink, .plink svg { transition: none; }
+  .plink:hover svg { transform: none; }
+}
+
+/* Wherever a finger is the pointer (the page's 899px touch line): the new
+ * controls are full-height targets, not their desktop sizes. */
+@media (max-width: 899px) {
+  .mfilter button { min-height: 44px; }
+  .pact .btn { min-height: 44px; }
+  .pact .themetoggle button { width: 40px; height: 40px; }
+}
+
+/* The page behind a modal surface (lib/scrollLock.js): held where it is. */
+html.is-scroll-locked, html.is-scroll-locked body { overflow: hidden; overscroll-behavior: none; }
+/* The phone's sheet scrolls itself when it is taller than the screen, and a
+ * scroll that reaches its end stops there instead of moving the page. */
+@media (max-width: 639px) {
+  .acct .menu.acct__menu { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+}
+
+/* ══ 48 · Password reset, switched off ══════════════════════════════════════
+ *
+ * A state of the product, not an error (components/PasswordResetUnavailable):
+ * the reason in the page's own voice, a quiet record-style block saying what
+ * it means for you, and one way on. Nothing in the critical colour, and no
+ * field that would pretend to send something.
+ */
+.resetoff {
+  display: flex; align-items: flex-start; gap: var(--s3);
+  padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-btn);
+  background: var(--surface-2);
+}
+.resetoff__icon {
+  flex: none; width: 36px; height: 36px; border-radius: 10px;
+  display: grid; place-items: center; background: var(--accent-bg); color: var(--accent);
+}
+.resetoff__k { font-size: 15px; font-weight: 600; color: var(--ink); }
+.resetoff__v { margin-top: 2px; font-size: 14px; line-height: 1.5; color: var(--slate); }
+.resetpage { margin-top: var(--s5); }
+
+/* "Currently unavailable": said, with a hollow mark - not a badge. */
+.resetrow__status { display: inline-flex; align-items: center; gap: 7px; color: var(--slate); }
+.resetrow__status::before {
+  content: ""; flex: none; width: 7px; height: 7px; border-radius: 50%;
+  border: 1.5px solid currentColor; opacity: .8;
+}
+
+/* The inline explanation in Settings and Profile, opened by their control. */
+.resetnote {
+  display: grid; gap: var(--s2); margin-top: var(--s4); padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+  animation: rise-in var(--dur) var(--ease-out) backwards;
+}
+.resetnote__title {
+  font-family: var(--display); font-weight: 700; font-size: 16.5px;
+  letter-spacing: -.012em; line-height: 1.3; color: var(--ink); font-variant-numeric: normal;
+}
+.resetnote__body { max-width: 62ch; font-size: 14.5px; line-height: 1.55; color: var(--slate); }
+.resetnote .resetoff { margin-top: var(--s2); }
+
+/* Profile's password row carries its note under it. */
+.pact--stack { display: block; }
+.pact__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); }
+@media (max-width: 639px) {
+  .pact__row { flex-direction: column; align-items: stretch; gap: var(--s3); }
+  .pact__row .btn { width: 100%; justify-content: center; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) { .resetnote { animation: none; } }

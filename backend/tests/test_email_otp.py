@@ -22,6 +22,9 @@ import pytest
 from academicai import clock
 from academicai.db.connection import query_all, query_one
 from academicai.services import email_service
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 
 def register_account(client, register):
@@ -329,7 +332,7 @@ def test_registration_does_not_claim_delivery_on_a_simulated_backend(client, reg
                        json={"email": actor.email, "password": "Password123"})
     assert resp.status_code == 200
     # Registration's own response carried the honest flag.
-    fresh = client.post("/api/auth/register", json={
+    fresh = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
         **{k: v for k, v in actor.profile.items()},
         "email": "another@student.babcock.edu.ng",
         "student_id_number": "BU/SEN/9911",
@@ -374,7 +377,7 @@ def test_development_backends_never_report_delivery(app, backend, expected):
 def test_the_domain_bypass_is_off_by_default(client, app):
     from academicai.config import Config
     assert Config.ALLOW_ANY_EMAIL_DOMAIN is False
-    resp = client.post("/api/auth/register", json={
+    resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
         "full_name": "Consumer Address", "email": "someone@gmail.com",
         "password": "Password123", "confirm_password": "Password123",
         "university": "Babcock University", "department": "Software Engineering",
@@ -387,7 +390,7 @@ def test_the_domain_bypass_is_off_by_default(client, app):
 def test_the_bypass_lets_development_register_any_address(client, app):
     app.config["ALLOW_ANY_EMAIL_DOMAIN"] = True
     try:
-        resp = client.post("/api/auth/register", json={
+        resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
             "full_name": "Consumer Address", "email": "someone@gmail.com",
             "password": "Password123", "confirm_password": "Password123",
             "university": "Babcock University", "department": "Software Engineering",
@@ -407,7 +410,7 @@ def test_the_bypass_is_ignored_when_env_is_production(client, app):
     app.config["ALLOW_ANY_EMAIL_DOMAIN"] = True
     app.config["ENV"] = "production"
     try:
-        resp = client.post("/api/auth/register", json={
+        resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
             "full_name": "Consumer Address", "email": "someone@gmail.com",
             "password": "Password123", "confirm_password": "Password123",
             "university": "Babcock University", "department": "Software Engineering",

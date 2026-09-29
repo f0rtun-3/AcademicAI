@@ -10,7 +10,7 @@ export const TODAY = '2026-09-26';
 
 const community = {
   id: 3, status: 'ACTIVE', university: 'Babcock University', department: 'Computer Science',
-  level: '300', academic_session: '2026/2027', member_count: 64,
+  level: '300', academic_session: '2026/2027', member_count: 14,
   reps: [{ id: 2, full_name: 'Tolu Adeyemi', rep_since: '2026-09-10' }],
   election: { can_start_election: true, eligible_members: 64, required_members: 4,
               members_needed: 0 },
@@ -32,6 +32,15 @@ export const REP = {
   user: { ...STUDENT.user, id: 2, full_name: 'Tolu Adeyemi' },
   membership: { community_id: 3, role: 'VERIFIED_REP', status: 'ACTIVE', user_id: 2 },
 };
+
+// As /api/community/members returns them: exactly these four fields, active
+// members only. Tolu is the rep (community.reps), Adaeze is the student session.
+export const members = [
+  ['Tolu Adeyemi', 2, 'VERIFIED_REP'], ['Adaeze Okafor', 7], ['Chinedu Obi', 11],
+  ['Amaka Eze', 12], ['Ifeoma Nwosu', 13], ['Kemi Adebayo', 14], ['Musa Garba', 15],
+  ['Seun Olawale', 16], ['Tunde Bello', 17], ['Zainab Musa', 18], ['Emeka Nnamdi', 19],
+  ['Funke Akindele', 20], ['Obinna Uche', 21], ['Halima Sani', 22],
+].map(([full_name, user_id, role = 'STUDENT']) => ({ user_id, full_name, role, status: 'ACTIVE' }));
 
 export const events = [
   { id: 1, title: 'Data Structures Assignment 2', event_type: 'ASSIGNMENT', course_code: 'COS202',
@@ -210,6 +219,7 @@ function payloadFor(url, state) {
              referenced_event_ids: [], suggested_reminder: state.suggestion ?? null,
              conversation_id: 1 }];
   if (path === '/community') return [200, { community, membership: session.membership }];
+  if (path === '/community/members') return [200, { members }];
   if (path === '/community/courses') return [200, { courses }];
   if (path === '/community/timetable') return [200, { timetable }];
   if (path === '/community/announcements') return [200, { announcements }];

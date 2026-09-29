@@ -1,19 +1,21 @@
 // S8 · Community, with the sub-nav the approved IA specifies:
 //
-//   Overview | Elections | Membership | Manage (verified rep only)
+//   Overview | Members | Elections | Membership | Manage (verified rep only)
 //
-// Each is a route (/community, /community/elections, /community/membership,
-// /community/manage) so a section is linkable and survives a refresh. Manage
+// Each is a route (/community, /community/members, /community/elections,
+// /community/membership, /community/manage) so a section is linkable and
+// survives a refresh. Manage
 // is the fourth SUB-route, not a fifth top-level tab — a role changes what is
 // inside the shell, never the shell itself. For a student it is absent, not
 // disabled.
 
 import { useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import RepElections from '../components/RepElections.jsx';
 import CommunityMembership from '../components/CommunityMembership.jsx';
+import CommunityMembers from '../components/CommunityMembers.jsx';
 import CommunityNav from '../components/CommunityNav.jsx';
 import { useResource } from '../components/useResource.js';
 import { EmptyState, ErrorBanner, ErrorState, Loading } from '../components/States.jsx';
@@ -26,13 +28,18 @@ import {
 } from '../components/icons.jsx';
 import { dayShort, describeChange, isStudentFacingChange } from '../lib/vocabulary.js';
 
-const SECTIONS = ['elections', 'membership'];
+const SECTIONS = ['members', 'elections', 'membership'];
 
 function Overview({ community, courses, timetable, announcements, changes,
                    onToggleEnrollment, busy, archived }) {
   return (
     <div className="stack stack--loose">
-      <Board title="Verified reps" icon={IconShield}>
+      <Board title="Verified reps" icon={IconShield}
+             foot={community.member_count > 1 ? (
+               <Link className="linkish" to="/community/members">
+                 See all {community.member_count} members
+               </Link>
+             ) : null}>
         {community.reps.length === 0 ? (
           /* The shared empty state, not a bare row with grey text in it. The
              readiness sentence is the same one the Notice above prints, and
@@ -241,6 +248,7 @@ export default function CommunityPage() {
                   announcements={announcements} changes={changes} busy={busy}
                   archived={archived} onToggleEnrollment={toggleEnrollment} />
       )}
+      {tab === 'members' && <CommunityMembers community={community} />}
       {tab === 'elections' && (
         <RepElections community={community} membership={membership}
                       onChanged={afterBallotChange} />

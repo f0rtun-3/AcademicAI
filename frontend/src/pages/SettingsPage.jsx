@@ -16,6 +16,8 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import { ErrorBanner } from '../components/States.jsx';
 import { Field, Notice, PageHeader, Panel } from '../components/ui.jsx';
 import ThemeToggle from '../components/ThemeToggle.jsx';
+import { ResetUnavailableNote } from '../components/PasswordResetUnavailable.jsx';
+import { PASSWORD_RESET_AVAILABLE } from '../lib/features.js';
 
 export default function SettingsPage() {
   const { user, logout, refresh } = useAuth();
@@ -25,6 +27,8 @@ export default function SettingsPage() {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  // Reset is switched off (lib/features.js): its control opens the reason.
+  const [resetWhy, setResetWhy] = useState(false);
 
   async function changeEmail(event) {
     event.preventDefault();
@@ -110,7 +114,22 @@ export default function SettingsPage() {
       </Panel>
 
       <Panel title="Password">
-        {resetSent ? (
+        {!PASSWORD_RESET_AVAILABLE ? (
+          <>
+            <div className="setrow">
+              <div>
+                <p className="setrow__name">Reset password</p>
+                <p className="prose resetrow__status">Currently unavailable</p>
+              </div>
+              <button type="button" className="btn btn--secondary"
+                      aria-expanded={resetWhy} aria-controls="reset-unavailable"
+                      onClick={() => setResetWhy((open) => !open)}>
+                Reset password
+              </button>
+            </div>
+            {resetWhy && <ResetUnavailableNote id="reset-unavailable" />}
+          </>
+        ) : resetSent ? (
           <Notice tone="info" label="Check your email" role="status">
             If an account exists for {user?.email}, a reset code is on its way.
           </Notice>

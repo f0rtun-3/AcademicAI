@@ -76,6 +76,28 @@ def _about(field):
         raise
 
 
+# The Terms & Conditions an account agrees to at registration. A stable id
+# rather than display text: the page says "Effective Tuesday 29 September
+# 2026", the frontend sends this id back with the acceptance
+# (TermsPage.jsx, TERMS_VERSION), and a new version of the Terms means a new
+# id here. Registration refuses an acceptance of any other version, so an
+# account can never record agreement to Terms it was not shown.
+TERMS_VERSION = "2026-09-29"
+
+
+def _require_terms(data):
+    """The sign-up form's agreement, checked where it counts - here."""
+    if data.get("accept_terms") is not True:
+        raise ValidationError(
+            "Agree to the Terms & Conditions to create your account.",
+            details={"field": "accept_terms"})
+    if data.get("terms_version") != TERMS_VERSION:
+        raise ValidationError(
+            "The Terms & Conditions have been updated since this page was opened. "
+            "Reload the page, read the current version, and agree to it to continue.",
+            details={"field": "accept_terms", "terms_version": TERMS_VERSION})
+
+
 def register(data):
     """Create an account.
 
@@ -123,6 +145,8 @@ def register(data):
             raise ValidationError(
                 "Your Matric Number can only contain letters, numbers, spaces, "
                 "slashes and hyphens.")
+    # Last, as it is last on the form: agreement to the current Terms.
+    _require_terms(data)
 
     now = clock.now_iso()
     with transaction() as conn:
@@ -161,16 +185,19 @@ def register(data):
         # Recorded so that "verified" never quietly means two different things.
         method = "OTP" if verification_required else "SKIPPED_NO_VERIFICATION"
 
+        # The acceptance is stored as what was agreed to and when - the
+        # version id and the account's own creation instant - and nothing else.
         user_id = insert_returning_id(
             """INSERT INTO users
                (full_name, email, password_hash, email_verified,
                 email_verification_method,
                 university_id, department, level, academic_session,
-                student_id_number, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                student_id_number, terms_version, terms_accepted_at,
+                created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (full_name, email, hash_password(data["password"]), verified, method,
              university_id, department, level, academic_session,
-             student_id_number, now, now),
+             student_id_number, TERMS_VERSION, now, now, now),
             conn=conn,
         )
         # No code is minted when none will be asked for. A code sitting unused

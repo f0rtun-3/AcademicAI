@@ -10,6 +10,12 @@
 // the wording of the "if an account exists" notice. New: the shared auth
 // composition, a stage indicator so the two-step reset does not feel like a
 // dead end, and password fields with a visibility control.
+//
+// SWITCHED OFF FOR NOW (lib/features.js). There is no production email
+// delivery for students yet, so a reset code would never arrive. The page
+// says so instead of asking for an email: no field, no "sent" state, nothing
+// about any account - and the way back to sign in. The flow below is kept
+// whole, and returns when PASSWORD_RESET_AVAILABLE is set to true.
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -18,6 +24,10 @@ import AuthLayout from '../components/AuthLayout.jsx';
 import { ErrorBanner } from '../components/States.jsx';
 import { Field, Notice, PasswordInput } from '../components/ui.jsx';
 import StepList from '../components/StepList.jsx';
+import {
+  RESET_UNAVAILABLE_BODY, RESET_UNAVAILABLE_TITLE, ResetStatus,
+} from '../components/PasswordResetUnavailable.jsx';
+import { PASSWORD_RESET_AVAILABLE } from '../lib/features.js';
 
 const STAGES = [
   { id: 'request', label: 'Your email' },
@@ -26,6 +36,32 @@ const STAGES = [
 ];
 
 export default function ForgotPassword() {
+  return PASSWORD_RESET_AVAILABLE ? <ResetFlow /> : <ResetUnavailable />;
+}
+
+// What the page is while reset is switched off: the reason, what it means for
+// you, and one way on. The same auth composition as every other auth screen.
+function ResetUnavailable() {
+  return (
+    <AuthLayout
+      title={RESET_UNAVAILABLE_TITLE}
+      subtitle={RESET_UNAVAILABLE_BODY}
+      preview={false}
+      pitch="Locked out?"
+      blurb="Resetting a password goes through the email address on the account, and
+             email to students is not switched on yet."
+    >
+      <div className="stack resetpage">
+        <ResetStatus />
+        <Link className="btn btn--primary btn--block" to="/login">Back to sign in</Link>
+      </div>
+    </AuthLayout>
+  );
+}
+
+// The reset itself - email, then code and new password, then done. Kept
+// intact for when email delivery is configured.
+function ResetFlow() {
   const [stage, setStage] = useState('request');
   const [email, setEmail] = useState('');
   const [form, setForm] = useState({ token: '', password: '', confirm_password: '' });

@@ -16,6 +16,9 @@ import pytest
 from academicai import academic_time, clock
 from academicai.ai import provider as ai_provider
 from tests.conftest import analyze
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 UTC = timezone.utc
 
@@ -588,7 +591,7 @@ def test_sign_up_never_creates_a_university_without_a_clock(client, app):
     refused instead of being created with no timezone."""
     app.config["ALLOW_ANY_EMAIL_DOMAIN"] = True
     try:
-        resp = client.post("/api/auth/register", json={
+        resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
             "full_name": "New Place", "email": "someone@example.com",
             "password": "Password123", "confirm_password": "Password123",
             "university": "University of Nowhere", "department": "SE",

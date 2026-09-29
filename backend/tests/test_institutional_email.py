@@ -11,12 +11,16 @@ from academicai import clock
 from academicai.errors import ValidationError
 from academicai.services import auth_service, email_domain_service
 from tests.conftest import APPROVED_DOMAINS
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 pytestmark = pytest.mark.security
 
 
 def _profile(university, email, **overrides):
     payload = {
+        **TERMS_ACCEPTED,
         "full_name": "Fortune Okala",
         "email": email,
         "password": "Password123",

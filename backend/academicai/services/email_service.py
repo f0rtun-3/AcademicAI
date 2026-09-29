@@ -1,4 +1,5 @@
-"""Email delivery backends. Email is the only notification channel in MVP (spec 19).
+"""Email delivery backends: a notification's email channel (spec 19). The in-app
+channel is the row itself - see notification_service.
 
 ONE SEAM, THREE BACKENDS
 ------------------------
@@ -22,7 +23,11 @@ failures - nothing went wrong, and the caller should not retry - they are
 simulations, and the outbox says so.
 
 A real provider that refuses the message raises EmailDeliveryError, which IS a
-failure and is retried by the worker.
+failure. It is retried by the worker unless it is PERMANENT: a provider that
+answers 4xx has read the request and said no - an unverified sender domain, a
+recipient its plan will not deliver to - and asking again in a minute gets the
+same answer. Those are marked failed at once rather than retried five times.
+Network trouble, timeouts, 408, 429 and 5xx stay retryable.
 """
 import json
 import logging
@@ -42,7 +47,13 @@ _outbox = []
 
 
 class EmailDeliveryError(RuntimeError):
-    pass
+    def __init__(self, message, permanent=False):
+        super().__init__(message)
+        self.permanent = permanent
+
+
+# 4xx answers that are about timing, not about the message: worth retrying.
+_RETRYABLE_CLIENT_ERRORS = frozenset({408, 429})
 
 
 class Result:
@@ -145,7 +156,9 @@ def _resend_send(to, subject, body, html):
         # from-address, an unverified domain, a malformed recipient - and that
         # sentence is far more useful than the status code alone.
         detail = exc.read().decode("utf-8", "replace")[:300]
-        raise EmailDeliveryError(f"Resend rejected the message ({exc.code}): {detail}")
+        permanent = 400 <= exc.code < 500 and exc.code not in _RETRYABLE_CLIENT_ERRORS
+        raise EmailDeliveryError(f"Resend rejected the message ({exc.code}): {detail}",
+                                 permanent=permanent)
     except urllib.error.URLError as exc:
         raise EmailDeliveryError(f"Could not reach Resend: {exc.reason}")
 

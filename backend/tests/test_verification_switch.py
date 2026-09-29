@@ -15,6 +15,9 @@ import pytest
 
 from academicai.db.connection import query_all, query_one
 from academicai.services import email_service
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 PROFILE = {
     "full_name": "Demo Student",
@@ -35,7 +38,7 @@ def verification_off(app):
 
 def register(client, email, student_id="BU/SEN/9001", **over):
     return client.post("/api/auth/register",
-                       json={**PROFILE, "email": email,
+                       json={**TERMS_ACCEPTED, **PROFILE, "email": email,
                              "student_id_number": student_id, **over})
 
 

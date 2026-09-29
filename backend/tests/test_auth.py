@@ -2,6 +2,9 @@
 from datetime import timedelta
 
 from academicai import clock
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 
 def test_health(client):
@@ -30,7 +33,7 @@ def test_register_rejects_duplicate_email(client, register):
 
 
 def test_register_rejects_password_mismatch(client):
-    resp = client.post("/api/auth/register", json={
+    resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
         "full_name": "A B", "email": "ab@student.babcock.edu.ng",
         "password": "Password123", "confirm_password": "Password124",
         "university": "Babcock University", "department": "Software Engineering",
@@ -40,7 +43,7 @@ def test_register_rejects_password_mismatch(client):
 
 
 def test_register_rejects_weak_password(client):
-    resp = client.post("/api/auth/register", json={
+    resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED, 
         "full_name": "A B", "email": "weak@student.babcock.edu.ng",
         "password": "short", "confirm_password": "short",
         "university": "Babcock University", "department": "Software Engineering",

@@ -339,7 +339,8 @@ def delete_personal(user_id, reminder_id):
 
 def process_due_personal_reminders(conn=None):
     due = query_all(
-        """SELECT p.*, cm.community_id, e.status AS event_status
+        """SELECT p.*, cm.community_id, e.status AS event_status,
+                  e.event_type, e.event_date, e.event_time, e.venue
            FROM personal_reminders p
            LEFT JOIN community_members cm
                   ON cm.user_id = p.user_id AND cm.status = 'ACTIVE'
@@ -361,9 +362,13 @@ def process_due_personal_reminders(conn=None):
         )
         if cur.rowcount == 0:
             continue
+        # Linked to an event: the email says what it is and when, so it stands
+        # on its own (spec 19). Unlinked, the title is the whole message.
+        line = (notification_copy.event_line(row)
+                if row["event_id"] is not None and row["event_type"] else None)
         notification_service.enqueue(
             [row["user_id"]], row["community_id"], f"Reminder: {row['title']}",
-            f"Your personal reminder: {row['title']}",
+            f"Your personal reminder: {row['title']}" + (f"\n{line}" if line else ""),
             dedupe_key=f"personal_reminder:{row['id']}", conn=conn,
             # A personal reminder has no record of its own, so the bell opens
             # the list where the student can act on it.
@@ -371,6 +376,56 @@ def process_due_personal_reminders(conn=None):
         )
         fired += 1
     return fired
+
+
+# --- When the next reminder is due -----------------------------------------
+#
+# Neither of these decides that anything fired - only the jobs above do that.
+# They say WHEN to look: the worker, so it runs as a reminder comes due rather
+# than on its next fixed cycle; and the bell, so it asks for the notification
+# the moment it can exist rather than on its next fixed poll.
+
+def any_due(conn=None):
+    """True when a reminder of either kind is waiting to be processed now."""
+    now = clock.now_iso()
+    return query_one(
+        """SELECT 1 AS due WHERE
+             EXISTS (SELECT 1 FROM personal_reminders WHERE status = 'PENDING' AND remind_at <= ?)
+          OR EXISTS (SELECT 1 FROM event_reminders WHERE status = 'PENDING' AND remind_at <= ?)""",
+        (now, now), conn=conn,
+    ) is not None
+
+
+def next_due_for_user(user_id, conn=None):
+    """The soonest PENDING reminder instant addressed to this user, or None.
+
+    Their own personal reminders, and the official reminders of scheduled
+    events they would receive: events in a community they are an active member
+    of, and for a course event, only if they are actively enrolled - the same
+    rule the worker applies when it resolves recipients (spec 19). A time
+    already past is returned too: the worker has not reached it yet, and the
+    bell should keep looking.
+    """
+    personal = query_one(
+        """SELECT MIN(remind_at) AS at FROM personal_reminders
+           WHERE user_id = ? AND status = 'PENDING'""",
+        (user_id,), conn=conn,
+    )
+    official = query_one(
+        """SELECT MIN(r.remind_at) AS at
+           FROM event_reminders r
+           JOIN academic_events e ON e.id = r.event_id
+           JOIN community_members cm
+             ON cm.community_id = e.community_id AND cm.user_id = ? AND cm.status = 'ACTIVE'
+           WHERE r.status = 'PENDING' AND e.status = 'SCHEDULED'
+             AND (e.course_id IS NULL OR EXISTS (
+                   SELECT 1 FROM course_enrollments ce
+                   WHERE ce.user_id = cm.user_id AND ce.course_id = e.course_id
+                     AND ce.status = 'ACTIVE'))""",
+        (user_id,), conn=conn,
+    )
+    times = [row["at"] for row in (personal, official) if row and row["at"]]
+    return min(times) if times else None
 
 
 def reminder_payload(row, zone_name=None):

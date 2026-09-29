@@ -219,6 +219,8 @@ test('a sign-up error sits beside its field, which takes focus', async ({ page }
   await page.getByLabel('Level').fill('200');
   await page.getByLabel('Academic session').fill('2026/2027');
   await page.getByLabel('Matric Number').fill('21/1234');
+  // A complete form, agreement included, so the one error is the passwords.
+  await page.getByRole('checkbox', { name: 'I agree to the Terms & Conditions.' }).check();
   await page.getByRole('button', { name: 'Create account' }).click();
 
   const confirm = page.getByLabel('Confirm password');

@@ -4,6 +4,9 @@
 // bearer header. A 401 clears the session so the app falls back to login
 // rather than showing a half-authenticated screen.
 
+import { announce, REMINDERS_CHANGED } from '../lib/liveEvents.js';
+import { PASSWORD_RESET_AVAILABLE, PASSWORD_RESET_PATHS } from '../lib/features.js';
+
 const BASE_URL = import.meta.env?.VITE_API_URL ?? '';
 const TOKEN_KEY = 'academicai.token';
 
@@ -57,6 +60,11 @@ export class ApiError extends Error {
 }
 
 async function request(method, path, body) {
+  // Switched-off features cannot be reached from any screen: the request is
+  // refused here, before anything leaves the browser (lib/features.js).
+  if (!PASSWORD_RESET_AVAILABLE && PASSWORD_RESET_PATHS.has(path)) {
+    throw new ApiError(503, { error: 'unavailable', message: 'Password reset is not available yet.' });
+  }
   // FormData carries its own multipart boundary, so the Content-Type header
   // must be left off entirely for the browser to set it correctly.
   const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
@@ -96,6 +104,10 @@ async function request(method, path, body) {
     }
     throw new ApiError(response.status, payload);
   }
+  // Every reminder write, from whichever screen made it (the reminders page,
+  // an event, a chat suggestion), tells the bell - which then learns when the
+  // new next reminder is due. One place, so no caller can forget.
+  if (method !== 'GET' && /^\/reminders(\/|\?|$)/.test(path)) announce(REMINDERS_CHANGED);
   return payload;
 }
 

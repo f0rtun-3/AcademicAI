@@ -13,6 +13,21 @@
 // when a person is actually looking. Polling stops entirely while the tab is
 // hidden: a background tab asking every minute forever is the reason this kind
 // of thing gets blamed for battery life.
+//
+// ON TIME, NOT EVENTUALLY
+// -----------------------
+// A reminder is the one notification whose moment is known in advance, so the
+// fixed poll is not what finds it. Each response says when this person's next
+// reminder is due (`next_reminder_at`), and the bell asks again just after
+// that - the worker checks for due reminders every two seconds, so the
+// notification exists by then and the toast appears within seconds of the
+// reminder's time. If the worker is running late, the bell asks again shortly;
+// if it is not running at all, the bell stops asking early and the regular
+// poll carries on. The hint only says WHEN to ask. What the bell shows is
+// still only what the server returned.
+//
+// A reminder created, edited or cancelled anywhere (liveEvents.js) makes the
+// bell re-read at once, so the hint is never an old one.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,10 +37,21 @@ import { whenParts } from './ui.jsx';
 import NotificationToasts from './NotificationToasts.jsx';
 import { usePresence } from './motion.js';
 import { notificationKindLabel, notificationViewLabel } from '../lib/vocabulary.js';
+import { announce, listen, NOTIFICATIONS_ARRIVED, REMINDERS_CHANGED } from '../lib/liveEvents.js';
 
-// Slow enough to be invisible in aggregate, fast enough that a reminder
-// arriving while you are reading the page shows up on its own.
-const POLL_MS = 45000;
+// For everything that is not a reminder (a rep's announcement, a changed
+// deadline): slow enough to be invisible in aggregate, quick enough that it
+// shows up on its own while you are reading. Reminders do not wait for it.
+const POLL_MS = 30000;
+
+// Just after a reminder's time: the worker checks every 2s, so by now it has
+// had its chance to fire it.
+const DUE_GRACE_MS = 2500;
+// Due but not in yet - the worker is mid-cycle or behind. Ask again soon...
+const RECHECK_MS = 3000;
+// ...for this long. Past that the worker is not running, and polling hard
+// would change nothing; the regular poll carries on.
+const LATE_WINDOW_MS = 2 * 60 * 1000;
 
 // A stack, not a wall. Anything beyond this waits in the bell.
 const MAX_TOASTS = 3;
@@ -51,8 +77,8 @@ function when(value) {
   if (minutes < 60 * 24) return `${Math.round(minutes / 60)}h ago`;
   // The whole instant, not its first ten characters: those are the UTC date,
   // and whenParts reads the day on the university's clock.
-  const { top, bottom } = whenParts(value);
-  return `${top} ${bottom}`;
+  const { top, bottom, year } = whenParts(value);
+  return year ? `${top} ${bottom} ${year}` : `${top} ${bottom}`;
 }
 
 export default function NotificationBell() {
@@ -80,13 +106,37 @@ export default function NotificationBell() {
   // only ids that were not in the set, so a focus refresh or a poll that
   // returns the same rows produces nothing.
   const seen = useRef(null);
+  // The one pending "ask again at the reminder's time" timer.
+  const dueTimer = useRef(null);
 
   const load = useCallback(async () => {
+    // Replaces any earlier timer: every response carries the current hint.
+    function scheduleDueCheck(nextAt) {
+      clearTimeout(dueTimer.current);
+      dueTimer.current = null;
+      const due = nextAt ? Date.parse(nextAt) : NaN;
+      if (Number.isNaN(due)) return;
+      const now = Date.now();
+      let wait;
+      if (due > now) wait = due - now + DUE_GRACE_MS;
+      else if (now - due < LATE_WINDOW_MS) wait = RECHECK_MS;
+      else return;
+      // Further off than two polls: a later response will schedule it (and a
+      // timer that long is past what setTimeout holds reliably).
+      if (wait > 2 * POLL_MS) return;
+      dueTimer.current = setTimeout(() => {
+        dueTimer.current = null;
+        // Hidden: skip. Coming back to the tab reloads, which finds it.
+        if (document.visibilityState === 'visible') load();
+      }, wait);
+    }
+
     try {
       const data = await api.get('/notifications');
       const list = data.notifications ?? [];
       setItems(list);
       setUnread(data.unread ?? 0);
+      scheduleDueCheck(data.next_reminder_at);
 
       if (seen.current === null) {
         // First sight. Record, announce nothing.
@@ -97,6 +147,9 @@ export default function NotificationBell() {
       list.forEach((n) => seen.current.add(n.id));
       if (fresh.length > 0) {
         setArrivals((n) => n + 1);
+        // The reminders list and the dashboard re-read, so a reminder reads
+        // "Sent" the moment its toast appears rather than after a reload.
+        announce(NOTIFICATIONS_ARRIVED, { kinds: fresh.map((n) => n.kind) });
         setToasts((prev) => {
           const known = new Set(prev.map((t) => t.id));
           const added = fresh
@@ -120,6 +173,7 @@ export default function NotificationBell() {
       // A failed poll is not worth a banner. The bell simply shows what it
       // last knew; the next tick tries again.
     }
+
   }, []);
 
   useEffect(() => {
@@ -131,10 +185,15 @@ export default function NotificationBell() {
     const onFocus = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onFocus);
     window.addEventListener('focus', onFocus);
+    // A reminder was just set or changed: when the next one is due may be
+    // different now.
+    const unlisten = listen(REMINDERS_CHANGED, onFocus);
     return () => {
       clearInterval(tick);
+      clearTimeout(dueTimer.current);
       document.removeEventListener('visibilitychange', onFocus);
       window.removeEventListener('focus', onFocus);
+      unlisten();
     };
   }, [load]);
 

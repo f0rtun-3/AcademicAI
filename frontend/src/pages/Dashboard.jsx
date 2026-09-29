@@ -16,13 +16,14 @@
 // Coming up: the attention row already carries the date, and says what
 // changed, which is the more useful of the two readings.
 
+import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { useResource } from '../components/useResource.js';
 import { EmptyState, ErrorState, Loading } from '../components/States.jsx';
 import {
-  Board, CommunityStatus, Completion, DueLabel, Facts, Notice, PageHeader, Row, StateChip,
+  Board, CommunityStatus, Completion, DueLabel, Facts, Notice, Row, StateChip,
   StatusBadge, daysUntil, localTime, longDate, todayISO, whenParts,
 } from '../components/ui.jsx';
 import {
@@ -33,8 +34,15 @@ import { isAssessment } from '../lib/calendar.js';
 import { needsAttention } from '../lib/attention.js';
 import { describeChange, eventTypeLabel, eventTypeNoun } from '../lib/vocabulary.js';
 import { reminderLocal } from '../lib/academicTime.js';
+import { listen, NOTIFICATIONS_ARRIVED } from '../lib/liveEvents.js';
 
 const NEXT_DAYS = 7;
+
+// Written out, never delegated to the runtime locale: "Saturday" must not
+// become something else because the browser is set to another language.
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+                'September', 'October', 'November', 'December'];
 
 function eventMeta(event) {
   const parts = [eventTypeLabel(event.event_type)];
@@ -79,7 +87,7 @@ export default function Dashboard() {
   const { isRep } = useAuth();
   const navigate = useNavigate();
   const openEvent = (id) => navigate(`/events/${id}`);
-  const { status, data, error, reload } = useResource(async () => {
+  const { status, data, error, reload, refresh } = useResource(async () => {
     const dashboard = await api.get('/dashboard');
     // The cancelled-event rows the band needs are not in `upcoming`, which is
     // scheduled-only. Reading the calendar as well composes two authoritative
@@ -93,6 +101,9 @@ export default function Dashboard() {
     }
     return { ...dashboard, allEvents: all };
   });
+  // Something arrived in the bell - a reminder fired, a rep published - so
+  // what this page shows may have changed. Re-read quietly, in place.
+  useEffect(() => listen(NOTIFICATIONS_ARRIVED, () => refresh()), [refresh]);
 
   if (status === 'loading') return <Loading label="Loading your dashboard…" />;
   if (status === 'error') return <ErrorState message={error} onRetry={reload} />;
@@ -118,6 +129,14 @@ export default function Dashboard() {
   const pendingReminders = (reminders ?? []).filter((r) => r.status === 'PENDING');
   const archived = community.status === 'ARCHIVED';
 
+  // Today on the university's clock, split for the header's numeral.
+  const todayDate = new Date(`${today}T00:00:00`);
+  const todayParts = {
+    day: todayDate.getDate(),
+    weekday: WEEKDAYS[todayDate.getDay()],
+    month: `${MONTHS[todayDate.getMonth()]} ${todayDate.getFullYear()}`,
+  };
+
   // The day in one line: what is due today, what changed, what you set.
   const dueToday = upcoming.filter((e) => e.event_date === today && !e.completed).length;
   const eventsForWeek = allEvents ?? upcoming;
@@ -127,21 +146,25 @@ export default function Dashboard() {
     // column and the personal and community side in a narrower one. Content
     // arrives in three short beats (styles.css §31).
     <div className="stack stack--loose dash">
-      {/* The day, on one surface: the date and greeting, the three facts that
-        * matter this morning, and the week ahead at a glance. The one lit
-        * element on the dashboard is today in the week strip. */}
-      <PageHeader
-        surface
-        className="dashhead"
-        eyebrow={longDate(today)}
-        title={greeting}
-        action={(
-          <Link className="btn btn--ai" to="/chat">
-            <IconChat size={18} />
-            Ask AcademicAI
-          </Link>
-        )}
-        meta={<>
+      {/* THE DAY. An open editorial composition on the page ground rather
+        * than another card: today's date set as a very large numeral - the
+        * product's time signature at full scale - beside the greeting and the
+        * day's pulse. The week ahead follows as its own surface. */}
+      <header className="today">
+        <p className="today__date" aria-hidden="true">
+          <span className="today__num">{todayParts.day}</span>
+          <span className="today__cal">
+            <span className="today__dow">{todayParts.weekday}</span>
+            <span className="today__month">{todayParts.month}</span>
+          </span>
+        </p>
+        <div className="today__main">
+          {/* The numeral beside this is decorative, so the full date is
+              said here for a screen reader. */}
+          <p className="eyebrow-label">
+            Today<span className="sr-only">, {longDate(today)}</span>
+          </p>
+          <h1 className="today__title">{greeting}</h1>
           <ul className="pulse" aria-label="Today at a glance">
             <li className={dueToday ? 'pulse--warn' : undefined}>
               {dueToday ? `${dueToday} due today` : 'Nothing due today'}
@@ -156,11 +179,26 @@ export default function Dashboard() {
                 {pendingReminders.length} reminder{pendingReminders.length === 1 ? '' : 's'} set
               </li>
             )}
+            {community.status !== 'ACTIVE' && (
+              <li className="pulse--plain"><CommunityStatus status={community.status} /></li>
+            )}
           </ul>
-          {community.status !== 'ACTIVE' && <CommunityStatus status={community.status} />}
-        </>}>
+        </div>
+        <div className="today__action">
+          <Link className="btn btn--ai" to="/chat">
+            <IconChat size={18} />
+            Ask AcademicAI
+          </Link>
+        </div>
+      </header>
+
+      <section className="weekpanel" aria-labelledby="week-heading">
+        <div className="weekpanel__head">
+          <h2 className="eyebrow-label" id="week-heading">The next seven days</h2>
+          <Link className="linkish" to="/calendar">Open the calendar</Link>
+        </div>
         <WeekStrip events={eventsForWeek} today={today} />
-      </PageHeader>
+      </section>
 
       {archived && (
         <Notice tone="none" label="Session archived">

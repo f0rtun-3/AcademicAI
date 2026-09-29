@@ -78,6 +78,11 @@ def close_db(_exc=None):
 # list brings an already-deployed SQLite file up to date. Keep it small.
 _ADDED_COLUMNS = (
     ("users", "student_id_number", "TEXT"),
+    # Terms & Conditions acceptance, recorded at registration. Additive and
+    # nullable: an account created before the Terms existed keeps NULL, which
+    # is the truth - it never agreed to a version.
+    ("users", "terms_version", "TEXT"),
+    ("users", "terms_accepted_at", "TEXT"),
     ("identity_verifications", "provider", "TEXT"),
     ("identity_verifications", "authoritative", "INTEGER NOT NULL DEFAULT 0"),
     ("identity_verifications", "evidence_format", "TEXT"),

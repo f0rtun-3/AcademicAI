@@ -152,7 +152,7 @@ describe('profile', () => {
     mockApi({ '/auth/me': { ...STUDENT_SESSION,
                             user: { ...STUDENT_SESSION.user, student_id_number: 'BU/SEN/0001' } } });
     renderWithAuth(<ProfilePage />);
-    expect(await screen.findByText('Matric No.')).toBeInTheDocument();
+    expect(await screen.findByText('Matric number')).toBeInTheDocument();
     expect(screen.getByText('BU/SEN/0001')).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/student id/i);
     expect(document.body.textContent).toMatch(/has not otherwise confirmed your identity/i);
@@ -164,7 +164,8 @@ describe('profile', () => {
     // status the product no longer produces.
     mockApi({ '/auth/me': STUDENT_SESSION });
     renderWithAuth(<ProfilePage />);
-    await screen.findByText('Verification');
+    // The one claim, stated beside what it does NOT mean.
+    await screen.findByText(/What “verified” means/);
     const body = document.body.textContent;
     expect(body).toMatch(/email address has been verified/i);
     expect(body).not.toMatch(/identity verified|identity has been verified/i);
@@ -181,18 +182,19 @@ describe('profile', () => {
     renderWithAuth(<ProfilePage />);
     const value = await screen.findByText('21/1234');
     expect(value).toBeInTheDocument();
-    // It sits in the Academic panel with the other self-declared profile
-    // fields, not in the Verification panel.
-    const academic = value.closest('.panel');
-    expect(academic.textContent).toMatch(/Academic/);
+    // It sits in the academic record with the other self-declared profile
+    // fields, away from anything that says what was verified.
+    const academic = value.closest('.pblock');
+    expect(academic.textContent).toMatch(/Academic record/);
     expect(academic.textContent).not.toMatch(/verified|confirmed|validated/i);
   });
 
   it('keeps the academic block read-only and points at transfer (J·6)', async () => {
     mockApi({ '/auth/me': STUDENT_SESSION });
     renderWithAuth(<ProfilePage />);
-    expect(await screen.findByText(/These are read-only/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'request a transfer' })).toBeInTheDocument();
+    // Said on the block itself, and the way to change it is a transfer.
+    expect(await screen.findByText('Read-only')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'requesting a transfer' })).toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 });

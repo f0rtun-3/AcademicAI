@@ -121,7 +121,8 @@ export default function AgendaView({ groups, onOpen, todayKey, today }) {
         // A month view legitimately includes days that have passed. They are
         // dimmed rather than hidden: the record still matters, but the eye
         // should land on what is still ahead.
-        <section className={`agday${date && date < todayKey ? ' agday--past' : ''}`}
+        <section className={`agday${date && date < todayKey ? ' agday--past' : ''}`
+                            + `${date === todayKey ? ' agday--today' : ''}`}
                  key={date ?? 'undated'}>
           <DayHeading date={date} isToday={date === todayKey} count={items.length} />
           <div className="agday__list">

@@ -21,6 +21,7 @@ import { useAuth } from '../auth/AuthContext.jsx';
 import AuthLayout from '../components/AuthLayout.jsx';
 import { ErrorBanner, SuccessBanner } from '../components/States.jsx';
 import { Field, Notice, PasswordInput } from '../components/ui.jsx';
+import { TERMS_VERSION } from '../lib/terms.js';
 
 const EMPTY = {
   full_name: '', email: '', password: '', confirm_password: '',
@@ -28,11 +29,17 @@ const EMPTY = {
   // Wire field name, unchanged. The user-facing word is Matric Number (C·12).
   student_id_number: '',
 };
+// Fields a refusal can be shown beside: the form's inputs, and the agreement.
+const FIELDS = new Set([...Object.keys(EMPTY), 'accept_terms']);
+const TERMS_REQUIRED = 'Agree to the Terms & Conditions to create your account.';
 
 export default function SignUp() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(EMPTY);
+  // Unticked until the student ticks it. Sent with the registration and
+  // checked again by the backend, which records the version agreed to.
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -100,10 +107,19 @@ export default function SignUp() {
       focusField('confirm_password');
       return;
     }
+    // The agreement, before anything is sent. The backend refuses without it
+    // too; this is what says so beside the box instead of after a round trip.
+    if (!agreed) {
+      setFieldErrors({ accept_terms: TERMS_REQUIRED });
+      focusField('accept_terms');
+      return;
+    }
     setFieldErrors({});
     setBusy(true);
     try {
-      const created = await api.post('/auth/register', form);
+      const created = await api.post('/auth/register', {
+        ...form, accept_terms: true, terms_version: TERMS_VERSION,
+      });
       // Say what actually happened, in all three cases. "Check your email"
       // sends someone hunting for a message that was never sent, and this
       // deployment may not verify email at all.
@@ -120,7 +136,7 @@ export default function SignUp() {
       navigate(created?.next_step === 'verify_email' ? '/verify-email' : '/');
     } catch (err) {
       const field = err?.details?.field;
-      if (field && field in EMPTY) {
+      if (field && FIELDS.has(field)) {
         setFieldErrors({ [field]: err.message });
         focusField(field);
       } else {
@@ -264,11 +280,57 @@ export default function SignUp() {
                  hint="Your university matric number. AcademicAI does not currently verify this information." />
         </fieldset>
 
-        <button type="submit" className="btn btn--primary btn--block" disabled={busy}
-                aria-busy={busy || undefined}
-                style={{ marginTop: 'var(--s5)' }}>
+        {/* The agreement. A real control in the form's validation: unticked
+            by default, required before anything is sent, and recorded by the
+            backend as the version agreed to and when. The link opens a new
+            tab, so reading the Terms never loses a half-filled form - and it
+            stops its click at the link, so following it never ticks the box. */}
+        <div className={`agree${fieldErrors.accept_terms ? ' agree--error' : ''}`}>
+          {/* The whole row is the label, so the whole row is the target. */}
+          <label className="agree__row">
+          <input type="checkbox" id="accept_terms" className="agree__box"
+                 checked={agreed}
+                 aria-invalid={fieldErrors.accept_terms ? 'true' : undefined}
+                 aria-describedby={fieldErrors.accept_terms ? 'accept_terms-err' : undefined}
+                 onChange={(event) => {
+                   setAgreed(event.target.checked);
+                   setFieldErrors((prev) => {
+                     if (!prev.accept_terms) return prev;
+                     const next = { ...prev };
+                     delete next.accept_terms;
+                     return next;
+                   });
+                 }} />
+          <span className="agree__label">
+            I agree to the{' '}
+            <Link to="/terms" target="_blank" rel="noopener"
+                  onClick={(event) => event.stopPropagation()}>
+              Terms &amp; Conditions
+            </Link>.
+          </span>
+          </label>
+          {fieldErrors.accept_terms && (
+            <p className="err agree__err" id="accept_terms-err">{fieldErrors.accept_terms}</p>
+          )}
+        </div>
+
+        {/* Until the box is ticked the button says so: muted, with the reason
+            under it. aria-disabled rather than disabled, so it stays focusable
+            and pressing it explains itself (the box is flagged and focused). */}
+        <button type="submit"
+                className={`btn btn--primary btn--block signup__submit${agreed ? '' : ' btn--waiting'}`}
+                disabled={busy} aria-busy={busy || undefined}
+                aria-disabled={!agreed || undefined}
+                aria-describedby={agreed || fieldErrors.accept_terms ? undefined : 'create-needs-terms'}>
           {busy ? 'Creating account…' : 'Create account'}
         </button>
+        {/* Once the box itself says why (after a refused press), this line
+            would only repeat it. */}
+        {!agreed && !fieldErrors.accept_terms && (
+          <p className="t-meta agree__need" id="create-needs-terms">
+            Agree to the Terms &amp; Conditions above to create your account.
+          </p>
+        )}
       </form>
     </AuthLayout>
   );

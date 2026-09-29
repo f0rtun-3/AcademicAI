@@ -42,6 +42,9 @@ export default function PublicNav() {
   }, [open]);
 
   const signedIn = status === 'ready';
+  // The section links are anchors on the landing page. From any other public
+  // page (the Terms) they lead back to it, to that section.
+  const hrefOf = (href) => (pathname === '/' ? href : `/${href}`);
 
   return (
     <header className="pubnav">
@@ -50,7 +53,7 @@ export default function PublicNav() {
 
         <nav className="pubnav__links" aria-label="Sections of this page">
           {SECTIONS.map((item) => (
-            <a key={item.href} href={item.href}>{item.label}</a>
+            <a key={item.href} href={hrefOf(item.href)}>{item.label}</a>
           ))}
         </nav>
 
@@ -76,8 +79,14 @@ export default function PublicNav() {
       {open && (
         <div className="pubsheet" id="public-menu">
           {SECTIONS.map((item) => (
-            <a key={item.href} href={item.href} onClick={() => setOpen(false)}>{item.label}</a>
+            <a key={item.href} href={hrefOf(item.href)} onClick={() => setOpen(false)}>{item.label}</a>
           ))}
+          {/* On a phone the bar has no room for the theme control, so it
+              lives here instead (styles.css hides the bar's copy). */}
+          <div className="pubsheet__theme">
+            <span className="t-label">Theme</span>
+            <ThemeToggle />
+          </div>
           <div className="pubsheet__actions">
             {signedIn ? (
               <Link className="btn btn--primary" to="/dashboard">Open AcademicAI</Link>

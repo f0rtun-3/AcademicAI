@@ -205,8 +205,9 @@ export default function ChatPage() {
         * dot that is always on. It turns warning when the last request could
         * not reach the server, because then the dot would be a lie. */}
       <header className="chathead">
-        <span className="chathead__mark" aria-hidden="true"><BrandMark size={38} radius={9} /></span>
+        <span className="chathead__mark" aria-hidden="true"><BrandMark size={44} radius={13} /></span>
         <div className="chathead__text">
+          <p className="eyebrow-label chathead__label">Assistant</p>
           <h1 className="chathead__name">AcademicAI Assistant</h1>
           <p className="chathead__lede">
             Your academic information, in one place. It reads your community&apos;s

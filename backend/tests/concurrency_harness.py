@@ -10,6 +10,9 @@ import threading
 from academicai import clock
 from academicai.app import create_app
 from academicai.config import TestConfig
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 DOMAIN = "student.babcock.edu.ng"
 
@@ -49,7 +52,7 @@ def make_member(app, department="Software Engineering", level="200",
     name = f"Conc {i}"
     sid = f"BU/SEN/{i:04d}"
 
-    reg = client.post("/api/auth/register", json={
+    reg = client.post("/api/auth/register", json={**TERMS_ACCEPTED,
         "full_name": name, "email": email, "password": "Password123",
         "confirm_password": "Password123", "university": "Babcock University",
         "department": department, "level": level,

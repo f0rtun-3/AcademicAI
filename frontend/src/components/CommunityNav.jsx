@@ -1,6 +1,7 @@
 // The Community sub-navigation, shared by every Community route.
 //
 //   /community             Overview
+//   /community/members     Members
 //   /community/elections   Elections
 //   /community/membership  Membership
 //   /community/manage      Manage (verified rep only)
@@ -16,6 +17,7 @@ import { NavLink } from 'react-router-dom';
 export default function CommunityNav({ isRep }) {
   const items = [
     { to: '/community', label: 'Overview', end: true },
+    { to: '/community/members', label: 'Members' },
     { to: '/community/elections', label: 'Elections' },
     { to: '/community/membership', label: 'Membership' },
   ];

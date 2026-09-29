@@ -5,14 +5,18 @@
 // there are no Privacy or Terms pages — linking to a 404, or inventing legal
 // text, would both be worse than omitting them.
 //
-// No invented email address or social accounts either. The one factual line it
-// does carry is the product's own limitation, which belongs in the footer of
-// every page rather than buried in an About section.
+// No social accounts either. The contact address lives in the page's last
+// section (#contact), which the Feedback link below leads to. The one legal
+// page that exists - the Terms - sits in the same column, not a strip of its
+// own under the footer.
 
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Brand from './Brand.jsx';
 
 export default function PublicFooter() {
+  // Section anchors live on the landing page; from the Terms they lead back.
+  const { pathname } = useLocation();
+  const at = (hash) => (pathname === '/' ? hash : `/${hash}`);
   return (
     <footer className="pubfooter">
       <div className="wrap">
@@ -28,10 +32,10 @@ export default function PublicFooter() {
           <div>
             <h4>Product</h4>
             <ul>
-              <li><a href="#how">How it works</a></li>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#roles">For students &amp; reps</a></li>
-              <li><a href="#trust">How official updates work</a></li>
+              <li><a href={at('#how')}>How it works</a></li>
+              <li><a href={at('#features')}>Features</a></li>
+              <li><a href={at('#roles')}>For students &amp; reps</a></li>
+              <li><a href={at('#trust')}>How official updates work</a></li>
             </ul>
           </div>
 
@@ -40,14 +44,10 @@ export default function PublicFooter() {
             <ul>
               <li><Link to="/sign-up">Create an account</Link></li>
               <li><Link to="/login">Log in</Link></li>
-              <li><a href="#contact">Feedback</a></li>
+              <li><a href={at('#contact')}>Feedback</a></li>
+              <li><Link to="/terms">Terms &amp; Conditions</Link></li>
             </ul>
           </div>
-        </div>
-
-        <div className="pubfooter__base">
-          <span>AcademicAI — a student project, not a university system.</span>
-          <span>Built for Nigerian universities</span>
         </div>
       </div>
     </footer>

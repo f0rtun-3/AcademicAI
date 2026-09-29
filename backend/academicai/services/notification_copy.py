@@ -109,34 +109,47 @@ def event_cancelled(event, course_code=None):
     }
 
 
+def event_line(row):
+    """What an event is and when, in one sentence: "Due Monday 28 September at
+    23:59." or "Test on Wednesday 30 September at 14:00 in B107."
+
+    `row` carries event_type, event_date, event_time and venue. The day is
+    named in full rather than as "today": a notification is read again later,
+    from the bell's history, and "today" would then be wrong.
+    """
+    when = wording.when_phrase(row["event_date"], row["event_time"])
+    if wording.is_due_type(row["event_type"]):
+        return f"Due {when}." if when else "The due date has not been confirmed."
+    noun = wording.capitalise(wording.type_noun(row["event_type"]))
+    line = f"{noun} on {when}" if when else f"{noun}, date to be confirmed"
+    if row["venue"]:
+        line += f" in {row['venue']}"
+    return line + "."
+
+
 def event_reminder(row, course_code=None):
     """`row` carries the event's own columns (title, event_type, event_date,
     event_time, venue) and its event_id."""
-    when = wording.when_phrase(row["event_date"], row["event_time"])
-    if wording.is_due_type(row["event_type"]):
-        body = f"Due {when}." if when else "The due date has not been confirmed."
-    else:
-        noun = wording.capitalise(wording.type_noun(row["event_type"]))
-        body = f"{noun} on {when}" if when else f"{noun}, date to be confirmed"
-        if row["venue"]:
-            body += f" in {row['venue']}"
-        body += "."
     return {
         "kind": EVENT_REMINDER,
         "link": f"/events/{row['event_id']}",
         "app_subject": wording.named_event(row["title"], course_code),
-        "app_body": body,
+        "app_body": event_line(row),
     }
 
 
 def personal_reminder(row):
-    # The kind label already says "Reminder", and the title is the whole
-    # message the student wrote for themselves - so there is no body to add.
+    # The kind label already says "Reminder", and the title is the message the
+    # student wrote for themselves. Unlinked, that is the whole of it. Linked
+    # to an event, the body adds what the event is and when - the toast then
+    # reads "COS202 Assignment / Due Monday 28 September at 23:59." rather than
+    # a bare title.
+    linked = row["event_id"] is not None and "event_type" in row.keys() and row["event_type"]
     return {
         "kind": PERSONAL_REMINDER,
         "link": REMINDERS_LINK,
         "app_subject": row["title"],
-        "app_body": None,
+        "app_body": event_line(row) if linked else None,
     }
 
 

@@ -11,6 +11,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+// These fill the whole nine-field sign-up form key by key; under a full
+// parallel run that brushes the 5s default, so this file allows longer.
+vi.setConfig({ testTimeout: 15000 });
 import ChatPage from '../src/pages/ChatPage.jsx';
 import CommunityPage from '../src/pages/CommunityPage.jsx';
 import EventDetailPage from '../src/pages/EventDetailPage.jsx';
@@ -165,7 +168,7 @@ describe('the toast stack', () => {
 const REGISTRY = { universities: [{ id: 1, name: 'Babcock University',
   domains: [{ domain: 'student.babcock.edu.ng', domain_type: 'STUDENT' }] }] };
 
-async function fillSignUp(user, { confirm = 'Password123' } = {}) {
+async function fillSignUp(user, { confirm = 'Password123', agree = true } = {}) {
   await screen.findByLabelText('University');
   await waitFor(() => expect(screen.getByLabelText('University').tagName).toBe('SELECT'));
   await user.type(screen.getByLabelText('Full name'), 'Ada Student');
@@ -177,6 +180,7 @@ async function fillSignUp(user, { confirm = 'Password123' } = {}) {
   await user.type(screen.getByLabelText('Level'), '200');
   await user.type(screen.getByLabelText('Academic session'), '2026/2027');
   await user.type(screen.getByLabelText('Matric Number'), '21/1234');
+  if (agree) await user.click(screen.getByRole('checkbox', { name: /I agree to the Terms/ }));
 }
 
 function describedBy(field) {

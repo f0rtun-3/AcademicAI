@@ -1,6 +1,9 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+// These fill the whole nine-field sign-up form key by key; under a full
+// parallel run that brushes the 5s default, so this file allows longer.
+vi.setConfig({ testTimeout: 15000 });
 import SignUp from '../src/pages/SignUp.jsx';
 import { mockApi, renderWithAuth } from './helpers.jsx';
 
@@ -33,6 +36,8 @@ async function fillRequired(user, { email, university }) {
   await user.type(screen.getByLabelText('Level'), '200');
   await user.type(screen.getByLabelText('Academic session'), '2026/2027');
   await user.type(screen.getByLabelText('Matric Number'), 'BU/SEN/0001');
+  // The agreement is part of a complete form.
+  await user.click(screen.getByRole('checkbox', { name: /I agree to the Terms/ }));
 }
 
 describe('institutional email guidance on sign-up', () => {

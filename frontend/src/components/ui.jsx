@@ -41,13 +41,23 @@ export function todayISO(now = new Date()) {
 // "Mon / 21 Sep", with today and tomorrow named rather than dated — the
 // departure-board column. Returns the two lines separately so the row can set
 // them on their own baselines.
+// A date more than about six months away carries its year, as `year`. "Wed"
+// over "29 Sep" reads as THIS 29 September: a reminder set a year out by a
+// slip of the date picker looked like this week's, and never fired. Near
+// dates stay short - "12 Jan" seen in December is not ambiguous. The year is
+// its own field (a third line in a row's date column) so the column keeps one
+// width and every row's title still shares a left edge.
+const FAR_DAYS = 180;
+
 export function whenParts(value, today = parseDate(todayISO())) {
   const date = parseDate(value);
   if (!date) return { top: '—', bottom: 'no date' };
   const days = Math.round((date - today) / 86400000);
-  if (days === 0) return { top: 'Today', bottom: `${date.getDate()} ${MONTHS[date.getMonth()]}` };
-  if (days === 1) return { top: 'Tomorrow', bottom: `${date.getDate()} ${MONTHS[date.getMonth()]}` };
-  return { top: DAYS[date.getDay()], bottom: `${date.getDate()} ${MONTHS[date.getMonth()]}` };
+  const bottom = `${date.getDate()} ${MONTHS[date.getMonth()]}`;
+  const year = Math.abs(days) > FAR_DAYS ? String(date.getFullYear()) : undefined;
+  if (days === 0) return { top: 'Today', bottom, year };
+  if (days === 1) return { top: 'Tomorrow', bottom, year };
+  return { top: DAYS[date.getDay()], bottom, year };
 }
 
 export function daysUntil(value, today = parseDate(todayISO())) {
@@ -319,6 +329,7 @@ export function Row({ when, title, meta, side, onClick, today = false, ...rest }
         <div className={whenCls}>
           <strong>{when.top}</strong>
           <DateLine text={when.bottom} />
+          {when.year && <span className="brow__year">{when.year}</span>}
         </div>
       )}
       <div className="brow__main">

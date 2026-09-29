@@ -1,13 +1,28 @@
-"""Email notifications and the outbox (spec 19).
+"""Notifications: one row, two channels (spec 19).
 
-Email is the only MVP channel. Recipients are resolved at publish time and
-written as concrete outbox rows, which is what stops a student who joins later
-from receiving a "new assignment" notice published before they arrived.
+A row is one thing that happened to one person, and it reaches them two ways:
+
+  in the app   the bell reads the row the moment it is inserted - the worker's
+               reminder job inserts it at the reminder's time. Nothing about
+               email can remove, hide or delay this.
+  by email     `dispatch_pending` sends the same row afterwards. `status`,
+               `attempts`, `sent_at` and `last_error` are the EMAIL's delivery
+               state and nothing else; the bell never reads them.
+
+Spec 19 named email as the MVP's only channel; the bell was added on top of
+the same outbox rows, so every notification - reminders included - is both
+shown in the app and emailed. An email that fails is recorded as failed and
+logged; the in-app notification is untouched.
+
+Recipients are resolved at publish time and written as concrete outbox rows,
+which is what stops a student who joins later from receiving a "new
+assignment" notice published before they arrived.
 
 Course-scoped recipients are the INTERSECTION of active community members and
 active course enrollments, so neither a stale enrollment row nor a former
 member can be notified.
 """
+import logging
 import sqlite3
 
 from .. import clock
@@ -15,6 +30,8 @@ from ..db.connection import execute, query_all, query_one, transaction
 from . import email_service
 
 MAX_ATTEMPTS = 5
+
+log = logging.getLogger("academicai.notifications")
 
 
 def _insert(user_id, community_id, subject, body, dedupe_key, conn,
@@ -206,11 +223,21 @@ def dispatch_pending(limit=100):
     for row in claimed:
         try:
             result = email_service.send(row["email"], row["subject"], row["body"])
-        except Exception as exc:  # delivery failure is expected and retryable
+        except Exception as exc:  # delivery failure is expected, and usually retryable
+            # A permanent refusal is not asked again; anything else is, up to
+            # MAX_ATTEMPTS. Either way only the EMAIL is marked - the row stays
+            # in the person's bell exactly as it was.
+            attempt = row["attempts"] + 1
+            permanent = getattr(exc, "permanent", False)
+            status = "FAILED" if permanent or attempt >= MAX_ATTEMPTS else "PENDING"
             with transaction() as conn:
-                status = "FAILED" if row["attempts"] + 1 >= MAX_ATTEMPTS else "PENDING"
                 execute("UPDATE notifications SET status = ?, last_error = ? WHERE id = ?",
                         (status, str(exc)[:200], row["id"]), conn=conn)
+            log.warning("email not delivered: notification=%s attempt=%s/%s %s: %s",
+                        row["id"], attempt, MAX_ATTEMPTS,
+                        "permanent, not retried" if permanent
+                        else ("giving up" if status == "FAILED" else "will retry"),
+                        str(exc)[:200])
             failed += 1
         else:
             # SENT means a provider accepted the message. A development backend

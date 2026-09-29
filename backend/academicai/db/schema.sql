@@ -35,6 +35,11 @@ CREATE TABLE IF NOT EXISTS users (
     -- anything. It is kept because the student owns it and it belongs on
     -- their record; it is not evidence and grants nothing.
     student_id_number TEXT,
+    -- The Terms & Conditions this account agreed to at registration: a stable
+    -- version id (auth_service.TERMS_VERSION) and when. NULL on accounts that
+    -- predate the Terms. Nothing else about the acceptance is kept.
+    terms_version     TEXT,
+    terms_accepted_at TEXT,
     created_at        TEXT NOT NULL,
     updated_at        TEXT NOT NULL
 );

@@ -3,7 +3,7 @@
 // One page, anchored sections, because the public story is a narrative and
 // reads better in order: what it is, the problem, how it works, what is in
 // it, who it is for, how official information is authorised, and only then
-// how to get in.
+// how to get in - and last, how to reach the people building it.
 //
 // COPY RULES THIS PAGE IS WRITTEN UNDER
 // -------------------------------------
@@ -19,13 +19,14 @@
 // AI proposes, a human course rep reviews, the backend authorises, the
 // database is the record.
 
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import PublicNav from '../components/PublicNav.jsx';
 import PublicFooter from '../components/PublicFooter.jsx';
-import ProductPreview from '../components/ProductPreview.jsx';
+import AcademicPhone from '../components/PhoneMockup.jsx';
 import { useAuth } from '../auth/AuthContext.jsx';
 import {
-  IconBell, IconBook, IconCalendar, IconChat, IconCheck, IconDashboard,
+  IconArrowRight, IconBell, IconBook, IconCalendar, IconChat, IconCheck, IconDashboard,
   IconInbox, IconMegaphone, IconShield, IconSpark, IconUser,
 } from '../components/icons.jsx';
 
@@ -78,19 +79,86 @@ const CHAIN = [
   { title: 'The database is the record', body: 'What is stored is what the community sees. Nothing else counts.', truth: true },
 ];
 
+// The six features, split the way the product itself is split: four are the
+// RECORD (what your reps publish, organised by time), two are the SIGNAL (the
+// assistant that reads it). The section shows that split rather than six
+// identical cards.
+// Where feedback goes: a real inbox, reached by the visitor's own email app.
+// Each reason fills in only the SUBJECT, so the message itself is theirs.
+const CONTACT_EMAIL = 'helloacademicai@gmail.com';
+const mailto = (subject) => `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}`;
+const CONTACT_REASONS = [
+  { title: 'Report a bug', body: 'Something isn’t working as expected.',
+    subject: 'AcademicAI — Bug Report' },
+  { title: 'Share feedback', body: 'Tell us what would make AcademicAI better.',
+    subject: 'AcademicAI — Feedback' },
+  { title: 'Ask a question', body: 'Questions about AcademicAI or how it works.',
+    subject: 'AcademicAI — Question' },
+];
+
+const RECORD_FEATURES = FEATURES.filter((f) => !['AI Chat', 'Add a message'].includes(f.title));
+const SIGNAL_FEATURES = FEATURES.filter((f) => ['AI Chat', 'Add a message'].includes(f.title));
+
+// A section's place in the page's narrative. The page IS read in order (see
+// the note at the top), so the numbering encodes a real sequence.
+function SectionMark({ n, label }) {
+  return (
+    <p className="smark">
+      <span className="smark__n">{n}</span>
+      <span className="smark__label">{label}</span>
+    </p>
+  );
+}
+
+// Adds `is-revealed` to each [data-reveal] block as it scrolls into view, so
+// sections settle in once rather than all being present at load. Without
+// IntersectionObserver, or under reduced motion, everything is simply shown:
+// the hidden starting state only applies once this has run (html.reveal-on).
+function useReveal() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || typeof IntersectionObserver === 'undefined') return undefined;
+    root.classList.add('reveal-on');
+    const seen = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-revealed');
+          seen.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    document.querySelectorAll('[data-reveal]').forEach((el) => seen.observe(el));
+    return () => { seen.disconnect(); root.classList.remove('reveal-on'); };
+  }, []);
+}
+
+// Arriving at "/#contact" from another page (the Terms' nav or footer): the
+// browser looked for #contact before React rendered it, so look again once
+// the page exists - and land there at once. The page's smooth scrolling is
+// for moving within it; arriving is not a journey down five screens.
+function useArrivalHash() {
+  useEffect(() => {
+    const id = window.location.hash.slice(1);
+    if (id) document.getElementById(id)?.scrollIntoView({ behavior: 'instant', block: 'start' });
+  }, []);
+}
+
 export default function Landing() {
   const { status } = useAuth();
   const signedIn = status === 'ready';
+  useReveal();
+  useArrivalHash();
 
   return (
     <div className="public">
       <PublicNav />
 
       <main className="public__main" id="main">
-        {/* ── Hero ───────────────────────────────────────────────────────── */}
+        {/* ── Hero: night, the product set on it ─────────────────────────── */}
         <section className="hero">
           <div className="wrap hero__grid">
-            <div>
+            <div className="hero__copy">
               <span className="eyebrow">For university students</span>
               <h1>Your academic life, in one place you can trust.</h1>
               <p className="hero__lede">
@@ -113,157 +181,221 @@ export default function Landing() {
                 Free to use with your university email. No card, no app to install.
               </p>
             </div>
-            <ProductPreview />
+            {/* The story in one picture: a message as it arrives in a group
+                chat - lower-case, buried, easy to miss - and the same thing on
+                AcademicAI, a dated record with a reminder that fires. The phone
+                is the real application at phone size. Illustrative and inert. */}
+            <div className="hero__visual" aria-hidden="true">
+              <p className="hero__raw">
+                <span className="hero__raw-who">Class group · 11:02 pm</span>
+                pls note cos202 assignment is due monday by 11:59pm, submit on the portal
+              </p>
+              <div className="phone-stage">
+                <div className="phone-float">
+                  <AcademicPhone className="phone--hero" />
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* ── The problem ────────────────────────────────────────────────── */}
-        <section className="section" id="problem">
-          <div className="wrap">
-            <div className="section__head">
-              <h2>Nothing is missing. It is just somewhere in the chat.</h2>
-              <p>
+        {/* ── 01 · The problem ───────────────────────────────────────────── */}
+        <section className="section section--problem" id="problem">
+          <div className="wrap split-ed" data-reveal>
+            <div className="split-ed__head">
+              <SectionMark n="01" label="The problem" />
+              <h2 className="ed-h2">Nothing is missing. It is just somewhere in the chat.</h2>
+              <p className="ed-lede">
                 Most academic information does get shared. The difficulty is that it
                 is shared as conversation — so it is not dated, not structured, and
                 not there when you go looking for it.
               </p>
             </div>
-            <div className="grid3">
+            <ul className="edlist">
               {PROBLEMS.map(({ Icon, title, body }) => (
-                <article className="card" key={title}>
-                  <span className="card__icon"><Icon size={20} /></span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </article>
+                <li className="edlist__item" key={title}>
+                  <span className="edlist__icon" aria-hidden="true"><Icon size={18} /></span>
+                  <div>
+                    <h3 className="edlist__title">{title}</h3>
+                    <p className="edlist__body">{body}</p>
+                  </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         </section>
 
-        {/* ── How it works ───────────────────────────────────────────────── */}
-        <section className="section section--tint" id="how">
-          <div className="wrap">
-            <div className="section__head">
-              <h2>How it works</h2>
-              <p>Three steps, and a human decides the one that matters.</p>
+        {/* ── 02 · How it works: three steps on the time spine ───────────── */}
+        <section className="section section--white" id="how">
+          <div className="wrap" data-reveal>
+            <div className="ed-head">
+              <SectionMark n="02" label="The process" />
+              <h2 className="ed-h2">How it works</h2>
+              <p className="ed-lede">Three steps, and a human decides the one that matters.</p>
             </div>
-            <div className="steps">
-              <div className="step">
-                <span className="step__n">Step 01</span>
+            <ol className="spine3">
+              <li className="spine3__step">
+                <span className="spine3__node" aria-hidden="true" />
+                <span className="spine3__n" aria-hidden="true">01</span>
                 <h3>Academic information arrives</h3>
                 <p>
                   A course rep publishes an event, or anyone pastes an announcement
                   they were sent for AcademicAI to interpret.
                 </p>
-              </div>
-              <div className="step">
-                <span className="step__n">Step 02</span>
+              </li>
+              <li className="spine3__step spine3__step--signal">
+                <span className="spine3__node" aria-hidden="true" />
+                <span className="spine3__n" aria-hidden="true">02</span>
                 <h3>AcademicAI organises it</h3>
                 <p>
                   Dates, times, venues and courses are pulled into structured records
                   scoped to your exact community — and a rep confirms anything official.
                 </p>
-              </div>
-              <div className="step">
-                <span className="step__n">Step 03</span>
+              </li>
+              <li className="spine3__step spine3__step--record">
+                <span className="spine3__node" aria-hidden="true" />
+                <span className="spine3__n" aria-hidden="true">03</span>
                 <h3>You know what matters, and when</h3>
                 <p>
                   It shows up on your dashboard and calendar, and you can set a
                   private reminder or just ask what is due.
                 </p>
-              </div>
-            </div>
+              </li>
+            </ol>
           </div>
         </section>
 
-        {/* ── Features ───────────────────────────────────────────────────── */}
+        {/* ── 03 · What is in it: the record, and the signal ─────────────── */}
         <section className="section" id="features">
           <div className="wrap">
-            <div className="section__head">
-              <h2>What is in it</h2>
-              <p>
+            <div className="ed-head" data-reveal>
+              <SectionMark n="03" label="Features" />
+              <h2 className="ed-h2">What is in it</h2>
+              <p className="ed-lede">
                 Built around one community at a time: your university, department,
                 level and academic session.
               </p>
             </div>
-            <div className="grid3">
-              {FEATURES.map(({ Icon, title, body }) => (
-                <article className="card card--hover" key={title}>
-                  <span className="card__icon"><Icon size={20} /></span>
-                  <h3>{title}</h3>
-                  <p>{body}</p>
-                </article>
-              ))}
+            <div className="duo">
+              <article className="duo__panel duo__panel--record" data-reveal>
+                <p className="duo__kicker">The record</p>
+                <p className="duo__line">What your course reps publish, organised by time.</p>
+                <ul className="duo__list">
+                  {RECORD_FEATURES.map(({ Icon, title, body }) => (
+                    <li key={title}>
+                      <span className="duo__icon" aria-hidden="true"><Icon size={17} /></span>
+                      <div>
+                        <h3>{title}</h3>
+                        <p>{body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+              <article className="duo__panel duo__panel--signal" data-reveal>
+                <p className="duo__kicker">The signal</p>
+                <p className="duo__line">The assistant that reads the record — and never writes it.</p>
+                {/* A glimpse of the assistant, illustrative and inert. */}
+                <div className="duo__chat" aria-hidden="true">
+                  <p className="duo__q">What is due this week?</p>
+                  <p className="duo__a">
+                    Two things: the COS202 assignment today at 23:59, and the SEN212
+                    quiz on Friday.
+                  </p>
+                </div>
+                <ul className="duo__list">
+                  {SIGNAL_FEATURES.map(({ Icon, title, body }) => (
+                    <li key={title}>
+                      <span className="duo__icon" aria-hidden="true"><Icon size={17} /></span>
+                      <div>
+                        <h3>{title}</h3>
+                        <p>{body}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </article>
             </div>
           </div>
         </section>
 
-        {/* ── Students and reps ──────────────────────────────────────────── */}
-        <section className="section section--tint" id="roles">
-          <div className="wrap grid2">
-            <article className="card">
-              <span className="card__icon"><IconUser size={20} /></span>
-              <h3>If you are a student</h3>
-              <p style={{ marginBottom: 'var(--s4)' }}>
-                Join the community for your department, level and session, and get
-                everything published to it.
-              </p>
-              <ul className="ticks">
-                <li><IconCheck size={16} /><span>See what is due, what changed and what was cancelled</span></li>
-                <li><IconCheck size={16} /><span>Set private reminders only you can see</span></li>
-                <li><IconCheck size={16} /><span>Ask the assistant about your own community&apos;s records</span></li>
-                <li><IconCheck size={16} /><span>Stand for election as a course representative</span></li>
-              </ul>
-            </article>
+        {/* ── 04 · Who it is for: two columns, not two cards ─────────────── */}
+        <section className="section section--white" id="roles">
+          <div className="wrap">
+            <div className="ed-head" data-reveal>
+              <SectionMark n="04" label="Who it is for" />
+              {/* The two columns carry their own headings; this keeps the
+                  page's outline whole for a screen reader. */}
+              <h2 className="sr-only">Who it is for</h2>
+            </div>
+            <div className="roles" data-reveal>
+              <article className="roles__col">
+                <span className="roles__icon" aria-hidden="true"><IconUser size={20} /></span>
+                <h3 className="ed-h3">If you are a student</h3>
+                <p className="roles__lede">
+                  Join the community for your department, level and session, and get
+                  everything published to it.
+                </p>
+                <ul className="ticks">
+                  <li><IconCheck size={16} /><span>See what is due, what changed and what was cancelled</span></li>
+                  <li><IconCheck size={16} /><span>Set private reminders only you can see</span></li>
+                  <li><IconCheck size={16} /><span>Ask the assistant about your own community&apos;s records</span></li>
+                  <li><IconCheck size={16} /><span>Stand for election as a course representative</span></li>
+                </ul>
+              </article>
 
-            <article className="card">
-              <span className="card__icon"><IconMegaphone size={20} /></span>
-              <h3>If you are a course representative</h3>
-              <p style={{ marginBottom: 'var(--s4)' }}>
-                Elected by your own community, and the only person who can publish
-                official information to it.
-              </p>
-              <ul className="ticks">
-                <li><IconCheck size={16} /><span>Publish events, timetable entries and announcements</span></li>
-                <li><IconCheck size={16} /><span>Review what the AI proposes before anything goes out</span></li>
-                <li><IconCheck size={16} /><span>Manage courses and approve who joins</span></li>
-                <li><IconCheck size={16} /><span>Hold authority only in your own community</span></li>
-              </ul>
-            </article>
+              <article className="roles__col">
+                <span className="roles__icon" aria-hidden="true"><IconMegaphone size={20} /></span>
+                <h3 className="ed-h3">If you are a course representative</h3>
+                <p className="roles__lede">
+                  Elected by your own community, and the only person who can publish
+                  official information to it.
+                </p>
+                <ul className="ticks">
+                  <li><IconCheck size={16} /><span>Publish events, timetable entries and announcements</span></li>
+                  <li><IconCheck size={16} /><span>Review what the AI proposes before anything goes out</span></li>
+                  <li><IconCheck size={16} /><span>Manage courses and approve who joins</span></li>
+                  <li><IconCheck size={16} /><span>Hold authority only in your own community</span></li>
+                </ul>
+              </article>
+            </div>
           </div>
         </section>
 
-        {/* ── Trust model ────────────────────────────────────────────────── */}
-        <section className="section" id="trust">
+        {/* ── 05 · Trust: the chain, on the spine, on night ──────────────── */}
+        <section className="section section--night" id="trust">
           <div className="wrap">
-            <div className="section__head">
-              <h2>The AI never publishes anything</h2>
-              <p>
+            <div className="ed-head" data-reveal>
+              <SectionMark n="05" label="Trust" />
+              <h2 className="ed-h2">The AI never publishes anything</h2>
+              <p className="ed-lede">
                 It reads and it proposes. A person decides. That order is the whole
                 point, and it does not bend.
               </p>
             </div>
-            <div className="chain">
-              {CHAIN.map(({ title, body, truth }) => (
-                <div className={`chain__link${truth ? ' chain__link--truth' : ''}`} key={title}>
+            {/* The trust model as a sequence along one line: it starts in the
+                signal (the AI's proposal) and ends in the record. */}
+            <ol className="chain" data-reveal>
+              {CHAIN.map(({ title, body, truth }, i) => (
+                <li className={`chain__link${truth ? ' chain__link--truth' : ''}`
+                               + `${i === 0 ? ' chain__link--signal' : ''}`} key={title}>
+                  <span className="chain__node" aria-hidden="true" />
                   <h4>{title}</h4>
                   <p>{body}</p>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
 
-            <div className="band" style={{ marginTop: 'var(--s7)' }}>
+            <div className="limits" data-reveal>
               <div>
-                <h3 className="t-section" style={{ marginBottom: 'var(--s3)' }}>
-                  What AcademicAI does not do
-                </h3>
-                <p className="t-body" style={{ color: 'var(--slate)' }}>
+                <h3 className="ed-h3">What AcademicAI does not do</h3>
+                <p className="limits__lede">
                   Being clear about the limits is part of being useful. AcademicAI
                   organises what your community shares with it — it is not a source
                   of authority about your university.
                 </p>
               </div>
-              <ul className="ticks">
+              <ul className="ticks ticks--night">
                 <li><IconShield size={16} /><span>
                   It does <strong>not</strong> verify your identity. Signing up
                   confirms you control a university email address, nothing more.
@@ -284,40 +416,13 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ── Contact / feedback ─────────────────────────────────────────── */}
-        <section className="section section--tint" id="contact">
-          <div className="wrap band">
-            <div className="section__head" style={{ marginBottom: 0 }}>
-              <h2>Feedback</h2>
-              <p>
-                AcademicAI is an early-stage student project and is actively being
-                built. What breaks, what is missing and what is confusing are all
-                worth hearing about.
-              </p>
-            </div>
-            <div className="card">
-              {/* No contact backend exists, so this does NOT pretend to send a
-                  message and there is no fabricated email address or form. It
-                  says where feedback actually goes today: to the person you got
-                  the link from. */}
-              <h3>How to get in touch</h3>
-              <p style={{ marginBottom: 'var(--s4)' }}>
-                There is no contact form yet — building one that silently discarded
-                your message would be worse than not having it.
-              </p>
-              <p>
-                If someone shared AcademicAI with you, send your feedback to them
-                directly. If you are already signed in, the fastest route is your
-                own course representative, who can raise it with the community.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Closing CTA ────────────────────────────────────────────────── */}
-        <section className="section">
+        {/* ── How to get in: one night surface ──────────────────────────
+            Straight after the trust model, as the page's opening note says:
+            how official information is authorised, and only then how to
+            get in. Contact follows it as the page's last word. */}
+        <section className="section section--cta">
           <div className="wrap">
-            <div className="cta">
+            <div className="cta" data-reveal>
               <h2>Start with your university email</h2>
               <p>
                 Create an account, join the community for your department and level,
@@ -334,6 +439,48 @@ export default function Landing() {
                 )}
               </div>
             </div>
+          </div>
+        </section>
+        {/* ── 06 · Contact: the last word ────────────────────────────────
+            The page opens on night with a statement and closes on night with
+            one, set the same way. One action - an email to a real inbox - and
+            three reasons that open the same email with its subject filled
+            in. No form: there is no backend for one, and a form that went
+            nowhere would be worse than an address. */}
+        <section className="section section--night shape" id="contact"
+                 aria-labelledby="shape-title">
+          <div className="wrap">
+            <div className="shape__head" data-reveal>
+              <SectionMark n="06" label="Contact" />
+              <h2 className="shape__title" id="shape-title">Help shape AcademicAI.</h2>
+              <div className="shape__body">
+                <p className="shape__lede">
+                  AcademicAI is built around how students actually manage school. If
+                  something feels confusing, missing, or unnecessarily difficult, tell us.
+                </p>
+                <div className="shape__act">
+                  <a className="btn shape__cta" href={mailto('AcademicAI — Feedback')}>
+                    Send us a message
+                    <IconArrowRight size={18} />
+                    <span className="sr-only"> (opens your email app)</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <ul className="shape__reasons" data-reveal aria-label="Or start with what it is about">
+              {CONTACT_REASONS.map(({ title, body, subject }) => (
+                <li key={title}>
+                  <a className="shape__reason" href={mailto(subject)}>
+                    <span className="shape__reason-title">
+                      {title}
+                      <IconArrowRight size={16} />
+                    </span>
+                    <span className="shape__reason-body">{body}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
       </main>

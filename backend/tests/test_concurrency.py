@@ -14,6 +14,9 @@ from academicai import clock
 from academicai.app import create_app
 from academicai.config import TestConfig
 from academicai.db.connection import DatabaseBusy, connect, query_all, query_one, transaction
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 pytestmark = pytest.mark.concurrency
 
@@ -45,7 +48,7 @@ def _seed(app):
     actors = []
     for i in range(4):
         email = f"conc{i}@student.babcock.edu.ng"
-        payload = {"full_name": f"Conc Student {i}", "email": email,
+        payload = {**TERMS_ACCEPTED, "full_name": f"Conc Student {i}", "email": email,
                    "password": "Password123", "confirm_password": "Password123",
                    "university": "Babcock University", "department": "Software Engineering",
                    "level": "200", "academic_session": "2026/2027",

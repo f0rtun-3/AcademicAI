@@ -15,6 +15,9 @@ from academicai import clock  # noqa: E402
 from academicai.app import create_test_app  # noqa: E402
 from academicai.security import rate_limit  # noqa: E402
 from academicai.services import email_service  # noqa: E402
+from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+# What the sign-up form sends when its Terms box is ticked.
+TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 BASE_TIME = datetime(2026, 9, 14, 9, 0, 0, tzinfo=timezone.utc)
 
@@ -113,7 +116,7 @@ def register():
         counter["n"] += 1
         n = counter["n"]
         name = name or f"Student {n}"
-        payload = dict(DEFAULT_PROFILE)
+        payload = {**TERMS_ACCEPTED, **DEFAULT_PROFILE}
         payload.update(profile)
         # The email domain must be one approved for the selected university
         # (Gate 1), so derive it rather than hard-coding one.
@@ -357,7 +360,7 @@ def seed_rep_community_over_http(app):
     actors = []
     for i in range(4):
         email = f"race{i}@student.babcock.edu.ng"
-        resp = client.post("/api/auth/register", json={
+        resp = client.post("/api/auth/register", json={**TERMS_ACCEPTED,
             "full_name": f"Race Student {i}", "email": email,
             "password": "Password123", "confirm_password": "Password123",
             "university": "Babcock University", "department": "Software Engineering",

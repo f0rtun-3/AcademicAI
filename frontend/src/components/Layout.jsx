@@ -15,14 +15,11 @@
 // for a verified rep and is absent otherwise — a role changes what is inside
 // the shell, never the shell itself.
 
-import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from '../auth/AuthContext.jsx';
-import { initials } from './ui.jsx';
 import Brand from './Brand.jsx';
 import ThemeToggle from './ThemeToggle.jsx';
 import NotificationBell from './NotificationBell.jsx';
-import { usePresence } from './motion.js';
+import AccountMenu from './AccountMenu.jsx';
 import {
   IconAdd, IconBell, IconCalendar, IconChat, IconCommunity, IconDashboard, IconUser,
 } from './icons.jsx';
@@ -57,28 +54,8 @@ function titleFor(pathname) {
 }
 
 export default function Layout() {
-  const { user, logout } = useAuth();
   const { pathname } = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-  // Kept mounted for its closing animation (usePresence), then removed.
-  const [menuShown, menuLeaving] = usePresence(menuOpen);
   const onChat = pathname.startsWith('/chat');
-
-  useEffect(() => { setMenuOpen(false); }, [pathname]);
-  useEffect(() => {
-    if (!menuOpen) return undefined;
-    const onKey = (event) => { if (event.key === 'Escape') setMenuOpen(false); };
-    const onClick = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) setMenuOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.addEventListener('mousedown', onClick);
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.removeEventListener('mousedown', onClick);
-    };
-  }, [menuOpen]);
 
   return (
     <div className="shell shell--rail">
@@ -169,31 +146,7 @@ export default function Layout() {
             is about you in the same way your account is. */}
         <NotificationBell />
 
-        <div ref={menuRef} style={{ position: 'relative' }}>
-          <button type="button" className="avatar" aria-haspopup="menu"
-                  aria-expanded={menuOpen}
-                  aria-label={`Account: ${user?.full_name ?? 'you'}`}
-                  onClick={() => setMenuOpen((open) => !open)}>
-            {initials(user?.full_name)}
-          </button>
-          {menuShown && (
-            <div className="menu" role="menu" data-state={menuLeaving ? 'closed' : 'open'}>
-              <div className="menu__who">
-                <strong>{user?.full_name ?? 'You'}</strong>
-                <span className="mono">{user?.email}</span>
-              </div>
-              <Link className="menu__item" role="menuitem" to="/profile">Profile</Link>
-              <Link className="menu__item" role="menuitem" to="/reminders">Your reminders</Link>
-              <Link className="menu__item" role="menuitem" to="/settings">Settings</Link>
-              <div className="menu__theme">
-                <span className="t-label">Theme</span>
-                <ThemeToggle />
-              </div>
-              <button type="button" className="menu__item" role="menuitem"
-                      onClick={logout}>Log out</button>
-            </div>
-          )}
-        </div>
+        <AccountMenu />
       </header>
 
       <main className="main" id="content">
