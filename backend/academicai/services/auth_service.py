@@ -396,7 +396,10 @@ def verify_email(user_id, code):
         if cursor.rowcount != 1:
             raise ValidationError("That code is no longer valid. Request a new one.",
                                   details={"reason": "no_active_code"})
-        execute("UPDATE users SET email_verified = 1, updated_at = ? WHERE id = ?",
+        # A code was entered, so that is now how the address was verified -
+        # including for an account first let through with verification off.
+        execute("""UPDATE users SET email_verified = 1, email_verification_method = 'OTP',
+                   updated_at = ? WHERE id = ?""",
                 (now, user_id), conn=conn)
         return query_one("SELECT * FROM users WHERE id = ?", (user_id,), conn=conn)
 
@@ -520,7 +523,19 @@ def change_email(user_id, new_email):
 
     A verified institutional email can therefore never be traded for a
     personal address while keeping email_verified = 1.
+
+    WITH EMAIL VERIFICATION SWITCHED OFF it is refused, before anything is
+    changed or sent. Clearing email_verified would otherwise lock the account
+    out: every gate would wait for a code that the OTP endpoints, being off,
+    refuse to check.
     """
+    from flask import current_app
+
+    if not current_app.config["EMAIL_VERIFICATION_REQUIRED"]:
+        raise ConflictError(
+            "Changing your email isn't available while email verification is "
+            "switched off. Your address has not been changed.",
+            details={"email_verification_required": False})
     email = normalize_email(new_email)
     now = clock.now_iso()
     with transaction() as conn:
@@ -553,6 +568,25 @@ def change_email(user_id, new_email):
         return query_one("SELECT * FROM users WHERE id = ?", (user_id,), conn=conn), token
 
 
+def email_verification_status(user):
+    """How the account's email stands, for display - never a gate.
+
+      verified      a code was entered (or the account predates the method
+                    column, when only verified accounts could be verified)
+      not_required  let through because the deployment had verification
+                    switched off: email_verified = 1, but nothing was checked
+      pending       not verified yet
+
+    email_verified alone cannot say this: it is 1 in both of the first two
+    cases, which is exactly why email_verification_method is recorded.
+    """
+    if not user["email_verified"]:
+        return "pending"
+    if user["email_verification_method"] == "SKIPPED_NO_VERIFICATION":
+        return "not_required"
+    return "verified"
+
+
 def public_user(user):
     """Profile projection. Never exposes the password hash (spec 25).
 
@@ -572,6 +606,7 @@ def public_user(user):
         "full_name": user["full_name"],
         "email": user["email"],
         "email_verified": bool(user["email_verified"]),
+        "email_verification": email_verification_status(user),
         "university_id": user["university_id"],
         "department": user["department"],
         "level": user["level"],

@@ -22,6 +22,7 @@ import { ONBOARDING_STEPS } from '../components/onboarding.js';
 
 const LENGTH = 6;
 const RESEND_SECONDS = 60;
+const CONTACT_EMAIL = 'helloacademicai@gmail.com';
 
 // Only digits, only six of them. Applied to typing AND pasting, so a code
 // copied with a stray space or a zero-width character still lands.
@@ -30,7 +31,7 @@ function clean(value) {
 }
 
 export default function VerifyEmail() {
-  const { user, refresh, logout } = useAuth();
+  const { session, user, refresh, logout } = useAuth();
   const [digits, setDigits] = useState('');
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -102,6 +103,32 @@ export default function VerifyEmail() {
 
   const expired = error?.details?.reason === 'expired';
   const remaining = error?.details?.attempts_remaining;
+
+  // Verification switched off on this deployment (from /auth/me). Only an
+  // account created while it was still on can be here, and no code was, or
+  // can be, sent - so this says that instead of asking for one.
+  if (session?.email_verification_required === false) {
+    return (
+      <div className="gate">
+        <h1 className="t-display" style={{ marginBottom: 'var(--s5)' }}>
+          Your account isn’t active yet
+        </h1>
+        <div className="gate__card stack">
+          <p className="t-body">
+            Email verification is switched off on AcademicAI right now, so no code was sent
+            to <strong className="addr">{user?.email}</strong> and there is none to enter.
+          </p>
+          <p className="t-body">
+            Your account was created before it was switched off, which is why it still
+            needs activating. If that hasn’t happened soon, email {CONTACT_EMAIL}.
+          </p>
+          <div className="row-x stackable">
+            <button type="button" className="btn btn--quiet" onClick={logout}>Log out</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (done) {
     return (

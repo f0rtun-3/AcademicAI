@@ -35,6 +35,11 @@ def create_app(config_object=None, **overrides):
     return app
 
 
+# ACADEMICAI_DEPLOYMENT_MODE: "standard" is the default (nothing declared);
+# "production" and "demo" declare what the deployment is.
+DEPLOYMENT_MODES = ("standard", "production", "demo")
+
+
 def _validate_production_config(app):
     """Refuse to start a production deployment with development defaults (spec 25).
 
@@ -77,24 +82,40 @@ def _validate_production_config(app):
             "ACADEMICAI_ALLOW_ANY_EMAIL_DOMAIN must not be set in production; "
             "it disables institutional email verification")
 
-    # Unverified signups in production are allowed ONLY by a second, explicitly
-    # named variable. One flag can be set and forgotten; two, with the second
-    # saying nothing except "this deployment is a demo", cannot be arrived at
-    # by accident. This is the difference between choosing to run a demo and
-    # believing you are running the real thing.
-    if not app.config.get("EMAIL_VERIFICATION_REQUIRED"):
-        if app.config.get("DEPLOYMENT_MODE") != "demo":
+    # What kind of deployment this is (config.DEPLOYMENT_MODE). Anything but
+    # the known values is a typo, and a typo here would change what the check
+    # below allows.
+    mode = app.config.get("DEPLOYMENT_MODE")
+    if mode not in DEPLOYMENT_MODES:
+        problems.append(
+            f"ACADEMICAI_DEPLOYMENT_MODE is '{mode}'; it must be one of "
+            + ", ".join(DEPLOYMENT_MODES))
+    # Email verification may be switched off in production - temporarily, for
+    # instance while no sender can reach student mailboxes - but only when the
+    # deployment also says what it is. One flag can be set and forgotten (an
+    # empty value reads as false); a second, declaring the deployment
+    # "production" or "demo", cannot be arrived at by accident. Every other
+    # check here applies either way.
+    elif not app.config.get("EMAIL_VERIFICATION_REQUIRED"):
+        if mode == "standard":
             problems.append(
                 "ACADEMICAI_EMAIL_VERIFICATION_REQUIRED is false, so nobody's "
-                "ownership of their email address is checked. To run a public "
-                "demo on those terms, also set ACADEMICAI_DEPLOYMENT_MODE=demo")
-        else:
+                "ownership of their email address is checked. To run on those "
+                "terms, also declare the deployment: "
+                "ACADEMICAI_DEPLOYMENT_MODE=production (or demo, for a public demo)")
+        elif mode == "demo":
             # Permitted, never silent. This line is what someone reading the
             # logs of a live deployment needs to see.
             log.warning(
                 "DEMO DEPLOYMENT: email verification is DISABLED. Accounts are "
                 "created already marked verified and nobody's ownership of "
                 "their address is checked.")
+        else:
+            log.warning(
+                "PRODUCTION DEPLOYMENT: email verification is DISABLED "
+                "(ACADEMICAI_EMAIL_VERIFICATION_REQUIRED=false). New accounts are "
+                "created without a code and recorded as SKIPPED_NO_VERIFICATION; "
+                "nobody's ownership of their address is checked.")
     if problems:
         raise RuntimeError(
             "Refusing to start in production: " + "; ".join(problems) + ".")

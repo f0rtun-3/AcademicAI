@@ -138,6 +138,130 @@ def test_the_otp_endpoints_say_plainly_that_they_are_off(client, verification_of
     assert "not enabled on this deployment" in resp.get_json()["message"]
 
 
+def _signed_in(client, email, student_id):
+    register(client, email, student_id)
+    token = client.post("/api/auth/login",
+                        json={"email": email, "password": "Password123"}).get_json()["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_the_new_account_can_join_its_community(client, verification_off):
+    """Proceeding normally means past the email gate and into a community,
+    not merely being routed towards one."""
+    headers = _signed_in(client, "demo.join@student.babcock.edu.ng", "BU/SEN/9011")
+    assert client.post("/api/community/setup", headers=headers).status_code in (200, 201)
+    resp = client.post("/api/community/join", headers=headers)
+    assert resp.status_code == 201, resp.get_json()
+
+
+def test_changing_email_is_refused_rather_than_locking_the_account_out(
+        client, verification_off):
+    """An email change clears email_verified, and with the OTP endpoints off
+    nothing could set it again. So it is refused, and nothing changes."""
+    headers = _signed_in(client, "demo.move@student.babcock.edu.ng", "BU/SEN/9012")
+    email_service.clear()
+    resp = client.post("/api/auth/change-email", headers=headers,
+                       json={"email": "demo.moved@student.babcock.edu.ng"})
+    assert resp.status_code == 409
+    payload = resp.get_json()
+    assert "switched off" in payload["message"]
+    assert payload["details"] == {"email_verification_required": False}
+    assert "verification_code" not in payload
+    assert email_service.sent_messages() == []
+    # The address, the verification and this very session are all intact.
+    me = client.get("/api/auth/me", headers=headers)
+    assert me.status_code == 200
+    assert me.get_json()["user"]["email"] == "demo.move@student.babcock.edu.ng"
+    assert me.get_json()["user"]["email_verified"] is True
+    assert me.get_json()["next_step"] == "community_setup"
+
+
+def test_the_account_says_verification_was_not_required(client, verification_off):
+    """Stored as verified so every gate opens, but it must not READ as verified."""
+    resp = register(client, "demo.status@student.babcock.edu.ng", "BU/SEN/9013")
+    assert resp.get_json()["user"]["email_verification"] == "not_required"
+    headers = {"Authorization": "Bearer " + client.post(
+        "/api/auth/login", json={"email": "demo.status@student.babcock.edu.ng",
+                                 "password": "Password123"}).get_json()["token"]}
+    assert client.get("/api/auth/me", headers=headers).get_json()["user"][
+        "email_verification"] == "not_required"
+
+
+# ── Registered while verification was ON, then it was switched off ────────
+#
+# The code never arrived, so the account is still email_verified = 0. Nothing
+# rewrites that on its own: the gates read the stored state, the verification
+# endpoints are off, and the account waits. This is the one-time migration an
+# operator runs after switching verification off; it is the tested one.
+
+STRANDED_ACCOUNTS_MIGRATION = """UPDATE users
+   SET email_verified = 1, email_verification_method = 'SKIPPED_NO_VERIFICATION'
+ WHERE email_verified = 0"""
+
+
+def _stranded(client, app, email, student_id):
+    """Register with verification on, never enter the code, then switch it off."""
+    resp = register(client, email, student_id)
+    assert resp.get_json()["next_step"] == "verify_email"
+    app.config["EMAIL_VERIFICATION_REQUIRED"] = False
+    token = client.post("/api/auth/login",
+                        json={"email": email, "password": "Password123"}).get_json()["token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_a_stranded_account_is_left_exactly_as_it_was(client, app):
+    headers = _stranded(client, app, "stranded.one@student.babcock.edu.ng", "BU/SEN/9020")
+    me = client.get("/api/auth/me", headers=headers).get_json()
+    assert me["next_step"] == "verify_email"
+    assert me["user"]["email_verified"] is False
+    assert me["user"]["email_verification"] == "pending"
+    # What the verification screen reads, so it does not claim a code was sent.
+    assert me["email_verification_required"] is False
+    # Its history is not rewritten behind anyone's back...
+    with app.app_context():
+        row = query_one("SELECT email_verified, email_verification_method FROM users "
+                        "WHERE email = ?", ("stranded.one@student.babcock.edu.ng",))
+    assert (row["email_verified"], row["email_verification_method"]) == (0, "OTP")
+    # ...its gates stay shut...
+    assert client.post("/api/community/setup", headers=headers).status_code == 403
+    # ...and the code endpoints say plainly that they are off.
+    email_service.clear()
+    for path in ("/api/auth/resend-verification", "/api/auth/verify-email"):
+        resp = client.post(path, headers=headers,
+                           json={"email": "stranded.one@student.babcock.edu.ng", "code": "123456"})
+        assert resp.status_code == 409, path
+        assert "not enabled on this deployment" in resp.get_json()["message"]
+    assert email_service.sent_messages() == []
+
+
+def test_the_migration_makes_a_stranded_account_usable_and_touches_nothing_else(client, app):
+    from academicai.db.connection import execute, transaction
+
+    headers = _stranded(client, app, "stranded.two@student.babcock.edu.ng", "BU/SEN/9021")
+    # A genuinely verified account beside it, which the migration must not touch.
+    app.config["EMAIL_VERIFICATION_REQUIRED"] = True
+    code = register(client, "otp.done@student.babcock.edu.ng", "BU/SEN/9022").get_json()[
+        "verification_code"]
+    assert client.post("/api/auth/verify-email", json={
+        "email": "otp.done@student.babcock.edu.ng", "code": code}).status_code == 200
+    app.config["EMAIL_VERIFICATION_REQUIRED"] = False
+
+    with app.app_context():
+        with transaction() as conn:
+            changed = execute(STRANDED_ACCOUNTS_MIGRATION, conn=conn).rowcount
+    assert changed == 1
+
+    me = client.get("/api/auth/me", headers=headers).get_json()
+    assert me["next_step"] == "community_setup"
+    assert me["user"]["email_verification"] == "not_required"
+    assert client.post("/api/community/setup", headers=headers).status_code in (200, 201)
+    assert client.post("/api/community/join", headers=headers).status_code == 201
+    with app.app_context():
+        done = query_one("SELECT email_verification_method FROM users WHERE email = ?",
+                         ("otp.done@student.babcock.edu.ng",))
+    assert done["email_verification_method"] == "OTP"
+
+
 # ── With the switch on: the OTP flow is untouched ──────────────────────────
 
 def test_the_otp_flow_still_works_when_enabled(client, register_fixture=None):
@@ -170,6 +294,43 @@ def test_an_otp_verified_account_is_recorded_as_such(client, app):
     with app.app_context():
         row = query_one("SELECT email_verification_method FROM users WHERE email = ?",
                         ("real.method@student.babcock.edu.ng",))
+    assert row["email_verification_method"] == "OTP"
+
+
+def test_the_account_says_pending_then_verified(client):
+    resp = register(client, "real.status@student.babcock.edu.ng", "BU/SEN/9102")
+    assert resp.get_json()["user"]["email_verification"] == "pending"
+    token = client.post("/api/auth/login", json={
+        "email": "real.status@student.babcock.edu.ng",
+        "password": "Password123"}).get_json()["token"]
+    me = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"}).get_json()
+    assert me["email_verification_required"] is True
+    verify = client.post("/api/auth/verify-email", json={
+        "email": "real.status@student.babcock.edu.ng",
+        "code": resp.get_json()["verification_code"]})
+    assert verify.get_json()["user"]["email_verification"] == "verified"
+
+
+def test_an_account_let_through_earlier_reads_verified_once_it_enters_a_code(client, app):
+    """Verification off, then back on: an email change asks for a code, and
+    entering it makes the account genuinely verified - and recorded as such."""
+    app.config["EMAIL_VERIFICATION_REQUIRED"] = False
+    register(client, "was.skipped@student.babcock.edu.ng", "BU/SEN/9103")
+    token = client.post("/api/auth/login", json={
+        "email": "was.skipped@student.babcock.edu.ng",
+        "password": "Password123"}).get_json()["token"]
+    app.config["EMAIL_VERIFICATION_REQUIRED"] = True
+    changed = client.post("/api/auth/change-email",
+                          headers={"Authorization": f"Bearer {token}"},
+                          json={"email": "now.verified@student.babcock.edu.ng"}).get_json()
+    assert changed["user"]["email_verification"] == "pending"
+    verify = client.post("/api/auth/verify-email", json={
+        "email": "now.verified@student.babcock.edu.ng", "code": changed["verification_code"]})
+    assert verify.status_code == 200
+    assert verify.get_json()["user"]["email_verification"] == "verified"
+    with app.app_context():
+        row = query_one("SELECT email_verification_method FROM users WHERE email = ?",
+                        ("now.verified@student.babcock.edu.ng",))
     assert row["email_verification_method"] == "OTP"
 
 
@@ -214,24 +375,83 @@ def _passes_checks(config):
     return app
 
 
-def test_production_refuses_unverified_signups_by_default():
+def test_production_refuses_unverified_signups_while_nothing_is_declared():
+    """Verification off, DEPLOYMENT_MODE still the default: refused. One flag
+    can be cleared and forgotten - an empty value reads as false."""
     from academicai.app import create_app
     with pytest.raises(RuntimeError) as excinfo:
         create_app(_prod(EMAIL_VERIFICATION_REQUIRED=False))
-    assert "ACADEMICAI_DEPLOYMENT_MODE=demo" in str(excinfo.value)
+    assert "ACADEMICAI_DEPLOYMENT_MODE=production" in str(excinfo.value)
 
 
-def test_production_allows_it_only_when_declared_a_demo():
-    """Two variables, not one: a single flag can be set and forgotten."""
-    app = _passes_checks(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE="demo"))
+def test_production_runs_with_verification_off_when_declared_production(caplog):
+    """The live deployment: production, verification temporarily off. No demo."""
+    with caplog.at_level("WARNING", logger="academicai.app"):
+        app = _passes_checks(_prod(EMAIL_VERIFICATION_REQUIRED=False,
+                                   DEPLOYMENT_MODE="production"))
     assert app.config["EMAIL_VERIFICATION_REQUIRED"] is False
+    # Permitted, never silent - and not described as a demo.
+    assert "PRODUCTION DEPLOYMENT: email verification is DISABLED" in caplog.text
+    assert "DEMO" not in caplog.text
+
+
+def test_production_runs_with_verification_on_in_every_declared_mode():
+    for mode in ("standard", "production", "demo"):
+        assert _passes_checks(_prod(DEPLOYMENT_MODE=mode)).config[
+            "EMAIL_VERIFICATION_REQUIRED"] is True
+
+
+def test_a_demo_may_still_run_without_verification(caplog):
+    with caplog.at_level("WARNING", logger="academicai.app"):
+        app = _passes_checks(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE="demo"))
+    assert app.config["EMAIL_VERIFICATION_REQUIRED"] is False
+    assert "DEMO DEPLOYMENT: email verification is DISABLED" in caplog.text
 
 
 def test_a_near_miss_deployment_mode_does_not_count():
     from academicai.app import create_app
-    for mode in ("staging", "test", "DEMO_", "", "standard"):
+    for mode in ("staging", "test", "DEMO_", "", "standard", "prod", "live"):
         with pytest.raises(RuntimeError):
             create_app(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE=mode))
+
+
+def test_an_unknown_deployment_mode_is_refused_even_with_verification_on():
+    """A typo would otherwise change what the verification check allows."""
+    with pytest.raises(RuntimeError) as excinfo:
+        _passes_checks(_prod(DEPLOYMENT_MODE="prodution"))
+    assert "ACADEMICAI_DEPLOYMENT_MODE is 'prodution'" in str(excinfo.value)
+
+
+@pytest.mark.parametrize("override, refusal", [
+    ({"SECRET_KEY": "dev-insecure-secret-change-me"}, "ACADEMICAI_SECRET_KEY"),
+    ({"DATABASE_BACKEND": "sqlite"}, "requires 'postgresql'"),
+    ({"DATABASE_URL": None}, "ACADEMICAI_DATABASE_URL must be set"),
+    ({"EMAIL_BACKEND": "console"}, "does not send mail"),
+    ({"RESEND_API_KEY": None}, "ACADEMICAI_RESEND_API_KEY must be set"),
+    ({"ALLOW_ANY_EMAIL_DOMAIN": True}, "ACADEMICAI_ALLOW_ANY_EMAIL_DOMAIN must not be set"),
+])
+def test_turning_verification_off_relaxes_no_other_production_check(override, refusal):
+    with pytest.raises(RuntimeError) as excinfo:
+        _passes_checks(_prod(EMAIL_VERIFICATION_REQUIRED=False,
+                             DEPLOYMENT_MODE="production", **override))
+    assert refusal in str(excinfo.value)
+
+
+@pytest.mark.postgres
+def test_a_production_start_on_postgresql_with_verification_off(pg_schema):
+    """The real thing: starts, registers without a code, attempts no email."""
+    from academicai.app import create_app
+    app = create_app(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE="production",
+                           DATABASE_URL=pg_schema))
+    attempts = []
+    email_service.set_failure_hook(lambda to, subject, body: attempts.append(to))
+    resp = register(app.test_client(), "prod.user@student.babcock.edu.ng", "BU/SEN/9200")
+    assert resp.status_code == 201, resp.get_json()
+    payload = resp.get_json()
+    assert payload["next_step"] == "community_setup"
+    assert payload["user"]["email_verification"] == "not_required"
+    assert "verification_code" not in payload
+    assert attempts == [], "no email may be attempted"
 
 
 def test_demo_mode_alone_changes_nothing_when_verification_is_on():

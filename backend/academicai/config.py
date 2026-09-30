@@ -192,10 +192,12 @@ class Config:
     # switch; the switch only decides whether that flow RUNS.
     #
     # False creates accounts already marked verified, generates no code and
-    # sends no email. It exists for one situation: a transactional email
-    # provider in test mode delivers only to the account owner, so a public
-    # demo cannot mail its students at all, and every registration would strand
-    # somebody on a verification screen they can never pass.
+    # sends no email; they are recorded as SKIPPED_NO_VERIFICATION, which is how
+    # the app tells them apart from accounts that entered a code. It exists for
+    # deployments that cannot mail their students - an email provider in test
+    # mode, or no sender yet verified for student domains - where every
+    # registration would otherwise strand somebody on a verification screen
+    # they can never pass.
     #
     # WHAT IT COSTS. Nothing else is relaxed - the institutional-domain rule,
     # duplicate detection, password hashing and every authorisation check are
@@ -204,13 +206,15 @@ class Config:
     # shape of a valid student address can register as anyone.
     EMAIL_VERIFICATION_REQUIRED = _bool("ACADEMICAI_EMAIL_VERIFICATION_REQUIRED", True)
 
-    # The acknowledgement that makes the line above deployable.
+    # What kind of deployment this is: "standard" (the default - nothing
+    # declared), "production" or "demo". In production any other value
+    # refuses the start.
     #
-    # Turning verification off in production REFUSES THE START unless this
-    # says "demo". The point is that nobody can reach a production deployment
-    # with unverified signups by setting one flag and forgetting - it takes a
-    # second, differently-named variable whose only purpose is to say "yes, I
-    # know this deployment does not verify email ownership".
+    # It is also what makes the line above deployable: turning verification off
+    # in production REFUSES THE START while this is still "standard". Nobody
+    # reaches a production deployment with unverified signups by clearing one
+    # flag and forgetting - it takes a second, differently-named variable that
+    # says what the deployment is.
     DEPLOYMENT_MODE = os.environ.get("ACADEMICAI_DEPLOYMENT_MODE", "standard").strip().lower()
 
     RATE_LIMIT_ENABLED = _bool("ACADEMICAI_RATE_LIMIT", True)

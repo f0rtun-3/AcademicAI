@@ -31,6 +31,7 @@ import { Notice, initials, longDate } from '../components/ui.jsx';
 import { IconCheck, IconChevronRight, IconLogout } from '../components/icons.jsx';
 import { ResetUnavailableNote } from '../components/PasswordResetUnavailable.jsx';
 import { PASSWORD_RESET_AVAILABLE } from '../lib/features.js';
+import { EMAIL_STATUS_LABEL, emailVerificationStatus } from '../lib/emailVerification.js';
 
 function Fact({ label, value, mono = false }) {
   return (
@@ -55,6 +56,7 @@ export default function ProfilePage() {
   const c = community.status === 'ready' ? community.data : null;
   const repSince = c?.reps?.find((r) => r.id === user.id)?.rep_since;
   const role = !membership ? 'Not in a community yet' : isRep ? 'Course rep' : 'Student';
+  const emailStatus = emailVerificationStatus(user);
   const where = [user.department, user.level ? `Level ${user.level}` : null].filter(Boolean).join(' · ');
 
   return (
@@ -70,10 +72,11 @@ export default function ProfilePage() {
           </p>
           <p className="pid__mail">
             <span className="pid__addr">{user.email}</span>
-            {user.email_verified ? (
-              <span className="pid__verified"><IconCheck size={14} /> Email verified</span>
+            {/* Only a code actually entered earns the tick (lib/emailVerification). */}
+            {emailStatus === 'verified' ? (
+              <span className="pid__verified"><IconCheck size={14} /> {EMAIL_STATUS_LABEL.verified}</span>
             ) : (
-              <span className="pid__unverified">Email not verified</span>
+              <span className="pid__unverified">{EMAIL_STATUS_LABEL[emailStatus]}</span>
             )}
           </p>
         </div>
@@ -198,7 +201,7 @@ export default function ProfilePage() {
       {/* Says exactly what was established and nothing more: there is no
           ID-card check in this MVP, so this must never read as "identity
           verified". */}
-      {user.email_verified && (
+      {emailStatus === 'verified' && (
         <Notice tone="info" label="What “verified” means">
           Your email address has been verified, and it is on an approved domain for your
           university. AcademicAI has not otherwise confirmed your identity or checked your

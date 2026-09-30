@@ -237,6 +237,10 @@ def me():
         "membership": _membership_payload(membership),
         "pending_membership": _membership_payload(pending),
         "next_step": _next_step(user, membership, pending),
+        # Whether this deployment verifies email at all. The verification
+        # screen reads it so that, with verification off, it never claims a
+        # code was sent.
+        "email_verification_required": bool(current_app.config["EMAIL_VERIFICATION_REQUIRED"]),
         # The academic clock this student reads (their community's university,
         # or the one they registered with). The interface shows every event
         # and reminder time in this IANA zone, whatever the device is set to.
