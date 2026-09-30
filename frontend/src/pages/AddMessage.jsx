@@ -1,4 +1,4 @@
-// S13 · Add message → proposal review (spec 14, 28).
+// Add message → proposal review (spec 14, 28).
 //
 // THE PRODUCT'S CENTRAL PRINCIPLE, MADE VISIBLE:
 //
@@ -164,7 +164,7 @@ function Proposal({ proposal, isRep, onPublish, onDiscard, publishing, publishEr
                 {publishing ? 'Publishing…' : 'Confirm & Publish'}
               </button>
             )}
-            {/* C·11 — Edit is a real path a rep takes often, not a quiet
+            {/* Edit is a real path a rep takes often, not a quiet
                 afterthought, so it keeps secondary weight. */}
             <button type="button" className="btn btn--secondary"
                     onClick={() => setEditing((v) => !v)}>
@@ -246,7 +246,7 @@ function ProposalExplainer({ isRep }) {
 //
 // This is NOT a second matching rule. The client uses it only to decide what
 // to SHOW and which field to send; the backend re-resolves the code inside the
-// writing transaction and its refusal is what the rep reads (C·3, C·9).
+// writing transaction and its refusal is what the rep reads.
 function normaliseCode(value) {
   return String(value || '').trim().toUpperCase().replace(/ /g, '');
 }
@@ -467,7 +467,7 @@ export default function AddMessage() {
                 record and an event may only point at one that exists. Said
                 here rather than discovered after writing the whole thing.
                 It WARNS and does not block: the client is not the authority on
-                what the registry contains (C·3). */}
+                what the registry contains. */}
             {isRep && unknownCourse && (
               <Notice tone="warn" label="Not in your course list" role="status">
                 {typedCode} is not a course in this community yet. Add it under{' '}

@@ -1,8 +1,6 @@
-// Browser checks for the refinement pass, against a mocked API.
-//
-// What a unit test cannot see: real layout at real widths, the real computed
-// focus outline, and the text a student actually reads on screen. Every page
-// here is checked at the five widths the audit named, in light and dark.
+// Browser checks against a mocked API: what a unit test cannot see - real
+// layout at real widths, the computed focus outline, and the text a student
+// actually reads. Every page is checked at five widths, in light and dark.
 
 import { test, expect } from '@playwright/test';
 import { installMockApi, REP, STUDENT } from './fixtures/mockApi.js';

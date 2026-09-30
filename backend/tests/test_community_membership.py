@@ -48,9 +48,7 @@ def test_eligible_student_auto_joins_pending_community(client, joined_user):
 def test_a_student_without_a_verified_email_cannot_join(client, register):
     """The account gate is enforced at join time (spec 8).
 
-    This used to require identity verification as well. Student ID-card
-    verification is out of MVP scope, so a confirmed institutional email is
-    the whole gate - but it is still a gate, and it is still checked here.
+    A confirmed institutional email is the whole gate, and it is checked here.
     """
     actor = register(client)
     resp = client.post("/api/auth/login",

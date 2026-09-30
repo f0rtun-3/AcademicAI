@@ -1,8 +1,7 @@
 """Outbox integrity: recipients are server-decided and each message sends once.
 
-Regression for a confirmed defect: the dispatch claim incremented `attempts`
-but left the row PENDING, so two workers reading concurrently both claimed the
-same rows and would each send the email.
+Ensures two workers that read the same PENDING rows cannot both claim them:
+the claim is a compare-and-swap on `attempts`, so only one sends each email.
 """
 import pytest
 
@@ -21,7 +20,7 @@ def _queue_announcement(setup, title="Outbox probe"):
 # --- Each message sends exactly once ---------------------------------------
 
 def test_two_concurrent_workers_do_not_both_claim_a_row(client, academic_community, app):
-    """The reproduction case: two passes reading before either marks SENT."""
+    """Two passes that read before either marks SENT claim each row once."""
     setup = academic_community(size=5, seed_events=False)
     _queue_announcement(setup)
     email_service.clear()

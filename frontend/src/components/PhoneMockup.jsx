@@ -1,7 +1,6 @@
 // A current iPhone, with AcademicAI running on it.
 //
-// It replaces the old browser-window preview: AcademicAI is used on phones,
-// so the product is shown as the object students actually hold. Two parts:
+// AcademicAI is used on phones, so the product is shown on one. Two parts:
 //
 //   Phone          the device - titanium band, black bezel, Dynamic Island,
 //                  side buttons, a clipped screen. Purely presentational.
@@ -13,7 +12,7 @@
 // grid) and laid out at a true phone width (390px), then scaled to fit the
 // device's screen - so it shows exactly what the app looks like, in the
 // current theme, and restyling a row restyles the phone with it. The data is
-// illustrative sample content, like the preview it replaces.
+// illustrative sample content.
 //
 // It is INERT and DECORATIVE: nothing inside is focusable (no Row has an
 // onClick) and the whole device is aria-hidden; the surrounding copy says

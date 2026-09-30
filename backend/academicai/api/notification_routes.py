@@ -1,24 +1,17 @@
 """In-app notifications (spec 19, 21).
 
-WHAT THIS IS NOT
-----------------
-Not a second notification system. These endpoints read the SAME `notifications`
-rows the worker already writes for email; a row is one event with two outputs.
-Nothing here enqueues, sends, retries, or touches delivery state — that remains
-the worker's, so connecting a real email provider later changes nothing in this
-file.
+These endpoints read the SAME `notifications` rows the worker writes for email:
+a row is one event with two outputs. Nothing here enqueues, sends, retries or
+touches delivery state - that is the worker's.
 
-WHOSE ROWS
-----------
-Only the caller's, enforced in the query rather than by a check the route is
-trusted to have performed. No endpoint accepts a user id: the identity comes
+Only the caller's rows, enforced in the query rather than by a check the route
+is trusted to have performed. No endpoint accepts a user id: the identity comes
 from the bearer token via `require_auth`, and every statement in
-notification_service filters on it. Asking for another person's notification id
-returns 404 — the same answer as an id that does not exist, so the endpoint
-cannot be used to discover whether one does.
+notification_service filters on it. Another person's notification id returns
+404, the same as an id that does not exist, so existence cannot be probed.
 
 `require_auth`, not `require_member`: a student between communities still has a
-history worth reading, and the bell must not 403 mid-transfer.
+history to read, and the bell must not 403 mid-transfer.
 """
 from flask import Blueprint, g
 

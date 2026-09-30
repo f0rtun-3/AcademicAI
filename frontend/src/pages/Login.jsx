@@ -1,4 +1,4 @@
-// S1 · Log in.
+// Log in.
 //
 // The authentication behaviour is unchanged: the same login() from
 // AuthContext, the same ErrorBanner rendering the same backend message, the

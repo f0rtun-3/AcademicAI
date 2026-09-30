@@ -128,7 +128,7 @@ def election_readiness(community_id, viewer_id=None, conn=None):
     mis-draw a screen. The client is required to submit regardless of what this
     says and to render the backend's refusal.
 
-    `viewer_id` adds `cooldown_until` for that one person (J·4): when they may
+    `viewer_id` adds `cooldown_until` for that one person: when they may
     next stand here, or None if now. Read-only, self-only, and omitted entirely
     when no viewer is supplied - it is never returned for anybody else, because
     when a named classmate last failed a ballot is not this caller's business.

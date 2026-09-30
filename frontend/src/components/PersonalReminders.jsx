@@ -1,4 +1,4 @@
-// S15 · Personal reminders (spec 20, 28).
+// Personal reminders (spec 20, 28).
 //
 // Separate from official academic records: these belong to one student, are
 // never published, and the backend scopes every read and write to the owner.

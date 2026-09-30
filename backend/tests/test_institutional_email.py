@@ -376,13 +376,10 @@ def test_verification_token_is_still_single_use(client, register):
 
 
 def test_resend_replaces_the_previous_code_and_is_rate_limited(client, register, app):
-    """The rule REVERSED when verification became a six-digit code.
+    """Issuing a code destroys the previous one.
 
-    A 256-bit link token could be left live after a resend: guessing one was
-    impossible, so an extra valid token widened nothing. Six digits is a space
-    of a million, and every additional live code multiplies the chance a blind
-    guess lands. So issuing a code now destroys the previous one, and this test
-    is the inversion of the one it replaces.
+    Six digits is a space of a million, and every additional live code
+    multiplies the chance that a blind guess lands.
     """
     from datetime import timedelta
 
@@ -427,12 +424,10 @@ def test_verified_email_stays_required_after_verification(client, register):
 # --- Changing the email address -------------------------------------------
 
 def test_the_only_email_changing_route_is_the_authenticated_one(app):
-    """J·3 added exactly one route that can change an email address.
+    """Exactly one route can change an email address, and it requires auth.
 
-    This test replaces an earlier one asserting that NO such route existed. The
-    invariant it was really protecting - that no endpoint can change an email
-    while preserving verification - is now asserted directly by the tests
-    below, against the route rather than against its absence.
+    That no endpoint can change an email while keeping it verified is asserted
+    directly by the tests below.
     """
     routes = [str(r) for r in app.url_map.iter_rules()]
     email_routes = [r for r in routes

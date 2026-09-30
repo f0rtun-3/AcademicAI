@@ -1,4 +1,4 @@
-// S7 · Event detail as a route, and the rep edit path it carries.
+// Event detail as a route, and the rep edit path it carries.
 //
 // The spec makes this a ROUTE rather than a panel so a record is linkable and
 // survives a refresh. Editing is the rep's primary action here, and it is the

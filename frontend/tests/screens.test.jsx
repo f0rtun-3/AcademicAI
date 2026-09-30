@@ -144,7 +144,7 @@ describe('Calendar', () => {
 
     expect(await screen.findByRole('heading', { name: 'COS202 Assignment' }))
       .toBeInTheDocument();
-    // C·2 — the official status is stated in the details ("Scheduled" is the
+    // The official status is stated in the details ("Scheduled" is the
     // normal case, so it carries no header badge). Completion is never a chip.
     expect(screen.getByText('Scheduled')).toBeInTheDocument();
     expect(screen.queryByText(/COMPLETED BY YOU|Completed by you/)).not.toBeInTheDocument();
@@ -260,7 +260,7 @@ describe('Rep dashboard', () => {
     expect(screen.getByText('students')).toBeInTheDocument();
     expect(screen.getByText('verified rep')).toBeInTheDocument();
     // No denominator is invented: the vacancy cap is a backend rule that no
-    // response carries, so the UI must not state one (C·3 / P·4).
+    // response carries, so the UI must not state one.
     expect(document.body.textContent).not.toMatch(/of 3 reps/);
 
     await user.click(screen.getByRole('button', { name: 'Approve' }));

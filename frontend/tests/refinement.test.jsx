@@ -1,4 +1,4 @@
-// Behaviour fixed in the refinement pass, pinned so it stays fixed.
+// UI behaviours pinned by regression tests.
 //
 // Each block names the failure it guards against: a question lost when Chat
 // could not send, a toast stack stuck paused, keyboard focus dropped to the

@@ -1,4 +1,4 @@
-// S15 · Your reminders, as its own route.
+// Your reminders, as its own route.
 //
 // Reachable from the Dashboard and from chat, not from primary navigation:
 // four tabs at every size, and reminders are not one of them.

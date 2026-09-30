@@ -1,9 +1,8 @@
 """An archived academic session accepts no official writes (spec 23).
 
-Regression for a confirmed defect: a rep election still open when the session
-was archived went on to promote its candidate INTO the archived community, and
-that new rep could then create events, announcements and courses in a session
-that had already ended.
+Ensures a rep election still open when the session is archived cannot promote
+its candidate into the archived community, and that no rep can create events,
+announcements or courses in a session that has ended.
 """
 from datetime import timedelta
 
@@ -53,7 +52,7 @@ def test_a_former_rep_cannot_write_after_archival(client, academic_community, ap
 
 def test_a_ballot_open_at_archival_does_not_promote(client, academic_community, app,
                                                     run_worker):
-    """The reproduction case. A ballot mid-flight must not outlive the session."""
+    """A ballot mid-flight must not outlive the session."""
     setup = academic_community(size=6, seed_events=False)
     candidate = setup.members[1]
 
@@ -141,8 +140,8 @@ def test_archived_status_alone_blocks_a_still_seated_rep(client, academic_commun
     """Isolates the community-status guard from the rep-role guard.
 
     Archiving normally demotes reps, so this marks the community ARCHIVED
-    while deliberately leaving the rep seated - the state a mid-flight ballot
-    used to produce - and checks the write boundary still refuses.
+    while deliberately leaving the rep seated, and checks the write boundary
+    still refuses.
     """
     setup = academic_community(size=5, seed_events=False)
     with app.app_context():

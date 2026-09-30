@@ -66,8 +66,7 @@ def test_email_verification_flow(client, register):
     resp = client.post("/api/auth/verify-email", json={"email": actor.email, "code": actor.otp})
     assert resp.status_code == 200
     assert resp.get_json()["user"]["email_verified"] is True
-    # Email verification leads straight to community setup; the
-    # verify_identity step was removed with the ID-card feature.
+    # Email verification leads straight to community setup.
     assert resp.get_json()["next_step"] == "community_setup"
 
 

@@ -9,18 +9,14 @@ A row is one thing that happened to one person, and it reaches them two ways:
                `attempts`, `sent_at` and `last_error` are the EMAIL's delivery
                state and nothing else; the bell never reads them.
 
-Spec 19 named email as the MVP's only channel; the bell was added on top of
-the same outbox rows, so every notification - reminders included - is both
-shown in the app and emailed. An email that fails is recorded as failed and
-logged; the in-app notification is untouched.
+A failed email is recorded as failed and logged; the in-app notification is
+untouched.
 
 Recipients are resolved at publish time and written as concrete outbox rows,
-which is what stops a student who joins later from receiving a "new
-assignment" notice published before they arrived.
-
-Course-scoped recipients are the INTERSECTION of active community members and
-active course enrollments, so neither a stale enrollment row nor a former
-member can be notified.
+so a student who joins later never receives a notice published before they
+arrived. Course-scoped recipients are the INTERSECTION of active community
+members and active course enrollments, so neither a stale enrollment row nor a
+former member can be notified.
 """
 import logging
 

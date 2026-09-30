@@ -125,7 +125,7 @@ def test_election_readiness_flips_at_four_members(client, community, joined_user
     assert election["members_needed"] == 0
 
 
-# --- J·4: read-only cooldown visibility ------------------------------------
+# --- Read-only cooldown visibility -----------------------------------------
 #
 # The UI needs to say "you can stand again on <date>" instead of offering a
 # control that answers 409. Everything below asserts that the value is

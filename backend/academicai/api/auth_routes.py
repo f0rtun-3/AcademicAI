@@ -166,14 +166,14 @@ def logout():
 @bp.post("/change-email")
 @authz.require_auth
 def change_email():
-    """Change the signed-in account's email address (J·3).
+    """Change the signed-in account's email address.
 
     This route adds NO policy of its own. Every rule already lives in
     auth_service.change_email(), which re-runs institutional-domain validation
-    (Gate 1), clears email_verified, invalidates outstanding verification links
+    (Gate 1), clears email_verified, invalidates outstanding verification codes
     and revokes every session including this one. The caller is therefore
     logged out by its own request and must verify the new address before
-    continuing - which is the point, and must not be softened here.
+    continuing. That is intended; do not soften it here.
 
     Rate limited per account: an authenticated endpoint that emails an
     arbitrary address is a spam vector otherwise.
@@ -261,9 +261,8 @@ def _membership_payload(membership):
 def _next_step(user, membership, pending):
     """Drives onboarding UI so the client never routes to a screen that 403s (spec 9).
 
-    MVP SCOPE: there is no "verify_identity" step. Student ID-card verification
-    was removed from the product, so email verification leads straight to
-    community setup. The client's STEPS map must not carry a dead state either.
+    Email verification leads straight to community setup. There is no
+    identity-verification step, here or in the client's STEPS map.
     """
     if not user["email_verified"]:
         return "verify_email"

@@ -1,14 +1,13 @@
-// S16 · Settings — deliberately thin: two account actions and log out.
+// Settings — deliberately thin: two account actions and log out.
 //
-// Per J·1 there is no notifications section: the MVP is email-only and there
-// is nothing to configure. Per J·2 there is no authenticated password change,
+// There is no notifications section: the MVP is email-only and there
+// is nothing to configure. There is no authenticated password change,
 // only a reset emailed to the address on the account.
 //
-// Changing an email (J·3) re-runs institutional-domain validation, clears
+// Changing an email re-runs institutional-domain validation, clears
 // email_verified and revokes EVERY session including this one. The caller logs
-// itself out by its own request. That is the rule working, so the UI says so
-// before the button is pressed and handles the sign-out as an expected
-// outcome rather than an error.
+// itself out by its own request, so the UI says so before the button is
+// pressed and treats the sign-out as expected rather than as an error.
 
 import { useState } from 'react';
 import { api } from '../api/client.js';

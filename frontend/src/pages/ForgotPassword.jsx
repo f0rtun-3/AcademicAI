@@ -1,15 +1,13 @@
-// S1 · Forgot password, and the reset it leads to.
+// Forgot password, and the reset it leads to.
 //
-// Per J·2 there is no authenticated password change: resetting always goes
+// There is no authenticated password change: resetting always goes
 // through a code emailed to the address on the account. The request response
 // is deliberately identical whether or not the account exists, so this screen
 // must not report "no such account" — the backend does not tell it, and
 // inventing that answer would leak who is registered.
 //
-// Unchanged from the previous version: both endpoints, the three stages, and
-// the wording of the "if an account exists" notice. New: the shared auth
-// composition, a stage indicator so the two-step reset does not feel like a
-// dead end, and password fields with a visibility control.
+// A stage indicator shows where the two-step reset is, so it does not feel
+// like a dead end.
 //
 // SWITCHED OFF FOR NOW (lib/features.js). There is no production email
 // delivery for students yet, so a reset code would never arrive. The page

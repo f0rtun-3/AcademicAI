@@ -5,9 +5,7 @@
 //   laptop   two columns. The brand column's content is a panel exactly one
 //            viewport tall and sticky, so it is composed against the SCREEN,
 //            not against the form beside it: brand, copy, then the phone
-//            rising from the panel's foot. (It used to stretch to the form's
-//            height - 1,371px on sign-up - and split the difference into two
-//            voids, with the phone below the fold.)
+//            rising from the panel's foot.
 //   tablet   one column: a landscape card - the copy beside the phone - and
 //            the form straight after it, at the same width.
 //   phone    the form first. Sign-in keeps a compact band with the top of the

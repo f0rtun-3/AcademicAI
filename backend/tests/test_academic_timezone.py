@@ -618,9 +618,9 @@ def _file_app(path):
 
 
 def _legacy_database(tmp_path, extra_university=None):
-    """A real database, then the timezone column removed: exactly what a
-    deployment from before this change looks like. Official reminders carry
-    the old 08:00 UTC instants."""
+    """A real database with the timezone column removed, as a deployment
+    from before universities had timezones. Official reminders carry the old
+    08:00 UTC instants."""
     path = str(tmp_path / "legacy.db")
     _file_app(path)
     conn = sqlite3.connect(path)

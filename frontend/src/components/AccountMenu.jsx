@@ -1,26 +1,18 @@
 // The account menu: who you are, where your things are, and the way out.
 //
-// ONE COMPONENT, TWO FORMS. On a laptop or tablet it is a popover under the
-// avatar. On a phone it is a bottom sheet over a dimmed page - a 300px
-// dropdown pinned under a 40px avatar is a desktop control squeezed onto a
-// phone, and the sheet puts every row where a thumb already is. The switch
-// is CSS (styles.css section 46); the markup and behaviour are the same.
+// One component, two forms: a popover under the avatar on a laptop or tablet,
+// a bottom sheet over a dimmed page on a phone, where every row is within
+// thumb reach. The switch is CSS (styles.css section 46); markup and behaviour
+// are the same.
 //
-// IDENTITY ON NIGHT. The header is the one night surface in the menu, like
-// the rail it opens beside: your initials, your name, what you are in your
-// community and your address. Everything under it is plain rows.
+// Keyboard: opening moves focus to the first item, arrow keys (and Home/End)
+// move between items, Escape closes and returns focus to the avatar. Clicking
+// outside or navigating closes it.
 //
-// KEYBOARD. It is a real menu: opening moves focus to the first item, arrow
-// keys (and Home/End) move between items, Escape closes and puts focus back
-// on the avatar. Clicking outside closes it, as does any navigation.
-//
-// ON A PHONE IT IS MODAL. The sheet is a dialog (aria-modal) holding the menu,
-// and while it is open nothing behind it can be reached: the page is locked
-// where it was (lib/scrollLock.js - wheel, trackpad, touch and keyboard, and
-// put back exactly on close), the rest of the app is inert, and Tab cycles
-// within the sheet instead of leaving it. Tapping the backdrop closes it and
-// returns focus to the avatar. On a laptop it stays a popover: tabbing out
-// of it closes it, and the page scrolls as normal.
+// On a phone it is modal (aria-modal): the page is locked where it was
+// (lib/scrollLock.js), the rest of the app is inert, Tab cycles within the
+// sheet, and tapping the backdrop closes it. On a laptop it stays a popover:
+// tabbing out closes it and the page scrolls as normal.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useScrollLock } from '../lib/scrollLock.js';

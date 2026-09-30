@@ -127,21 +127,17 @@ def register(data):
     with _about("academic_session"):
         academic_session = _require_text(data.get("academic_session"), "Academic session",
                                          max_len=40)
-    # The student's own declared Matric Number. It is INFORMATIONAL only: it
-    # used to be the account-side value an ID card was compared against, and
-    # with card verification out of MVP scope nothing checks it. It is still
-    # collected because it is part of the student's academic profile, and it is
-    # still validated for shape so the record stays clean - but it is not
+    # The student's own declared Matric Number: profile data, validated for
+    # shape only. Nothing checks it against university records, so it is not
     # evidence of anything and must never be displayed as verified.
     # The field is named student_id_number in the schema and on the wire; the
-    # user-facing word is "Matric Number" everywhere (UI spec C·12).
+    # user-facing word is "Matric Number" everywhere.
     with _about("student_id_number"):
         student_id_number = _require_text(data.get("student_id_number"),
                                           "Matric Number", max_len=32)
         if not STUDENT_ID_RE.match(student_id_number):
-            # A format check on the student's own entry, not a verification.
-            # The old wording ("characters we can't read") implied something
-            # was reading the value; nothing does.
+            # A format check on the student's own entry, not a verification:
+            # the message must not imply that anything reads the value.
             raise ValidationError(
                 "Your Matric Number can only contain letters, numbers, spaces, "
                 "slashes and hyphens.")
@@ -200,8 +196,8 @@ def register(data):
              student_id_number, TERMS_VERSION, now, now, now),
             conn=conn,
         )
-        # No code is minted when none will be asked for. A code sitting unused
-        # in the database is a credential nobody is watching.
+        # No code is minted when none will be asked for: an unused stored code
+        # would still be a live credential.
         token = _issue_email_token(user_id, conn=conn) if verification_required else None
         user = query_one("SELECT * FROM users WHERE id = ?", (user_id,), conn=conn)
     return user, token
@@ -308,14 +304,10 @@ def resend_email_verification(user_id):
 def verify_email(user_id, code):
     """Check a six-digit code against the one live code for `user_id`.
 
-    WHY THIS TAKES A user_id
-    ------------------------
-    The old link token was 256 bits and globally unique, so it identified the
-    account by itself. Six digits cannot: a code looked up globally would be
-    one of a million values shared across every account on the system, and
-    guessing it would verify SOMEBODY. Scoping the lookup to one account is
-    what keeps the search space per-account, and it is what the attempt ceiling
-    and the per-account rate limit are counted against.
+    The lookup is scoped to one account because six digits are not unique
+    across accounts: checked globally, a guessed code would verify somebody.
+    The attempt ceiling and the per-account rate limit count against the same
+    scope.
 
     The address is never a parameter. A code verifies the address already on
     the account and nothing else, so there is no way to point verification at

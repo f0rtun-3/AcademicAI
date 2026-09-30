@@ -67,7 +67,7 @@ def _assert_no_cooldown(community_id, user_id, cooldown_days, conn):
 
 
 def candidate_cooldown_until(community_id, user_id, conn=None):
-    """When this person may next stand here, or None if they may stand now (J·4).
+    """When this person may next stand here, or None if they may stand now.
 
     READ-ONLY, and deliberately a separate function from _assert_no_cooldown.
     This one answers a display question; that one enforces the rule inside the

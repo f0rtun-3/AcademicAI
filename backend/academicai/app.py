@@ -63,10 +63,8 @@ def _validate_production_config(app):
             problems.append("ACADEMICAI_DB_PATH must point at a persistent file")
     elif not app.config.get("DATABASE_URL"):
         problems.append("ACADEMICAI_DATABASE_URL must be set to the PostgreSQL database")
-    # A production build must be able to SEND. `console` used to pass this
-    # check, which meant a deployment could sit there printing verification
-    # codes into a log file while every new student waited for an email that
-    # was never going to arrive.
+    # A production build must be able to send mail: the development backends
+    # only print or record messages, so no student would ever receive one.
     backend = app.config.get("EMAIL_BACKEND")
     if backend not in email_service.DELIVERING_BACKENDS:
         problems.append(

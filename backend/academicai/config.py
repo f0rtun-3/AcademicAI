@@ -137,13 +137,9 @@ class Config:
     ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
     ANTHROPIC_MODEL = os.environ.get("ACADEMICAI_ANTHROPIC_MODEL", "claude-opus-5")
 
-    # MVP SCOPE: student ID-card verification has been REMOVED from the
-    # product, so there is deliberately no IDENTITY_PROVIDER,
-    # IDENTITY_VISION_PROVIDER, IDENTITY_VISION_FIXTURE or TESSERACT_CMD here.
-    # Leaving any of them would offer a switch that appears to turn identity
-    # scanning back on while no code implements it. Email verification against
-    # the approved institutional-domain registry is the account gate; see
-    # services/email_domain_service.py.
+    # There is deliberately no identity-verification setting: the account gate
+    # is email verification against the institutional-domain registry
+    # (services/email_domain_service.py).
     # EMAIL DELIVERY
     # --------------
     # "memory" and "console" do not send anything. They are development and

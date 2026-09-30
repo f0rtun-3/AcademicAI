@@ -32,21 +32,13 @@
    *   --surface    an elevated surface, and the chrome (rail, top bar).
    *   --surface-2  a recess inside an elevated surface.
    *
-   * HUE, which is where this went wrong once already. These neutrals were
-   * olive — hue 77-86 degrees at 7-14 points of saturation. Under the
-   * blue-grey text (215 degrees) an olive ground reads dirty, and the effect
-   * was invisible at the original near-white value and obvious as soon as the
-   * ground was darkened enough to separate from the cards.
+   * HUE. The neutrals sit at 146-156 degrees with 1-7 points of saturation:
+   * the same cool family as the forest-teal accent (167 degrees), colourless
+   * enough that the hue never shows. An olive or warm ground reads dirty
+   * under the blue-grey text (215 degrees).
    *
-   * They now sit at 146-156 degrees with 1-7 points of saturation: the same
-   * cool family as the forest-teal accent (167 degrees), and colourless
-   * enough at that saturation that the hue never declares itself. Grey, not
-   * green, and not beige either — a warm ground under teal reads as two
-   * competing temperatures.
-   *
-   * `--surface-2` is deliberately a shade darker than a pure-neutral reading
-   * would suggest: at #f8f9f8 a board's head is seven points off white and
-   * stops registering as a band at all. */
+   * `--surface-2` is a shade darker than a pure neutral would be: any lighter
+   * and a board's head stops registering as a band. */
   --paper: #f3f5f3;
   --surface: #ffffff;
   --surface-2: #f6f8f6;
@@ -201,10 +193,9 @@
    * The system font is the one face a reader already recognises, is hinted for
    * their own screen, and arrives instantly.
    *
-   * `--display` is no longer a different FAMILY, only a different treatment:
-   * headings earn their weight from size and boldness. Keeping the token means
-   * the thirteen heading rules did not have to change, and a display face can
-   * be reintroduced in one line if it is ever wanted.
+   * `--display` is the same family, given a different treatment: headings earn
+   * their weight from size and boldness. The token stays so a display face can
+   * be introduced in one line.
    *
    * `--mono` survives for one job: figures that must line up or be read
    * character by character — table numerals, counts, codes. Not labels. */
@@ -580,24 +571,20 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 
 /* ── 8 · Buttons ────────────────────────────────────────────────────────── */
 /*
- * ONE button. Everything in AcademicAI that can be pressed — Log in, Get
- * started, Add message, Publish, Vote yes, Leave community, Reset password,
- * Edit, Remove — is this element with one modifier. Nothing is styled per
- * page; a screen that needed a different-looking button would be telling us
- * the hierarchy is wrong, not that it needs its own CSS.
+ * ONE button. Everything that can be pressed is this element with one
+ * modifier; nothing is styled per page. A screen that needs a different-looking
+ * button is a hierarchy problem, not a reason for its own CSS.
  *
- * The resting treatment is surface + defined border + one hairline of
- * elevation. That is enough to read as a control against warm paper without
- * inflating into a card. It is deliberately NOT "flat text on a colour".
+ * Resting treatment: surface, a defined border and one hairline of elevation -
+ * enough to read as a control without looking like a card.
  *
  * HIERARCHY
  *   --primary    the one action the screen is for. Filled accent.
  *   (bare/.btn--secondary)  everything else that is a real action.
  *   --quiet      tertiary/ghost. No border, no shadow. Dismiss, close, cancel
  *                in a pair where the other side already carries the weight.
- *   --danger     destructive. Outlined in crit, never filled: a filled red
- *                button of the same size as its neighbour invites the
- *                misclick it is warning about.
+ *   --danger     destructive. Outlined in crit, never filled, so it is not
+ *                misclicked for its neighbour.
  *   --icon       square, glyph only. Always carries an aria-label.
  *   --sm         a contextual action inside a ruled row.
  *   --block      full width, taller. Auth forms and phone-width actions.
@@ -630,10 +617,9 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
               transform var(--dur-instant) ease, filter var(--dur-fast) ease;
 }
 
-/* Resting states, written per variant. The old system used
- * `filter: brightness(.96)` for every hover, which dimmed a filled accent
- * button and an outlined danger button by the same amount — one looked
- * pressed and the other looked disabled. */
+/* Resting states, written per variant. One shared hover filter would dim a
+ * filled accent button and an outlined danger button by the same amount, so
+ * one would look pressed and the other disabled. */
 .btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--line-hover); box-shadow: var(--e-ctl-hover); }
 .btn:active:not(:disabled) { box-shadow: var(--e-ctl-press); transform: translateY(1px); }
 
@@ -678,7 +664,7 @@ a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset:
 
 /* A contextual action: Edit and Remove beside a course, Approve and Reject
  * beside a request. Smaller because it belongs to its row, never because it
- * matters less — a decision pair stays a pair (C·11). */
+ * matters less — a decision pair stays a pair. */
 .btn--sm { min-height: var(--ctl-h-sm); font-size: 13px; padding: 0 var(--s3); }
 
 .btn--block { width: 100%; justify-content: center; min-height: var(--ctl-h-lg); font-size: 15px; }
@@ -912,8 +898,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
  * edge, the same lift and the same radius, so "this is a card" is one idea
  * the reader learns once.
  *
- * They used to carry a `--line` hairline and NO shadow at all, which is why
- * a board read as text sitting directly on the page. */
+ * Without the shadow a board reads as text sitting directly on the page. */
 .panel {
   background: var(--surface);
   border: 1px solid var(--edge);
@@ -926,8 +911,8 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   gap: var(--s3); margin-bottom: var(--s4); flex-wrap: wrap;
 }
 
-/* A list of like things is ruled rows inside ONE bounded board. Twelve cards
- * in a column is twelve borders saying nothing. */
+/* A list of like things is ruled rows inside ONE bounded board, not a column
+ * of separate cards. */
 .board {
   background: var(--surface);
   border: 1px solid var(--edge);
@@ -936,11 +921,9 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   overflow: hidden;
 }
 /* The head belongs to the card: the same white, divided from the rows by an
- * internal hairline. It used to be a `--surface-2` band, and with every board
- * on a page carrying one the dashboard read as a stack of spreadsheets - the
- * grey said "table header" six times over. The heading's size and weight are
- * what make it a head; the band added nothing they did not already say.
- * `--surface-2` stays for true recesses (a table's th, a segmented track). */
+ * internal hairline. The heading's size and weight make it a head, so it
+ * needs no grey band; `--surface-2` is for true recesses (a table's th, a
+ * segmented track). */
 .board__head {
   display: flex; align-items: center; justify-content: space-between;
   gap: var(--s3); padding: var(--s4) var(--s5) 14px;
@@ -986,7 +969,7 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--accent); }
   gap: var(--s3) var(--s4);
   align-items: start;
   padding: 14px var(--s5);
-  min-height: 60px;                 /* C·10 floor */
+  min-height: 60px;                 /* minimum row height */
   border-bottom: 1px solid var(--line);
   border-radius: 0;                 /* 5 · rows are ruled, never rounded */
   background: none;
@@ -1049,7 +1032,7 @@ button.brow:hover { background: var(--surface-2); }
  * small size — set here rather than at each call site, because a row action
  * is a position in the system, not a decision a page gets to make. Pairs stay
  * pairs: Approve and Reject shrink together, so neither is made the quiet
- * option (C·11). */
+ * option. */
 .brow__side .btn { min-height: var(--ctl-h-sm); font-size: var(--fs-sm); padding: 0 var(--s3); }
 /* A destructive action repeated down a list (Remove, Withdraw, Cancel
  * reminder) keeps its crit WORD but takes the neutral border at rest. Five red
@@ -1112,7 +1095,7 @@ button.brow:hover .brow__go { color: var(--ink); transform: translateX(2px); }
 .chip--warn { background: var(--warn-bg);   color: var(--warn); }
 .chip--crit { background: var(--crit-bg);   color: var(--crit); }
 
-/* C·2 — personal completion is NOT a status. No chip, no semantic colour,
+/* Personal completion is NOT a status. No chip, no semantic colour,
  * never the status column. */
 .pmark {
   color: var(--slate); font-size: var(--fs-sm);
@@ -1533,7 +1516,7 @@ tr:last-child td { border-bottom: none; }
 .state--unauthorized h2 { color: var(--warn); }
 .state--empty h2, .state--awaiting h2 { color: var(--ink); }
 
-/* ── Chat (S14) ─────────────────────────────────────────────────────────── */
+/* ── Chat ──────────────────────────────────────────────────────────────── */
 /*
  * The transcript is the screen, so everything else gets out of its way: a
  * compact header above, a bounded composer below, and a calm column between
@@ -1890,20 +1873,17 @@ tr:last-child td { border-bottom: none; }
 /* ── 16 · Responsive ────────────────────────────────────────────────────── */
 
 @media (max-width: 639px) {
-  /* Touch sizing. These two are the only controls that stay on screen at phone
-   * widths whatever the route, and at 32px and 30px they were the smallest
-   * targets in the product. They clear WCAG 2.5.8's 24px minimum either way;
-   * this is about the thumb, not the audit. */
+  /* Touch sizing. These two controls stay on screen on every route at phone
+   * widths, so they are sized for a thumb, beyond WCAG 2.5.8's 24px minimum. */
   .avatar { width: 40px; height: 40px; }
 
-  /* The row becomes two lines so a long chip never clips (C·10). The chip
+  /* The row becomes two lines so a long chip never clips. The chip
    * keeps a fixed position — it moves to the start of the second line, on
    * every row, consistently. */
-  /* EVERY child is placed explicitly. Previously only .brow__go carried a
-   * position (`grid-row: 1` with no column), and grid resolves definite-row
-   * items before auto-placed ones - so the chevron took column 1 and shoved
-   * the date and title one column right, right-aligning the title. Naming all
-   * four areas removes the ambiguity. */
+  /* EVERY child is placed explicitly. Grid resolves items with a definite row
+   * before auto-placed ones, so one child positioned by row alone would take
+   * column 1 and push the others right. Naming all four areas removes the
+   * ambiguity. */
   .brow { grid-template-columns: auto 1fr; gap: var(--s2) var(--s3); }
   .brow__when { grid-area: 1 / 1; }
   .brow__main { grid-area: 1 / 2; }
@@ -1995,9 +1975,8 @@ tr:last-child td { border-bottom: none; }
 }
 
 @media (pointer: coarse) {
-  /* A finger, whatever the viewport width. The 639px rule in §8 covers phones
-   * by size; this covers a touch tablet at 834px, where the old width-based
-   * rule stopped at 899px and left a 1024px touch screen with 40px targets. */
+  /* A finger, whatever the viewport width. The 639px rule covers phones by
+   * size; this covers touch screens of any width, tablets included. */
   .btn { min-height: 44px; }
   .btn--sm { min-height: 40px; }
   .btn--icon { width: 44px; min-width: 44px; }
@@ -2203,7 +2182,7 @@ tr:last-child td { border-bottom: none; }
 
 /* The form column is the white surface and the brand column the tinted
  * ground: two planes, one for reading about the product and one for using
- * it. The form used to sit on the grey page with nothing under it. */
+ * it. */
 .authform {
   display: flex; flex-direction: column; justify-content: center;
   padding: var(--s6) var(--s4) var(--s7); background: var(--surface);
@@ -2258,9 +2237,8 @@ tr:last-child td { border-bottom: none; }
 /* Password visibility control.
  *
  * The wrapper IS the field: it carries the border, the background, the inset
- * and the focus ring, and the <input> inside it is stripped bare. Previously
- * the input kept its own border and the toggle floated on top of it, which
- * read as two controls overlapping — a button parked on a text box.
+ * and the focus ring, and the <input> inside it is stripped bare, so the
+ * visibility toggle reads as part of one control.
  *
  * `:focus-within` means focusing either the input or the toggle lights the
  * whole control, which is what a reader sees as "I am in this field". */
@@ -3003,9 +2981,8 @@ html { scroll-behavior: smooth; }
 }
 
 /* The surfaced variant. Same composition, on a card, for a header that groups
- * a title with the state it belongs to. It used to carry a 3px accent left
- * border; on a rounded card that border bends round both corners and reads as
- * a bracket, and the eyebrow already says "this is your place". */
+ * a title with the state it belongs to. No accent border: on a rounded card
+ * it bends round both corners, and the eyebrow already marks the place. */
 .phead--surface {
   padding: var(--s5) var(--s6);
   background: var(--surface);
@@ -3041,7 +3018,7 @@ html { scroll-behavior: smooth; }
 }
 .prose a, .prose .linkish { color: var(--accent); }
 
-/* ══ 27 · Identity surface - moved: Profile's header is now .pid (section 47). */
+/* ══ 27 · Section headings, settings rows, the file viewer ═══════════════════ */
 
 /* A section heading with its explanation and, optionally, the one action that
  * acts on the whole section. Used where a screen has named parts that are not
@@ -3201,7 +3178,7 @@ html { scroll-behavior: smooth; }
   .chlist li { grid-template-columns: 1fr; gap: 0; }
 }
 
-/* ══ 30 · Refinement pass ═══════════════════════════════════════════════════ */
+/* ══ 30 · Notification rows, change details, the top bar ════════════════════ */
 
 /* Unread is marked, not only bolded: a dot before the subject is what the eye
  * scans for down a list. Read rows keep the same left edge. */
@@ -3758,11 +3735,10 @@ button.brow:active, .agev:active, button.bellrow__main:active {
  *
  * The same ground as the rail, so the first screen anyone sees and the
  * product they sign into are recognisably one thing. Plain night, with no
- * texture: a hairline ruling every 32px used to sit on every night surface,
- * and it read as screen banding - behind the phone most of all.
+ * texture: a fine ruling reads as screen banding.
  * The SHORTHAND, not background-color: both elements carry an earlier
- * `background: var(--wash)`, a gradient image, and a colour alone leaves it
- * painted on top (the ruling used to hide it). */
+ * `background: var(--wash)`, a gradient image, and setting only the colour
+ * would leave that gradient painted on top. */
 .authbrand, .hero {
   background: var(--night);
   color: var(--night-ink);
@@ -4824,10 +4800,7 @@ button.brow:active, .agev:active, button.bellrow__main:active {
 
 /* ── The auth screens ────────────────────────────────────────────────────
  * Composed against the SCREEN, never against the form. The form's height is
- * the page's business: sign-in is short, sign-up is nine fields. The brand
- * content used to live in a column stretched to the form's height, with
- * auto margins splitting the surplus - on sign-up, 320px above the copy,
- * 320px under it, and the phone below the fold. */
+ * the page's business: sign-in is short, sign-up is nine fields. */
 
 /* Laptop: a panel one viewport tall, sticky, so sign-up's long form scrolls
  * past it and the composition holds. Brand, copy, then the phone straight

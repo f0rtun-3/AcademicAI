@@ -1,8 +1,7 @@
 // The Calendar's empty states.
 //
-// "Empty" is three different situations and conflating them is what made the
-// old screen unhelpful. A student whose exam is next month was told "Nothing
-// scheduled", which was true of the view and false of their term.
+// "Empty" is three different situations, and each gets its own message: a
+// month with nothing in it is not a term with nothing in it.
 //
 //   NOTHING     the community has published no events at all
 //   OFF-MONTH   events exist, just not in the month being viewed

@@ -1,16 +1,11 @@
-// S2 · Verify email. One gate, one task, one escape.
+// Verify email.
 //
-// WHAT THIS SCREEN DOES NOT DO
-// ----------------------------
-// It does not decide anything. It does not know the code, check the code,
-// count attempts, or judge whether one has expired. It posts six digits and
-// renders what the backend answers. Every rule lives in auth_service, because
-// a check the client performs is a check an attacker skips.
+// The screen decides nothing: it posts six digits and renders what the
+// backend answers. Checking the code, counting attempts and expiry all live in
+// auth_service - client-side checks are for UX, the server is authoritative.
 //
-// The one thing it tracks locally is the resend countdown, and that is a
-// DISPLAY of a rule the server also enforces: pressing the button early is
-// refused by the backend with the seconds remaining, which is what seeds the
-// clock. The countdown is a courtesy, never the control.
+// The resend countdown only displays a rule the server enforces: pressing
+// early is refused with the seconds remaining, which is what seeds the clock.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client.js';

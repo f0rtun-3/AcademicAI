@@ -1,13 +1,12 @@
 """Official-record integrity: removed courses, optimistic versioning, and the
 single-active-membership invariant.
 
-Regressions for three confirmed defects:
-  * a REMOVED course still resolved, so it could be re-enrolled into and
-    attached to new official events;
-  * announcement and course updates checked the version but did not include it
-    in the UPDATE, so the guarantee depended entirely on SQLite taking the
-    write lock up front;
-  * at most one ACTIVE membership per user was application-enforced only.
+Ensures:
+  * a REMOVED course cannot be re-enrolled into or attached to new official
+    events;
+  * announcement and course updates include the version in the UPDATE itself,
+    so the guarantee does not depend on the engine's write lock;
+  * at most one ACTIVE membership per user is enforced by the database.
 """
 import pytest
 
@@ -27,7 +26,7 @@ def test_a_removed_course_cannot_be_enrolled_into(client, academic_community):
     assert student.post(f"/api/community/courses/{course['id']}/enroll").status_code == 201
 
     setup.rep.delete(f"/api/community/courses/{course['id']}")
-    # The reproduction: this used to return 201 and resurrect the enrolment.
+    # Enrolling in a removed course is refused rather than resurrecting it.
     assert student.post(f"/api/community/courses/{course['id']}/enroll").status_code == 404
 
 

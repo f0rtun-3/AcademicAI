@@ -1,10 +1,8 @@
 """Terminal states are terminal (spec 18).
 
-Regressions for a confirmed defect: a withdrawn announcement and a cancelled
-timetable entry could each be re-transitioned and edited. Each repeat wrote a
-change_history row claiming a PUBLISHED -> WITHDRAWN (or ACTIVE -> CANCELLED)
-transition that had not happened, so the audit trail recorded transitions that
-were false. academic_events already guarded this; these two did not.
+Ensures a withdrawn announcement and a cancelled timetable entry cannot be
+re-transitioned or edited, so change_history never records a transition that
+did not happen.
 """
 import pytest
 
@@ -111,8 +109,8 @@ def test_events_still_guard_their_terminal_state(client, academic_community):
 
 def test_a_reminder_is_not_sent_for_an_event_cancelled_after_the_batch_read(
         client, academic_community, app):
-    """Regression: the worker checked the status captured when it selected the
-    batch, so an event cancelled in between was still reminded about."""
+    """The worker re-reads the event's status when it claims the reminder, so
+    an event cancelled after the batch was read is not reminded about."""
     from academicai import clock
     from academicai.services import reminder_service
 

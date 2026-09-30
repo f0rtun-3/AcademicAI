@@ -33,7 +33,7 @@ def test_registration_asks_for_email_verification_next(client, register):
 
 
 def test_verifying_the_email_leads_straight_to_community_setup(client, register):
-    """The step that used to be 'verify_identity' is gone, not renamed."""
+    """There is no identity-verification step, under any name."""
     actor = register(client)
     resp = client.post("/api/auth/verify-email",
                        json={"email": actor.email, "code": actor.otp})

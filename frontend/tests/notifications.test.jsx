@@ -295,7 +295,7 @@ describe('notification toasts', () => {
     await within(toastRegion()).findByText('Reminder: Revise for the quiz');
 
     const user = userEvent.setup();
-    // The label names the thing, per the brief.
+    // The label names the thing.
     await user.click(screen.getByRole('button', { name: 'View reminder' }));
 
     await waitFor(() => {

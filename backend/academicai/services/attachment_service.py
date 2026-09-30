@@ -1,31 +1,19 @@
 """Supporting material attached to an academic event.
 
-WHAT THIS IS FOR
-----------------
-An assignment or project brief that a lecturer handed out as a photo, a PDF or
-a Word document. AcademicAI keeps the structured record - title, instructions,
-course, deadline - because that is what can be searched, filtered and reminded
-on. This keeps the ORIGINAL beside it, so nobody has to scroll back through
-WhatsApp in week nine to find the exact paper.
+The original brief a lecturer handed out (a photo, a PDF, a Word document),
+kept beside the structured record - title, instructions, course, deadline -
+which is what is searched, filtered and reminded on. The record is never
+replaced by the file.
 
-The two are not alternatives. The record is never replaced by the file.
+Optional, always: an event with no attachments is complete. Nothing here is
+reachable from the publishing path, and no write to academic_events consults it.
 
-OPTIONAL, ALWAYS
-----------------
-An event with no attachments is complete and normal. Nothing in this module is
-reachable from the publishing path, and no write to academic_events consults
-it. Adding material is a separate, later, entirely skippable action.
-
-AUTHORITY
----------
-Unchanged from every other official write (spec 11): only a verified rep of the
-event's own community may add or remove material, and `assert_rep` is called
-INSIDE the writing transaction rather than trusted from the route decorator.
-Reading requires membership of that community, which `get_event` enforces by
-scoping on community_id - an id from another community is a 404, not a leak.
-
-A student can never modify official material. There is no endpoint that would
-let them, and the service would refuse if there were.
+Authority is the same as every other official write (spec 11): only a verified
+rep of the event's own community may add or remove material, and `assert_rep`
+is called INSIDE the writing transaction rather than trusted from the route
+decorator. Reading requires membership, which `get_event` enforces by scoping on
+community_id - an id from another community is a 404, not a leak. No endpoint
+lets a student modify official material.
 """
 import os
 

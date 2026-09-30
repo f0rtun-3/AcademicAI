@@ -203,7 +203,7 @@ export default function ChatPage() {
         * assistant can see. That scope is the session's own community, so the
         * indicator states a fact rather than decorating the page with a green
         * dot that is always on. It turns warning when the last request could
-        * not reach the server, because then the dot would be a lie. */}
+        * not reach the server, because then the dot would be misleading. */}
       <header className="chathead">
         <span className="chathead__mark" aria-hidden="true"><BrandMark size={44} radius={13} /></span>
         <div className="chathead__text">

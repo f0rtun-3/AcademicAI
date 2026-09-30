@@ -245,12 +245,9 @@ describe('what sign-up claims about the Matric Number', () => {
     // The removed ID-card feature has no vocabulary left anywhere.
     expect(body).not.toMatch(/ID card|upload|scan|photograph/i);
 
-    // "University records" may only appear as a DENIAL. This assertion used to
-    // forbid the phrase outright, which was too blunt: the redesigned sign-up
-    // screen carries the honest disclaimer "AcademicAI does not verify identity
-    // or university records", and a denial is the opposite of the claim the
-    // rule exists to catch. So the rule is now: every mention of records must
-    // be negated, and at least one such denial must be present.
+    // "University records" may only appear as a DENIAL, such as the sign-up
+    // disclaimer "AcademicAI does not verify identity or university records":
+    // every mention must be negated, and at least one denial must be present.
     const mentions = body.match(/.{0,24}(university|student) records/gi) ?? [];
     expect(mentions.length).toBeGreaterThan(0);
     for (const mention of mentions) {

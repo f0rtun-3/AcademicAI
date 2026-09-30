@@ -244,7 +244,7 @@ describe('rep removal ballots', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByTestId('remove-4'));
 
-    // A removal is hard to undo, so its consequences are read first (S10).
+    // A removal is hard to undo, so its consequences are read first.
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toHaveTextContent(/24 hours/);
     expect(dialog).toHaveTextContent(/loses rep authority immediately/);

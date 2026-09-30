@@ -1,4 +1,4 @@
-// S9 · Elections, and S10 · Rep removal (spec 11, 12).
+// Elections and rep removal (spec 11, 12).
 //
 // TRUST BOUNDARY. This component renders what the backend reported and
 // forwards actions to it. It re-implements NO election rule: eligibility, the
@@ -9,7 +9,7 @@
 // `can_vote`, `cooldown_until`, `can_start_election` and `members_needed` are
 // UI HINTS WITH NO AUTHORITY. They decide what is SHOWN, never what is
 // ALLOWED. Where a hint is stale or missing the request still goes, and the
-// backend's refusal is what the student reads (C·3, C·9).
+// backend's refusal is what the student reads.
 
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api/client.js';
@@ -96,7 +96,7 @@ export default function RepElections({ community, membership, onChanged }) {
       await load();
       if (onChanged) await onChanged();
     } catch (err) {
-      // The backend refused. Show its reason verbatim (C·5).
+      // The backend refused. Show its reason verbatim.
       setError(err);
     } finally {
       setBusy(false);
@@ -114,19 +114,17 @@ export default function RepElections({ community, membership, onChanged }) {
   const reps = community?.reps ?? [];
   const otherReps = reps.filter((r) => r.id !== membership?.user_id);
   const election = community?.election ?? {};
-  // C·3 — every number below is the backend's. No frontend constant expresses
+  // Every number below is the backend's. No frontend constant expresses
   // the rule; if the object is missing, the sentence is omitted, not guessed,
   // and the action stays available because the backend refuses authoritatively.
   const shortfall = election.can_start_election === false ? election.members_needed : null;
-  const cooldownUntil = election.cooldown_until ?? null;   // J·4, read-only
+  const cooldownUntil = election.cooldown_until ?? null;   // read-only
 
   return (
     <div className="stack stack--loose" data-testid="rep-elections">
       <section className="stack">
-        {/* A section heading is a name, not a sentence. The rep count used to
-            BE the heading, which left the tab with no title at all and set a
-            statement in heading type. The count is now what it is: a fact in
-            the sentence that explains the section. */}
+        {/* A section heading is a name, not a sentence: the rep count is a
+            fact in the sentence that explains the section. */}
         <div className="secthead">
           <div className="secthead__text">
             <h2 className="t-section">Elections</h2>
@@ -134,7 +132,7 @@ export default function RepElections({ community, membership, onChanged }) {
               Course reps are elected by this community, and only an elected rep
               can publish official academic information.{' '}
               {/* No denominator: the vacancy cap is a backend rule and is not in
-                  any response, so it is not invented here (C·3 / P·4). */}
+                  any response, so it is not invented here. */}
               This community has {reps.length} verified rep{reps.length === 1 ? '' : 's'}.
             </p>
           </div>
@@ -199,14 +197,10 @@ export default function RepElections({ community, membership, onChanged }) {
         )}
       </Board>
 
-      {/* S10 · Removal. Only a verified rep may open one (spec 12).
+      {/* Removal. Only a verified rep may open one (spec 12).
         *
-        * The board used to stack up to three flat rows of grey monospace above
-        * the ballots — who may start one, whether there is anyone to remove,
-        * whether any vote exists — so a board of RECORDS opened with three
-        * pieces of explanation dressed as records. Explanation is now the
-        * board's footnote and the action is a footer control; the rows are
-        * ballots and nothing else. */}
+        * The rows are ballots and nothing else: the explanation is the board's
+        * footnote and the action is a footer control. */}
       <Board title="Rep removal" icon={IconShield}
              foot={<div className="stack stack--tight">
                <span className="prose">

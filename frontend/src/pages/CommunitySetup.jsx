@@ -73,7 +73,7 @@ export default function CommunitySetup() {
   if (!setup) return <Loading label="Finding your academic community…" />;
 
   const { community, existed } = setup;
-  // C·3 — every number below is the backend's, read from
+  // Every number below is the backend's, read from
   // community_service.election_readiness(). No frontend constant expresses the
   // rule: there is no 4, no 3 and no arithmetic reconstructing the threshold
   // from another field. If the object is missing the sentence is OMITTED, not
@@ -120,7 +120,7 @@ export default function CommunitySetup() {
               </Notice>
             )}
 
-            {/* C·11 — two declarations, not an action and its alternative.
+            {/* Two declarations, not an action and its alternative.
                 Ranking one visually would nudge a choice the student should
                 make freely, so both carry the same weight. */}
             <div className="row-x stackable">

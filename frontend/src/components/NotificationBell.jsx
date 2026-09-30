@@ -1,33 +1,22 @@
 // The notification bell.
 //
-// WHAT IT IS ALLOWED TO DECIDE: nothing.
+// It decides nothing: a reminder has fired when the worker says so, and the
+// bell renders what `/api/notifications` returns. If the worker is stopped, the
+// bell stays empty.
 //
-// A reminder has fired when the worker says so. This component reads
-// `/api/notifications` and renders what is there. It never compares a
-// reminder's time to the clock and concludes anything — if the worker is
-// stopped, the bell stays empty, which is the truth.
+// Polling, not sockets: one GET on an interval, plus a refresh when the tab
+// regains focus. Polling stops entirely while the tab is hidden.
 //
-// POLLING, NOT SOCKETS
-// --------------------
-// One GET on an interval, plus a refresh when the tab regains focus, which is
-// when a person is actually looking. Polling stops entirely while the tab is
-// hidden: a background tab asking every minute forever is the reason this kind
-// of thing gets blamed for battery life.
-//
-// ON TIME, NOT EVENTUALLY
-// -----------------------
-// A reminder is the one notification whose moment is known in advance, so the
-// fixed poll is not what finds it. Each response says when this person's next
+// On time, not eventually: each response says when this person's next
 // reminder is due (`next_reminder_at`), and the bell asks again just after
-// that - the worker checks for due reminders every two seconds, so the
-// notification exists by then and the toast appears within seconds of the
-// reminder's time. If the worker is running late, the bell asks again shortly;
-// if it is not running at all, the bell stops asking early and the regular
-// poll carries on. The hint only says WHEN to ask. What the bell shows is
-// still only what the server returned.
+// that. The worker checks for due reminders every two seconds, so the toast
+// appears within seconds of the reminder's time. If the worker is late the bell
+// asks again shortly; if it is not running, the regular poll carries on. The
+// hint only says WHEN to ask - what the bell shows is only what the server
+// returned.
 //
 // A reminder created, edited or cancelled anywhere (liveEvents.js) makes the
-// bell re-read at once, so the hint is never an old one.
+// bell re-read at once.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

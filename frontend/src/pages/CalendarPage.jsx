@@ -1,4 +1,4 @@
-// S6 · Calendar.
+// Calendar.
 //
 // Two views over the SAME single fetch of /api/calendar. There is no second
 // event store, no local cache and no extra request: /api/calendar returns
@@ -16,7 +16,7 @@
 // None of this touches the API — the backend takes no date range, so paging is
 // a filter over data already in hand.
 //
-// Opening an event navigates to /events/:id (S7), the existing route. No event
+// Opening an event navigates to /events/:id, the existing route. No event
 // business logic is duplicated here.
 
 import { useMemo, useState } from 'react';

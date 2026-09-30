@@ -1,4 +1,4 @@
-// S7 · Event detail.
+// Event detail.
 //
 // A ROUTE, not a modal and not a side panel: it must be linkable and survive a
 // refresh, because reps share these. /events/:id is the canonical address of
@@ -366,7 +366,7 @@ export default function EventDetailPage() {
                   </form>
                 )}
 
-                {/* C·2 — personal completion, in its own labelled row, separated
+                {/* Personal completion, in its own labelled row, separated
                     from the official fields. Never the header chip. A completion
                     recorded before a cancellation is still shown - it is still
                     true - but a cancelled event offers no way to complete it. */}

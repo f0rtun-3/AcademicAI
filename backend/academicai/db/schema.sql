@@ -13,13 +13,10 @@ CREATE TABLE IF NOT EXISTS users (
     -- deployment had email verification switched off. Keeps email_verified
     -- from meaning two different things at once.
     email_verification_method TEXT,
-    -- LEGACY, UNREAD. Student ID-card verification was removed from the MVP;
-    -- no application code reads this column any more and nothing can change it
-    -- from its default. It is kept rather than dropped because the schema
-    -- migrator only ADDs columns, so removing it would mean rebuilding this
-    -- table on live databases for no functional gain. Historical rows may
-    -- still say VERIFIED/REJECTED/NEEDS_REVIEW; those values now mean nothing
-    -- and must NOT be treated as a gate. See security/authz.py.
+    -- LEGACY, UNREAD: left from the removed student ID-card check. Nothing
+    -- reads or changes it; it stays because the migrator only adds columns.
+    -- Old values (VERIFIED/REJECTED/NEEDS_REVIEW) must NOT be treated as a
+    -- gate. See security/authz.py.
     identity_status   TEXT NOT NULL DEFAULT 'UNVERIFIED'
                       CHECK (identity_status IN ('UNVERIFIED','NEEDS_REVIEW','VERIFIED','REJECTED')),
     token_epoch       INTEGER NOT NULL DEFAULT 1,
@@ -29,11 +26,8 @@ CREATE TABLE IF NOT EXISTS users (
     department        TEXT,
     level             TEXT,
     academic_session  TEXT,
-    -- The student's own declared Matric Number. PROFILE DATA ONLY: it used to
-    -- be the account-side value an ID card was compared against, and with
-    -- ID-card verification out of MVP scope nothing checks it against
-    -- anything. It is kept because the student owns it and it belongs on
-    -- their record; it is not evidence and grants nothing.
+    -- The student's own declared Matric Number. PROFILE DATA ONLY: nothing
+    -- checks it, so it is not evidence and grants nothing.
     student_id_number TEXT,
     -- The Terms & Conditions this account agreed to at registration: a stable
     -- version id (auth_service.TERMS_VERSION) and when. NULL on accounts that
@@ -126,11 +120,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_membership_per_user
 CREATE INDEX IF NOT EXISTS idx_members_community ON community_members(community_id, status);
 CREATE INDEX IF NOT EXISTS idx_members_user ON community_members(user_id, status);
 
--- LEGACY, UNWRITTEN. This table recorded student ID-card verification
--- attempts. That feature was removed from the MVP, so nothing inserts into it
--- or reads from it any more, and no route exposes it (a test asserts that).
--- It is kept so existing databases and their audit history are not destroyed;
--- it holds decisions and non-sensitive metadata only - never held an image.
+-- LEGACY, UNWRITTEN: attempts from the removed student ID-card check. Nothing
+-- reads or writes it and no route exposes it (a test asserts that); it stays
+-- so existing databases keep their history. It never held an image.
 CREATE TABLE IF NOT EXISTS identity_verifications (
     id             INTEGER PRIMARY KEY,
     user_id        INTEGER NOT NULL REFERENCES users(id),

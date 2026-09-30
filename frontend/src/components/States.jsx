@@ -2,7 +2,7 @@
 // terms: loading, empty, error, unauthorized, awaiting approval, and the two
 // dismissible banners.
 //
-// 18 · Error copy rule, as corrected (C·5):
+// Error copy rule:
 //   * A BUSINESS-RULE refusal (400/403/404/409/422) renders the backend's
 //     message verbatim. The backend is the only authority on which rule was
 //     enforced, so paraphrasing it would create a second source of truth.
@@ -60,7 +60,7 @@ export function errorText(error, intent = 'write') {
   if (status === undefined || BUSINESS_RULE.has(status)) {
     return error.message || 'Something went wrong.';
   }
-  // A transport or system failure gets UI framing (C·5). Where the backend
+  // A transport or system failure gets UI framing. Where the backend
   // wrote a real sentence - "The AI service is temporarily unavailable" - it is
   // KEPT: framing exists to add what the backend cannot know about the user's
   // situation, not to overwrite what it did say.

@@ -15,12 +15,10 @@ import {
 import CommunityNav from '../components/CommunityNav.jsx';
 import { dayLong, dayShort, spokenDay } from '../lib/vocabulary.js';
 
-// PROGRESSIVE DISCLOSURE for the "add" forms. Manage used to be one long
-// column in which every board ended in an open form, so the page read as
-// forms first and records second. Now each board shows what exists, and the
-// form it can add to opens from one button - the same form, the same fields,
-// nothing removed. `always` is for a section with nothing in it yet, where
-// adding is the only thing to do: the form is simply there, with no toggle.
+// Progressive disclosure for the "add" forms: each board shows what exists,
+// and its form opens from one button, so the page reads as records first.
+// `always` is for a section with nothing in it yet, where adding is the only
+// thing to do: the form is simply there, with no toggle.
 function AddForm({ label, children, always = false }) {
   const [open, setOpen] = useState(false);
   const id = useId();
@@ -435,7 +433,7 @@ export default function RepDashboard() {
         <div className="manage__body">
           {/* Tiles are spent here and nowhere else: in Manage these counts ARE
               the point. No denominator on reps - the vacancy cap is a backend
-              rule and is not in any response, so it is not invented here (C·3). */}
+              rule and is not in any response, so it is not invented here. */}
           <div className="tiles glance">
             <Tile n={rep.student_count ?? 0} label="students" />
             <Tile n={rep.rep_count ?? 0}
@@ -465,7 +463,7 @@ export default function RepDashboard() {
                        title={request.full_name}
                        meta="Requested to join"
                        side={<>
-                         {/* C·11 — a decision pair. Presenting Reject as the quiet
+                         {/* A decision pair. Presenting Reject as the quiet
                              option would bias a governance decision, so both carry
                              equal weight, with Reject outlined. */}
                          <button type="button" className="btn btn--primary"

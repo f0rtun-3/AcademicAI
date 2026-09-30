@@ -4,9 +4,9 @@ The require_rep decorator reads membership when a request arrives. The write
 runs later, inside its own transaction. Between those moments a removal ballot
 can close or a transfer can complete, and the decorator's answer goes stale.
 
-Regression for a confirmed defect: event, announcement, timetable and course
-writes previously trusted the decorator alone, so a publish issued in that
-window landed AFTER the rep's authority had been revoked (spec 12).
+Ensures event, announcement, timetable and course writes re-check rep
+authority inside their own transaction, so a publish issued in that window
+cannot land after the rep's authority has been revoked (spec 12).
 """
 import pytest
 

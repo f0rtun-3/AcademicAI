@@ -28,7 +28,7 @@ class Refused extends Error {
   }
 }
 
-// ── C·1 · the chip is a reading of state ──────────────────────────────────
+// ── The chip is a reading of state ────────────────────────────────────────
 describe('state chips', () => {
   it('renders the student-facing label, so what is read and announced are the same', () => {
     render(<StateChip value="DEADLINE_MOVED" />);
@@ -61,7 +61,7 @@ describe('state chips', () => {
   });
 });
 
-// ── C·5 · business-rule copy verbatim, transport copy framed ──────────────
+// ── Business-rule copy verbatim, transport copy framed ────────────────────
 describe('error copy', () => {
   it('renders a business-rule refusal verbatim', () => {
     const refusal = 'Only a verified course rep can publish official information.';
@@ -103,7 +103,7 @@ describe('tally', () => {
   });
 });
 
-// ── C·2 · personal completion never enters the official state column ──────
+// ── Personal completion never enters the official state column ────────────
 describe('personal completion', () => {
   const EVENT = {
     id: 7, course_id: 1, course_code: 'COS202', event_type: 'ASSIGNMENT',
@@ -146,7 +146,7 @@ describe('personal completion', () => {
   });
 });
 
-// ── S16 · Profile and Settings ────────────────────────────────────────────
+// ── Profile and Settings ──────────────────────────────────────────────────
 describe('profile', () => {
   it('says Matric Number, never Student ID, and never overstates the check', async () => {
     mockApi({ '/auth/me': { ...STUDENT_SESSION,

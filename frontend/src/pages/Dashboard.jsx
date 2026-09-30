@@ -1,4 +1,4 @@
-// S5 · Dashboard.
+// Dashboard.
 //
 // The page answers one question first: what do I need to know or do right
 // now? So the order is

@@ -372,11 +372,9 @@ def analyze(actor, message, **kwargs):
 def unverified_email_member(client, register, app):
     """A community member whose email is no longer verified.
 
-    This replaces the old needs_review_member fixture. With ID-card
-    verification out of MVP scope, the email gate is the account gate, so THIS
-    is the boundary worth proving: an account that stops being email-verified
-    must lose access to protected community data on the very next request,
-    even though its membership row is still ACTIVE.
+    The email gate is the account gate: an account that stops being
+    email-verified must lose access to protected community data on the very
+    next request, even though its membership row is still ACTIVE.
 
     Production reaches this state through a change of email address; the
     fixture writes the column directly so the test does not depend on that

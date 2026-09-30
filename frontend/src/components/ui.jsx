@@ -152,23 +152,12 @@ export function StatusBadge({ value, context, ...rest }) {
 
 // The community's own lifecycle state, labelled with its subject.
 //
-// WHY THIS EXISTS RATHER THAN A BARE StateChip
-// -------------------------------------------
-// The community header puts this chip directly after the student's name and
-// academic profile, so an unlabelled "PENDING" reads as a statement about the
-// READER - "your membership is pending" - when it is nothing of the kind. A
-// real student hit exactly that: active member, unlabelled PENDING chip, and
-// the reasonable conclusion that something of theirs was waiting.
-//
-// Two fixes, both scoped to the community:
-//
-//   1. The chip carries its subject visibly ("Community"), not just a tooltip.
-//   2. PENDING is relabelled "No rep yet". For a community it does not mean
-//      "waiting for approval" - it means no rep has been elected yet.
-//
-// The relabelling is the vocabulary's "community" context, not a global
-// label: a PENDING reminder is a different idea (queued, not yet sent) and
-// keeps its own word. Same token, two meanings.
+// Placed right after the student's name and profile, a bare "PENDING" chip
+// reads as a statement about the reader ("your membership is pending"). So the
+// chip names its subject ("Community"), and PENDING is shown as "No rep yet":
+// for a community it means no rep has been elected. The relabelling is the
+// vocabulary's "community" context only - a PENDING reminder (queued, not yet
+// sent) keeps its own word.
 const COMMUNITY_TITLE = {
   PENDING: 'This community has no elected course rep yet. '
          + 'It becomes active once its first rep election succeeds.',
@@ -186,7 +175,7 @@ export function CommunityStatus({ status }) {
   );
 }
 
-// C·2 — personal completion. Slate, metadata line, never a chip and never the
+// Personal completion. Slate, metadata line, never a chip and never the
 // status column. The scope is in the words, not only in the styling.
 export function Completion({ done }) {
   if (!done) return null;
@@ -202,10 +191,7 @@ export function Completion({ done }) {
 
 // The top of every page, in one place.
 //
-// The audit found each screen inventing its own: Calendar had title + month +
-// lede, Profile had a bare name floating on the page ground, Settings had a
-// title and nothing else. A page whose heading changes shape from route to
-// route reads as several products.
+// Every page uses this, so headings keep the same shape from route to route.
 //
 // Structure, top to bottom:
 //   eyebrow  optional, mono, the page's DATA line (a month, a community, a
@@ -221,8 +207,7 @@ export function Completion({ done }) {
 // `surface` puts the whole composition on a card. It is for a header that
 // carries STATE as well as a title — the dashboard's welcome, which has to
 // group the greeting with the community it greets you into. A header that is
-// only a title and a sentence stays on the page ground, because a card around
-// two lines of text is a box for its own sake.
+// only a title and a sentence stays on the page ground; it needs no card.
 export function PageHeader({ title, eyebrow, lede, meta, action, surface = false,
                              className = '', children }) {
   return (
@@ -244,10 +229,8 @@ export function PageHeader({ title, eyebrow, lede, meta, action, surface = false
 
 // A labelled fact strip. Several short attributes, each keeping its own name.
 //
-// The alternative — joining them with " · " into one line — is how the
-// dashboard used to read, and it loses the labels: "Babcock University ·
-// Computer Science · Level 300 · 2025/2026" asks the reader to work out which
-// value is which. A record states its fields.
+// Each value keeps its label: joined into one line ("Babcock University ·
+// Computer Science · Level 300"), the reader has to work out which is which.
 //
 // Values with no data are dropped rather than rendered as "Not set": this is a
 // header, and a header that lists absences is noise. Pages that must account
@@ -510,8 +493,8 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), '
 // Built on Field so the label, hint, error and aria wiring are identical to
 // every other input - the only addition is the toggle. The button is
 // type="button" (never submits), is labelled for screen readers, and reports
-// the CURRENT state rather than the action, because "Hide password" on a
-// masked field reads as a lie.
+// the CURRENT state rather than the action: "Hide password" on a masked
+// field would be misleading.
 //
 // Autocomplete is passed through rather than guessed: a sign-in field wants
 // "current-password" and a sign-up field wants "new-password", and getting

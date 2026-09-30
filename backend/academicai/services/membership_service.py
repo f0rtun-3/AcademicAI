@@ -15,11 +15,10 @@ from .change_history import record_change
 def _require_eligible(user):
     """The account gate for joining a community.
 
-    MVP SCOPE: student ID-card verification was removed from the product, so a
-    confirmed institutional email address is the whole of this check. The
-    university-specific part of it is not lost - registration only accepts an
-    address on that university's approved domain (email_domain_service,
-    "Gate 1") - but it is evidence of controlling an address, not of identity.
+    A confirmed institutional email address is the whole of this check.
+    Registration only accepts an address on the selected university's approved
+    domain (email_domain_service, "Gate 1"), so it shows control of an address,
+    not identity.
 
     Membership itself is still not granted by this: an existing community
     approves or rejects the request, which is a separate gate below.

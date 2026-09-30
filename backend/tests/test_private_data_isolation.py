@@ -1,8 +1,8 @@
 """No endpoint may expose another user's private account or identity data.
 
-Covers the data-minimisation invariants the audit calls for: identity evidence,
-verification outcomes, email addresses and student ID numbers belong to their
-owner and must not travel through community-facing responses.
+Identity evidence, verification outcomes, email addresses and student ID
+numbers belong to their owner and must not travel through community-facing
+responses.
 """
 import pytest
 

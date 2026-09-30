@@ -1,4 +1,4 @@
-// The "Needs attention" projection (S5 band 1, correction C·7).
+// The "Needs attention" projection: the dashboard's first band.
 //
 // THIS HOLDS NOTHING. It is a pure function over the authoritative records the
 // backend already returned - academic_events for current state, change_history

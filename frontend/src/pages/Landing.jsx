@@ -13,7 +13,7 @@
 //   * guarantees any date, deadline or venue is correct
 //   * publishes official information itself
 //   * contacts lecturers, or represents any university
-//   * notifies by anything other than email
+//   * notifies by anything other than in-app notifications and email
 //
 // And it states the trust model plainly, because that model IS the product:
 // AI proposes, a human course rep reviews, the backend authorises, the
@@ -409,7 +409,7 @@ export default function Landing() {
                   as accurate as what your course rep published.
                 </span></li>
                 <li><IconShield size={16} /><span>
-                  It reaches you by <strong>email</strong> only. No SMS, no WhatsApp.
+                  It reaches you <strong>only</strong> in the app and by email. No SMS, no WhatsApp.
                 </span></li>
               </ul>
             </div>

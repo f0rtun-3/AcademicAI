@@ -116,7 +116,7 @@ def add_attachment(event_id):
     """Attach one file to an event. Verified rep only.
 
     `require_rep` is the outer gate; the service re-checks inside the writing
-    transaction, because a role can change between the two (C·9).
+    transaction, because a role can change between the two.
     """
     upload = request.files.get("file")
     row = attachment_service.add_attachment(

@@ -252,17 +252,10 @@ def _notification_status_check_is_current(conn):
 def _widen_notification_status_check(conn):
     """Rebuild notifications so status also accepts SIMULATED.
 
-    WHY A FOURTH STATUS EXISTS
-    --------------------------
-    The outbox had three terminal answers: it is waiting, a provider took it,
-    or it could not be delivered. A development backend that prints a message
-    to a terminal is none of those. It was being recorded as SENT, which made
-    the outbox claim a delivery nobody made - and an outbox that lies is not
-    evidence of anything.
-
-    SIMULATED is terminal like SENT, so a message is still handled exactly
-    once and the idempotence guarantee is unchanged. It simply does not claim
-    the message left the building.
+    SIMULATED records a message that a development backend only printed or
+    kept in memory: no provider accepted it, so SENT would claim a delivery
+    that never happened. It is terminal like SENT, so each message is still
+    handled exactly once.
 
     Same shape as _widen_event_type_check: nothing is dropped until the copy is
     verified, and the whole swap is one transaction.

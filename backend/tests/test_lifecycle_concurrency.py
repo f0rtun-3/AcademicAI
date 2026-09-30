@@ -1,9 +1,8 @@
 """Lifecycle concurrency matrix: real threads against a real SQLite file.
 
-Every race below was executed, not reasoned about. The harness asserts each
+Every race below is executed, not reasoned about. The harness asserts each
 setup step, because a race whose fixture quietly failed proves nothing - an
-earlier version of this file "passed" only because expired sessions made every
-vote a silent 401.
+expired session, for example, turns every vote into a silent 401.
 """
 from datetime import timedelta
 
@@ -191,10 +190,8 @@ def test_race_course_removal(tmp_path):
         # THE REMOVAL IS NOT GUARANTEED TO WIN, and must not be asserted to.
         # Removal is refused while a SCHEDULED event references the course, so
         # whether the DELETE commits or answers 409 depends on which thread
-        # reaches its transaction first. An earlier version of this test
-        # asserted status == "REMOVED" and so failed intermittently on the
-        # outcome where the policy worked correctly. What must hold is the
-        # INVARIANT, in both outcomes.
+        # reaches its transaction first. What must hold is the INVARIANT, in
+        # both outcomes.
         assert status in ("REMOVED", "ACTIVE"), status
         assert 409 in out or status == "REMOVED", out
 

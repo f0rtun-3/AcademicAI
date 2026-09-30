@@ -1,4 +1,4 @@
-// The "Needs attention" projection (C·7).
+// The "Needs attention" projection.
 //
 // These tests exist to hold the band to being a PROJECTION: a pure function of
 // the authoritative records, with the approved window, cap and ordering.

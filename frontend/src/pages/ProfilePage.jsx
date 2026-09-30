@@ -1,24 +1,20 @@
-// S16 · Profile - who you are in AcademicAI, and what you can change.
+// Profile - who you are in AcademicAI, and what you can change.
 //
-// THREE KINDS OF FACT, KEPT APART:
+// Three kinds of fact, kept apart:
 //
 //   identity    your name, your role, your address - on night, at the top,
 //               the same material as the account menu's header.
-//   the record  your name, department, level, session and matric number.
-//               READ-ONLY. The name is fixed: it is how your course reps and
-//               classmates know who belongs to the community, so no screen
-//               offers to change it. Level and session define your community,
-//               so changing them is a transfer, not an edit (J·6). Said on the
-//               block, not discovered by looking for a pencil that is not there.
-//   your account  the things you CAN change - email, password, appearance, your
-//               session. They live in Settings, where the rules around them
-//               are explained (a new email signs you out everywhere), so this
-//               page states them and leads there rather than growing a second
-//               copy of the same form.
+//   the record  your name, department, level, session and matric number,
+//               READ-ONLY and labelled so. The name is how course reps and
+//               classmates know who belongs, so no screen offers to change it;
+//               level and session define the community, so changing them is a
+//               transfer, not an edit.
+//   your account  what you CAN change - email, password, appearance, your
+//               session. Those live in Settings, with their rules, and this
+//               page links there rather than duplicating the forms.
 //
-// DATA. The session supplies the person; /api/community - read only when you
-// are a member - supplies the university's name, the member count and, for a
-// rep, since when. Nothing here is fetched that the app did not already expose.
+// Data: the session supplies the person; /api/community (read only for a
+// member) supplies the university, the member count and, for a rep, since when.
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -94,7 +90,7 @@ export default function ProfilePage() {
             <Fact label="Department" value={user.department} />
             <Fact label="Level" value={user.level} mono />
             <Fact label="Academic session" value={user.academic_session} mono />
-            {/* C·12: Matric Number in the UI; the column keeps its own name. */}
+            {/* "Matric Number" in the UI; the column keeps its own name. */}
             <Fact label="Matric number" value={user.student_id_number} mono />
           </dl>
           <p className="pblock__foot">

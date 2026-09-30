@@ -1,4 +1,4 @@
-// S8 · Community, with the sub-nav the approved IA specifies:
+// Community, with its sub-nav:
 //
 //   Overview | Members | Elections | Membership | Manage (verified rep only)
 //

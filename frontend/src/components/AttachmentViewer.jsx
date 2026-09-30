@@ -1,47 +1,23 @@
 // Reading the original brief without leaving AcademicAI.
 //
-// WHY THE BYTES COME THROUGH FETCH
-// --------------------------------
-// Every request to this API carries a bearer token, and `<img src>` or
-// `<iframe src>` cannot send one. So the file is fetched, turned into a
-// `blob:` URL, and that URL is what the preview element points at. The object
-// URL is revoked when the dialog closes, so nothing outlives the view.
+// The bytes come through fetch because every API request carries a bearer
+// token, which `<img src>` and `<iframe src>` cannot send. The file becomes a
+// `blob:` URL for the preview, revoked when the dialog closes.
 //
-// WHAT IS SAFE TO RENDER
-// ----------------------
-// Only formats the browser can display on its own, and only formats the
-// upload allow-list already restricts us to. Crucially that list contains no
-// HTML and no SVG: a `blob:` URL inherits this page's origin, so a stored
-// document that could carry markup and script would be a real cross-site
-// scripting route. Images, PDFs and plain text cannot be.
+// Only formats the browser displays natively, and that the upload allow-list
+// permits, are rendered. A `blob:` URL inherits this page's origin, so the
+// allow-list deliberately contains no HTML and no SVG, and the server checks
+// every upload against its magic bytes: a stored file cannot carry markup or
+// script into this origin.
 //
-// THE PDF FRAME CARRIES NO `sandbox`, DELIBERATELY
-// ------------------------------------------------
-// I tried. Measured in a real browser: with `sandbox` set to any value -
-// `allow-same-origin`, `allow-scripts`, or empty - the frame's document is
-// opaque and Chrome's PDF viewer never loads, leaving a broken-document icon.
-// Only with the attribute absent does the frame report
-// `contentType: application/pdf`. A sandbox that silently breaks the feature
-// is not security, it is a blank box.
+// The PDF frame has no `sandbox` attribute on purpose: with any sandbox value
+// Chrome's PDF viewer does not load. The allow-list is what makes that safe,
+// and a PDF's own JavaScript runs in the browser's separate viewer process,
+// away from this document and the session token. The blob is re-typed from
+// our validated content_type below, never from the response header.
 //
-// What makes the absence acceptable is the upload allow-list, not optimism. A
-// `blob:` URL inherits this origin, so the question is whether a stored file
-// could contain markup or script. It cannot: the accepted formats include no
-// HTML and no SVG, and every upload is checked against its magic bytes
-// server-side, so a `.pdf` full of `<script>` is refused at the door. A PDF's
-// own JavaScript runs in the browser's separate viewer process and cannot
-// reach this document, its storage, or the session token.
-//
-// The blob is also re-typed from OUR validated content_type below rather than
-// from the response header, so the iframe can only ever be handed something
-// the database already agreed was a PDF.
-//
-// WHAT IS NOT PREVIEWED
-// ---------------------
-// Word, PowerPoint and HEIC. No browser renders them without a converter, and
-// converting documents server-side is a document-management system, which
-// this deliberately is not. Those say so plainly and offer the download,
-// rather than opening an empty frame and letting the reader wonder.
+// Word, PowerPoint and HEIC are not previewed - no browser renders them
+// without a converter - so they say so and offer the download.
 
 import { useEffect, useState } from 'react';
 import { api } from '../api/client.js';

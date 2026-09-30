@@ -1,27 +1,11 @@
 // Rendering an assistant answer.
 //
-// WHAT THIS IS ALLOWED TO DO
-// --------------------------
-// Present the answer's OWN structure. The provider composes a lead sentence
-// and, where it is listing things, lines that begin "- ". Those become a
-// proper list instead of eight paragraphs at body spacing. Every character the
-// backend sent is rendered, in the order it sent them.
-//
-// WHAT THIS MUST NOT DO
-// ---------------------
-// Interpret. It would be easy to read "- venue changed: B007 -> B107
-// (2026-09-15)" and emit an icon, a "VENUE CHANGE" heading and a formatted
-// date. That would make the client a second author of the answer:
-//
-//   * The wording is the AI provider's, not a contract. The heuristic provider
-//     writes that line; the Anthropic provider writes prose. A parser tuned to
-//     one silently produces nonsense under the other, and `AI_PROVIDER` is a
-//     config value, not a constant.
-//   * A mis-read line would show a student something the backend never said,
-//     about their own academic record.
-//
-// So: structure, yes. Meaning, never. The one exception is exact string
-// equality, which is not a reading — see `collapse` below.
+// It presents the answer's OWN structure - a lead sentence, and lines that
+// begin "- " become a list - and renders every character the backend sent, in
+// order. It never interprets the content (icons, headings, reformatted dates):
+// the wording belongs to the configured AI provider and differs between
+// providers, and a mis-read line would show a student something the backend
+// never said. The one exception is exact string equality - see `collapse`.
 
 const BULLET = /^\s*[-•]\s+/;
 

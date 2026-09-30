@@ -116,7 +116,7 @@ const STATUS = {
   ACTIVE: 'Active',
   PENDING: 'Pending',
   // NEEDS_REVIEW must never imply that anybody is going to look at it: there
-  // is no review queue (C·6).
+  // is no review queue.
   NEEDS_REVIEW: 'Not confirmed',
   PENDING_APPROVAL: 'Awaiting a rep',
   CLARIFICATION: 'Needs clarification',

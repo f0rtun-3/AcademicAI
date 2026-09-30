@@ -9,18 +9,11 @@ must state which gate it needs:
     @require_member              -> ACTIVE membership of a community
     @require_rep                 -> VERIFIED_REP in that same community
 
-MVP SCOPE: student ID-card verification was REMOVED from the product. There is
-no @require_identity_verified any more, and nothing here reads
-users.identity_status. The account-level evidence that a caller is a student of
-a particular university is therefore exactly one thing: they confirmed control
-of an address on that university's approved institutional domain
-(services/email_domain_service.py, "Gate 1"). That is weaker than reading a
-card and this module must not be documented as if it were the same thing.
-
-Note that @require_member is built on @require_email_verified rather than
-@require_auth. It has to be: the removed identity gate used to imply a verified
-email, because submitting a card required one first. Rebuilding membership on
-the email gate keeps the check exactly as strong as it was minus the card.
+The account-level evidence that a caller studies at a university is exactly
+one thing: control of an address on that university's approved domain
+(services/email_domain_service.py, "Gate 1"). Nothing here reads the legacy
+users.identity_status. @require_member builds on @require_email_verified, not
+@require_auth, so membership always implies a confirmed address.
 
 Every gate reads live database state on each request. Nothing about authority
 is carried in the session token, so a revoked or transferred rep loses

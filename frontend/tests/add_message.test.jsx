@@ -108,7 +108,7 @@ describe('Add Message', () => {
     const sent = calls.find((c) => c.path === '/ai/analyze-message');
     expect(sent.body.course_id).toBeUndefined();
 
-    // C·3 — the warning does not block. The request goes, and the backend's
+    // The warning does not block. The request goes, and the backend's
     // refusal is what the rep reads.
     await user.click(await screen.findByRole('button', { name: 'Confirm & Publish' }));
     await waitFor(() => {
@@ -118,8 +118,7 @@ describe('Add Message', () => {
   });
 
   it('says so when the community has no published course list', async () => {
-    // The state that made the old control look broken: a select whose only
-    // option was "No specific course", with no explanation.
+    // A select whose only option is "No specific course" must explain why.
     mockApi({
       '/auth/me': REP_SESSION,
       '/community/courses': { courses: [] },
@@ -311,8 +310,8 @@ describe('Add Message · instructions', () => {
 
   it('offers the attachment as optional and publishes fine without one',
      async () => {
-    // The control is present — the brief asks for it in the creation form —
-    // but it is never a step between a rep and publishing.
+    // The control is present in the creation form, but it is never a step
+    // between a rep and publishing.
     const calls = mockApi({
       '/auth/me': REP_SESSION,
       '/community/courses': COURSES,

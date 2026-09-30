@@ -3,13 +3,9 @@
 WHAT THIS ESTABLISHES
 ---------------------
 That a registrant's email address sits on a domain approved for the university
-they selected. Combined with the existing email-link verification, which proves
-they control the account, this shows:
-
-    control of an email account on an approved institution domain
-
-It does NOT independently prove current enrolment, and it is not a substitute
-for the student ID-card check (Gate 2). Nothing here grants membership or
+they selected. With email verification, which proves they control the account,
+this shows control of an email account on an approved institution domain. It
+does NOT prove current enrolment, and nothing here grants membership or
 authority.
 
 HOW IT COMPARES

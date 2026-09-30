@@ -1,4 +1,4 @@
-// S2 · Awaiting approval. A rep in the destination has to act; there is
+// Awaiting approval. A rep in the destination has to act; there is
 // nothing the student can do but wait or leave, so the screen offers exactly
 // those two and no busywork in between.
 

@@ -143,9 +143,7 @@ def _production_config(**extra):
         SECRET_KEY = "a-real-production-secret"
         DATABASE_BACKEND = "postgresql"
         DATABASE_URL = "postgresql://academicai@db.internal:5432/academicai"
-        # A backend that actually sends. `console` used to satisfy this check,
-        # which allowed a deployment that printed verification codes to a log
-        # while students waited for mail that was never sent.
+        # A backend that actually sends mail; production refuses the rest.
         EMAIL_BACKEND = "resend"
         RESEND_API_KEY = "re_test_key"
     for key, value in extra.items():

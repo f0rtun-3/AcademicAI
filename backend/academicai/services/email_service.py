@@ -1,33 +1,23 @@
 """Email delivery backends: a notification's email channel (spec 19). The in-app
 channel is the row itself - see notification_service.
 
-ONE SEAM, THREE BACKENDS
-------------------------
-Every message in the product goes through `send()`. The backend is chosen by
-configuration and nothing above this module knows which one is active.
+Every message goes through `send()`; the backend is chosen by configuration
+and nothing above this module knows which one is active:
 
     memory   records the message in-process. Tests read it back.
     console  prints the message. Development, so a code can be read from a log.
     resend   an HTTP POST to a transactional provider. The only one that sends.
 
-TRUTHFULNESS
-------------
 `send()` returns a Result whose `delivered` flag says whether a provider
 accepted the message, and callers record delivery state from that flag rather
-than from the absence of an exception. This is the whole point of the rewrite:
+than from the absence of an exception. The memory and console backends return
+delivered=False: not failures, and not retried, but never recorded as SENT.
 
-    printing to a terminal is not delivery, and must never be recorded as SENT.
-
-The memory and console backends therefore return delivered=False. They are not
-failures - nothing went wrong, and the caller should not retry - they are
-simulations, and the outbox says so.
-
-A real provider that refuses the message raises EmailDeliveryError, which IS a
-failure. It is retried by the worker unless it is PERMANENT: a provider that
-answers 4xx has read the request and said no - an unverified sender domain, a
-recipient its plan will not deliver to - and asking again in a minute gets the
-same answer. Those are marked failed at once rather than retried five times.
-Network trouble, timeouts, 408, 429 and 5xx stay retryable.
+A real provider that refuses the message raises EmailDeliveryError, which the
+worker retries - unless it is PERMANENT. A 4xx means the provider read the
+request and said no (an unverified sender domain, a recipient its plan will not
+deliver to), so it is marked failed at once. Network errors, timeouts, 408, 429
+and 5xx stay retryable.
 """
 import json
 import logging

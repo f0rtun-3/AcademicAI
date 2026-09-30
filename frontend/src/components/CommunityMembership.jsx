@@ -1,9 +1,9 @@
-// S11 · Community → Membership (spec 10).
+// Community → Membership (spec 10).
 //
 // Transfer sits above Leave: it is the commoner and less destructive action.
 // Each is PRECEDED by what it does, never followed by it.
 //
-// Per J·6, level changes happen only here — never in Profile.
+// Level changes happen only here — never in Profile.
 
 import { useState } from 'react';
 import { api } from '../api/client.js';
@@ -80,7 +80,7 @@ export default function CommunityMembership({ community, membership }) {
           the request. Your institutional email must match the destination university.
         </p>
 
-        {/* C·4 — department, level and session have no backend registry, and
+        {/* Department, level and session have no backend registry, and
             the community is matched on these four values exactly. The preview
             shows what will be stored so a stray space or capital is visible
             while it can still be fixed. The client normalises NOTHING: a

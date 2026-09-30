@@ -1,4 +1,4 @@
-// S1 · Sign up.
+// Sign up.
 //
 // Every field, hint, label, validation rule and request is unchanged. What is
 // new is the composition: the nine fields are grouped into three labelled
@@ -26,7 +26,7 @@ import { TERMS_VERSION } from '../lib/terms.js';
 const EMPTY = {
   full_name: '', email: '', password: '', confirm_password: '',
   university: '', department: '', level: '', academic_session: '',
-  // Wire field name, unchanged. The user-facing word is Matric Number (C·12).
+  // Wire field name, unchanged. The user-facing word is Matric Number.
   student_id_number: '',
 };
 // Fields a refusal can be shown beside: the form's inputs, and the agreement.
@@ -222,7 +222,7 @@ export default function SignUp() {
           <legend>Your academic community</legend>
 
           {/* University is a closed set held by the backend registry, so it is
-              a select. Department, level and session have NO registry (C·4) —
+              a select. Department, level and session have NO registry —
               they stay text inputs, with a preview of what will be stored. The
               client normalises nothing. */}
           <Field id="university" label="University" required error={fieldErrors.university}>
