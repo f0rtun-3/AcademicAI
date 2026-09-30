@@ -69,9 +69,21 @@ def _bool(name, default=False):
 
 
 class Config:
+    # DATABASE ENGINE. SQLite is the default, for local development and tests;
+    # production must run on PostgreSQL, and refuses to start on SQLite (see
+    # app._validate_production_config). The PostgreSQL backend is
+    # db/postgres.py; the application's SQL is the same for both.
+    DATABASE_BACKEND = os.environ.get("ACADEMICAI_DATABASE_BACKEND", "sqlite").strip().lower()
+    # postgresql://user:password@host:5432/dbname - a secret, like the key below.
+    DATABASE_URL = os.environ.get("ACADEMICAI_DATABASE_URL")
+    DB_POOL_MIN = int(os.environ.get("ACADEMICAI_DB_POOL_MIN", "1"))
+    DB_POOL_MAX = int(os.environ.get("ACADEMICAI_DB_POOL_MAX", "10"))
+
     # Database path is configurable so deployment can point it at a persistent
     # volume rather than an ephemeral filesystem (spec 32).
     DATABASE_PATH = os.environ.get("ACADEMICAI_DB_PATH", "instance/academicai.db")
+    # How long a writer waits for the write lock before DatabaseBusy (503).
+    # SQLite's busy_timeout; on PostgreSQL, the session's lock_timeout.
     SQLITE_BUSY_TIMEOUT_MS = int(os.environ.get("ACADEMICAI_BUSY_TIMEOUT_MS", "5000"))
     SQLITE_WAL = _bool("ACADEMICAI_SQLITE_WAL", True)
 
@@ -206,6 +218,7 @@ class Config:
 
 
 class TestConfig(Config):
+    DATABASE_BACKEND = "sqlite"
     DATABASE_PATH = ":memory:"
     TESTING = True
     SECRET_KEY = "test-secret"

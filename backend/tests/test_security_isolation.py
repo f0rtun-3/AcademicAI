@@ -291,10 +291,9 @@ def test_sql_injection_in_written_fields_is_stored_as_literal_text(
         "event_type": "QUIZ", "event_date": "2026-10-20"})
     assert resp.status_code == 201
     with app.app_context():
-        from academicai.db.connection import query_all, query_one
-        tables = {r["name"] for r in query_all(
-            "SELECT name FROM sqlite_master WHERE type='table'")}
-        assert "academic_events" in tables
+        from academicai.db.connection import query_one
+        # The table is still there: reading it would raise if it had been dropped.
+        assert query_one("SELECT COUNT(*) AS n FROM academic_events")["n"] >= 1
         row = query_one("SELECT title FROM academic_events WHERE id = ?",
                         (resp.get_json()["event"]["id"],))
         assert row["title"] == "'; DROP TABLE academic_events; --"
@@ -325,7 +324,6 @@ def test_sql_injection_through_chat(client, academic_community, app):
         "/api/chat", json={"question": "'; DROP TABLE chat_messages; --"})
     assert resp.status_code == 201
     with app.app_context():
-        from academicai.db.connection import query_all
-        tables = {r["name"] for r in query_all(
-            "SELECT name FROM sqlite_master WHERE type='table'")}
-        assert "chat_messages" in tables
+        from academicai.db.connection import query_one
+        # The table is still there: reading it would raise if it had been dropped.
+        assert query_one("SELECT COUNT(*) AS n FROM chat_messages")["n"] >= 1

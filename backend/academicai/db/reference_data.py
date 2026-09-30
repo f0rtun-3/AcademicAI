@@ -64,21 +64,25 @@ def seed(conn, now):
     deactivated - re-enabling one is an operator decision, not a side effect
     of a restart.
     """
+    # The one helper this needs from connection.py, imported here rather than
+    # at the top so this module still loads without the application.
+    from .connection import insert_returning_id
+
     if is_seeded(conn):
         return False
     for name, domain, domain_type in UNIVERSITY_EMAIL_DOMAINS:
         row = conn.execute("SELECT id FROM universities WHERE name = ?", (name,)).fetchone()
         if row is None:
-            cur = conn.execute(
+            university_id = insert_returning_id(
                 "INSERT INTO universities (name, created_at, timezone) VALUES (?, ?, ?)",
-                (name, now, UNIVERSITY_TIMEZONES[name]))
-            university_id = cur.lastrowid
+                (name, now, UNIVERSITY_TIMEZONES[name]), conn=conn)
         else:
             university_id = row["id"] if not isinstance(row, tuple) else row[0]
         conn.execute(
-            """INSERT OR IGNORE INTO university_email_domains
+            """INSERT INTO university_email_domains
                (university_id, domain, domain_type, active, created_at)
-               VALUES (?, ?, ?, 1, ?)""",
+               VALUES (?, ?, ?, 1, ?)
+               ON CONFLICT (domain) DO NOTHING""",
             (university_id, normalize_domain(domain), domain_type, now),
         )
     return True

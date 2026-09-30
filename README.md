@@ -27,8 +27,10 @@ backend/
     academic_time.py        University wall-clock <-> UTC instant, in the university's zone
     errors.py               Error types, each mapping to one HTTP status
     db/
-      schema.sql            The only SQLite-specific file
+      schema.sql            SQLite schema (development and tests)
+      schema_postgres.sql   PostgreSQL schema: migration 1, the baseline
       connection.py         Connections, WAL, busy_timeout, BEGIN IMMEDIATE
+      postgres.py           PostgreSQL backend: same behaviour, write lock, migrations
       reference_data.py     Seeded university email-domain registry
     security/
       authz.py              The three authorization gates
@@ -197,8 +199,34 @@ If you start the API yourself, use `python -u` (as `make api` and `make dev`
 both do): with the `console` email backend the verification code is printed to
 stdout, and Python block-buffers that away when it is redirected.
 
-Copy `.env.example` to `.env` and set `ACADEMICAI_SECRET_KEY` and
-`ACADEMICAI_DB_PATH` before deploying.
+Copy `.env.example` to `.env` and set `ACADEMICAI_SECRET_KEY` and the
+database settings below before deploying.
+
+### Database: SQLite for development, PostgreSQL for production
+
+| Variable | Meaning |
+| --- | --- |
+| `ACADEMICAI_DATABASE_BACKEND` | `sqlite` (default) or `postgresql` |
+| `ACADEMICAI_DATABASE_URL` | `postgresql://user:password@host:5432/dbname` (a secret) |
+| `ACADEMICAI_DB_POOL_MIN` / `_MAX` | pooled connections per process (1 / 10) |
+| `ACADEMICAI_BUSY_TIMEOUT_MS` | how long a write waits for the write lock before `503` (5000) |
+| `ACADEMICAI_DB_PATH` | SQLite file (SQLite only) |
+
+SQLite stays the default so local development and the test suite need nothing
+installed. **Production requires PostgreSQL:** with `ACADEMICAI_ENV=production`
+the app refuses to start on SQLite, or on PostgreSQL without a URL. The
+application's SQL is the same on both; `db/postgres.py` makes a PostgreSQL
+connection behave the way the code expects of SQLite (placeholders, rows,
+generated ids, transactions, errors).
+
+PostgreSQL's schema is managed by numbered migrations recorded in
+`schema_migrations`. `db/schema_postgres.sql` is migration 1; a later change is
+a new file `db/migrations_postgres/0002_what_it_does.sql`, never an edit to an
+applied one. Each migration runs in its own transaction, so it applies
+completely or not at all. The API and the worker both migrate when they start,
+taking turns under a start-up lock, so starting them together is safe. The
+SQLite path is unchanged (`schema.sql` plus the additive column list in
+`connection.py`).
 
 ## Rep elections
 
@@ -480,15 +508,26 @@ no file from any client. A general request-body cap
 
 ## Concurrency
 
-- Every read-then-write runs under `BEGIN IMMEDIATE`.
+- Every read-then-write runs under `BEGIN IMMEDIATE`. On PostgreSQL, where
+  `BEGIN` takes no lock, the same transactions begin by taking one app-wide
+  advisory lock (`pg_advisory_xact_lock`), released at commit or rollback, and
+  a write outside a transaction takes it too. Writes are therefore serialised
+  across every API and worker process exactly as on SQLite, and every decision
+  read inside a transaction still holds when its write lands. Reads outside a
+  transaction take nothing. This is deliberately as coarse as SQLite's lock:
+  narrower (per-community) locking is a possible later optimisation, not part
+  of the move to PostgreSQL. The lock is database-wide, so two deployments
+  sharing one PostgreSQL database would also share it.
 - Mutable records carry a version. Publishing against a stale version returns
   `409 stale_proposal` and requires re-analysis.
 - Ballot closing is a conditional `UPDATE ... WHERE status = 'OPEN'`, so running
   the worker twice cannot promote a candidate twice.
 - Notification rows carry a unique dedupe key, so re-running a job cannot send a
   message twice.
-- A SQLite lock failure surfaces as `503 database_busy`, never as a business
-  `409` — the two are tested to stay distinct.
+- A lock failure (SQLite's busy timeout, PostgreSQL's lock timeout, a
+  deadlock or a lost connection) surfaces as `503 database_busy`, never as a
+  business `409` — the two are tested to stay distinct. A constraint violation
+  is `409 conflict` on either engine.
 
 ## Tests
 
@@ -498,6 +537,22 @@ make test-frontend    # vitest
 ```
 
 No test requires an API key, a network connection, or any external binary.
+
+The suite runs on SQLite. PostgreSQL is opt-in, against a **disposable**
+database (tests create and drop schemas in it):
+
+```bash
+# The PostgreSQL tests (test_postgres_*.py, and the PostgreSQL half of
+# test_database_portability.py). Without the URL they are reported as skipped.
+ACADEMICAI_TEST_POSTGRES_URL=postgresql://user@localhost:5432/academicai_test \
+  .venv/bin/python -m pytest backend/tests
+
+# The whole suite on PostgreSQL. Tests marked sqlite_only (PRAGMAs, SQLite
+# files, the SQLite migrations) are skipped in this mode.
+ACADEMICAI_TEST_BACKEND=postgresql \
+ACADEMICAI_TEST_POSTGRES_URL=postgresql://user@localhost:5432/academicai_test \
+  .venv/bin/python -m pytest backend/tests
+```
 
 `tests/test_onboarding_flow.py` pins the MVP sequence and asserts the removed
 ID-card feature stays removed — no endpoint, no importable module, no
@@ -614,10 +669,11 @@ These are deliberate and documented rather than hidden:
 - **No real-browser E2E.** UI tests run in jsdom via vitest. End-to-end flows
   are covered at the API level plus an HTTP smoke test. Playwright has not been
   run.
-- **PostgreSQL is untested.** The dialect boundary is isolated to
-  `db/schema.sql` and application SQL is standard, but nothing has been executed
-  against PostgreSQL. Treat the migration as unvalidated work, not a
-  configuration switch.
+- **Supporting material is still stored on local disk** (`ACADEMICAI_UPLOAD_DIR`),
+  on PostgreSQL as on SQLite. A multi-machine deployment needs shared storage
+  for it; that move is separate from the database migration.
+- **`backup_db.py` backs up SQLite only.** Back up PostgreSQL with its own
+  tools (`pg_dump`, or the host's managed backups).
 - **Rate limiting is in-process.** A multi-process deployment needs a shared
   store. Call sites will not change.
 - **No per-user timezones.** A student reads their university's academic clock

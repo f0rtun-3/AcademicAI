@@ -191,12 +191,27 @@ def _prod(**extra):
         TESTING = False
         SECRET_KEY = "a-real-production-secret"
         DATABASE_PATH = tempfile.mkdtemp() + "/academicai.db"
+        # Production runs on PostgreSQL. These tests are about the start-up
+        # checks, which run before any connection is made (_passes_checks).
+        DATABASE_BACKEND = "postgresql"
+        DATABASE_URL = "postgresql://academicai@db.internal:5432/academicai"
         EMAIL_BACKEND = "resend"
         RESEND_API_KEY = "re_test_key"
         ALLOW_ANY_EMAIL_DOMAIN = False
     for key, value in extra.items():
         setattr(ProdConfig, key, value)
     return ProdConfig
+
+
+def _passes_checks(config):
+    """The production start-up checks alone, without connecting to a database."""
+    from flask import Flask
+
+    from academicai.app import _validate_production_config
+    app = Flask("check")
+    app.config.from_object(config)
+    _validate_production_config(app)
+    return app
 
 
 def test_production_refuses_unverified_signups_by_default():
@@ -208,8 +223,7 @@ def test_production_refuses_unverified_signups_by_default():
 
 def test_production_allows_it_only_when_declared_a_demo():
     """Two variables, not one: a single flag can be set and forgotten."""
-    from academicai.app import create_app
-    app = create_app(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE="demo"))
+    app = _passes_checks(_prod(EMAIL_VERIFICATION_REQUIRED=False, DEPLOYMENT_MODE="demo"))
     assert app.config["EMAIL_VERIFICATION_REQUIRED"] is False
 
 
@@ -222,6 +236,5 @@ def test_a_near_miss_deployment_mode_does_not_count():
 
 def test_demo_mode_alone_changes_nothing_when_verification_is_on():
     """The acknowledgement is not itself a switch."""
-    from academicai.app import create_app
-    app = create_app(_prod(DEPLOYMENT_MODE="demo"))
+    app = _passes_checks(_prod(DEPLOYMENT_MODE="demo"))
     assert app.config["EMAIL_VERIFICATION_REQUIRED"] is True

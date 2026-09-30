@@ -217,6 +217,7 @@ def test_double_vote_is_rejected_under_concurrency(file_app):
     assert sorted(statuses) == [201, 409]
 
 
+@pytest.mark.sqlite_only       # PostgreSQL: test_postgres_concurrency.py
 def test_lock_contention_is_not_reported_as_a_stale_proposal(file_app):
     """A SQLite lock failure must surface as 503, never as a business 409 (spec 32)."""
     actors, event, _ = _seed(file_app)
@@ -241,6 +242,7 @@ def test_lock_contention_is_not_reported_as_a_stale_proposal(file_app):
     assert resp.get_json()["error"] == "database_busy"
 
 
+@pytest.mark.sqlite_only
 def test_wal_and_foreign_keys_are_enabled_on_file_databases(file_app):
     with file_app.app_context():
         from academicai.db.connection import get_db

@@ -16,14 +16,61 @@ from academicai.app import create_test_app  # noqa: E402
 from academicai.security import rate_limit  # noqa: E402
 from academicai.services import email_service  # noqa: E402
 from academicai.services.auth_service import TERMS_VERSION  # noqa: E402
+from tests import pg_support  # noqa: E402
 # What the sign-up form sends when its Terms box is ticked.
 TERMS_ACCEPTED = {"accept_terms": True, "terms_version": TERMS_VERSION}
 
 BASE_TIME = datetime(2026, 9, 14, 9, 0, 0, tzinfo=timezone.utc)
 
 
+# ── PostgreSQL (opt-in; see tests/pg_support.py) ──────────────────────────
+
+def pytest_configure(config):
+    if not pg_support.FULL_SUITE_ON_POSTGRES:
+        return
+    if pg_support.PG_URL is None:
+        raise pytest.UsageError(
+            "ACADEMICAI_TEST_BACKEND=postgresql needs ACADEMICAI_TEST_POSTGRES_URL")
+    from academicai.config import TestConfig
+    name, url = pg_support.create_schema("suite")
+    config._academicai_pg_schema = (name, url)
+    # Every app a test creates - create_test_app, the file-backed concurrency
+    # apps, any TestConfig subclass - now runs on this schema.
+    TestConfig.DATABASE_BACKEND = "postgresql"
+    TestConfig.DATABASE_URL = url
+
+
+def pytest_unconfigure(config):
+    schema = getattr(config, "_academicai_pg_schema", None)
+    if schema is not None:
+        pg_support.drop_schema(*schema)
+
+
+def pytest_collection_modifyitems(config, items):
+    if not pg_support.FULL_SUITE_ON_POSTGRES:
+        return
+    skip = pytest.mark.skip(reason="tests SQLite itself; not applicable on PostgreSQL")
+    for item in items:
+        if item.get_closest_marker("sqlite_only"):
+            item.add_marker(skip)
+
+
+@pytest.fixture
+def pg_schema():
+    """A fresh, empty PostgreSQL schema for one test; its url. Skips the test
+    when PostgreSQL is not configured."""
+    if pg_support.PG_URL is None:
+        pytest.skip("PostgreSQL not configured: set ACADEMICAI_TEST_POSTGRES_URL")
+    name, url = pg_support.create_schema()
+    yield url
+    pg_support.drop_schema(name, url)
+
+
 @pytest.fixture(autouse=True)
-def _isolated_state():
+def _isolated_state(request):
+    if pg_support.FULL_SUITE_ON_POSTGRES:
+        # Each test starts from an empty database, as it does in memory.
+        pg_support.empty_all_tables(request.config._academicai_pg_schema[1])
     clock.freeze(BASE_TIME)
     email_service.clear()
     email_service.set_failure_hook(None)

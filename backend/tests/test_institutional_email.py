@@ -604,11 +604,11 @@ def test_extract_domain_normalizes(app):
 
 def test_domains_are_unique_across_universities(app):
     """One domain can never be claimed by two institutions."""
-    import sqlite3
+    from tests.pg_support import INTEGRITY_ERRORS
 
     with app.app_context():
         from academicai.db.connection import execute, transaction
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(INTEGRITY_ERRORS):
             with transaction() as conn:
                 covenant = conn.execute(
                     "SELECT id FROM universities WHERE name = 'Covenant University'"

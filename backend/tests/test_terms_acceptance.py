@@ -68,6 +68,7 @@ def test_the_acceptance_is_recorded_as_version_and_time(client, app):
     assert row["terms_accepted_at"] == row["created_at"]
 
 
+@pytest.mark.sqlite_only       # PostgreSQL's columns: test_postgres_backend's schema match
 def test_nothing_else_about_the_acceptance_is_kept(app):
     """Version and time only: no IP, user agent or copy of the text."""
     from academicai.db.connection import query_all

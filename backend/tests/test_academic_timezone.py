@@ -682,6 +682,7 @@ def _snapshot(path):
     return out
 
 
+@pytest.mark.sqlite_only
 def test_migration_backfills_zones_and_moves_only_pending_official_reminders(tmp_path):
     path = _legacy_database(tmp_path)
     personal_before = _personal(path)
@@ -702,6 +703,7 @@ def test_migration_backfills_zones_and_moves_only_pending_official_reminders(tmp
     assert _snapshot(path) == after
 
 
+@pytest.mark.sqlite_only
 def test_migration_keeps_a_zone_an_operator_already_set(tmp_path):
     path = _legacy_database(tmp_path)
     _file_app(path)
@@ -715,6 +717,7 @@ def test_migration_keeps_a_zone_an_operator_already_set(tmp_path):
     assert zones["Covenant University"] == "America/New_York"
 
 
+@pytest.mark.sqlite_only
 def test_start_up_refuses_a_university_it_cannot_give_a_clock(tmp_path):
     path = _legacy_database(tmp_path, extra_university="Unlisted University")
     with pytest.raises(RuntimeError) as excinfo:
@@ -726,6 +729,7 @@ def test_start_up_refuses_a_university_it_cannot_give_a_clock(tmp_path):
     assert {tz for _name, tz in _snapshot(path)["universities"]} == {None}
 
 
+@pytest.mark.sqlite_only
 def test_start_up_refuses_a_fixed_offset_or_unknown_zone(tmp_path):
     path = str(tmp_path / "bad.db")
     _file_app(path)

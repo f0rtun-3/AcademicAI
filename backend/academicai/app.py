@@ -46,8 +46,18 @@ def _validate_production_config(app):
     problems = []
     if app.config.get("SECRET_KEY") == Config.DEFAULT_SECRET_KEY:
         problems.append("ACADEMICAI_SECRET_KEY is still the development default")
-    if app.config.get("DATABASE_PATH") in (":memory:", None, ""):
-        problems.append("ACADEMICAI_DB_PATH must point at a persistent file")
+    # Production runs on PostgreSQL. SQLite stays the default for local
+    # development and tests, which is exactly why it must not reach production
+    # by omission: forgetting one variable would otherwise ship a file database.
+    db_backend = app.config.get("DATABASE_BACKEND")
+    if db_backend != "postgresql":
+        problems.append(
+            f"ACADEMICAI_DATABASE_BACKEND is '{db_backend}'; production requires "
+            "'postgresql' (SQLite is for local development and tests only)")
+        if app.config.get("DATABASE_PATH") in (":memory:", None, ""):
+            problems.append("ACADEMICAI_DB_PATH must point at a persistent file")
+    elif not app.config.get("DATABASE_URL"):
+        problems.append("ACADEMICAI_DATABASE_URL must be set to the PostgreSQL database")
     # A production build must be able to SEND. `console` used to pass this
     # check, which meant a deployment could sit there printing verification
     # codes into a log file while every new student waited for an email that
@@ -90,7 +100,18 @@ def _validate_production_config(app):
             "Refusing to start in production: " + "; ".join(problems) + ".")
 
 
+# How long a starting process waits for another one's migration to finish.
+STARTUP_LOCK_TIMEOUT_MS = 60_000
+
+
 def _init_database(app):
+    backend = app.config.get("DATABASE_BACKEND", "sqlite")
+    if backend == "postgresql":
+        _init_postgres(app)
+        return
+    if backend != "sqlite":
+        raise RuntimeError(
+            f"ACADEMICAI_DATABASE_BACKEND is '{backend}'; it must be 'sqlite' or 'postgresql'.")
     path = app.config["DATABASE_PATH"]
     if path == ":memory:":
         # One shared connection for the whole app so every request sees the same
@@ -105,6 +126,28 @@ def _init_database(app):
             _migrate(conn, app)
         finally:
             conn.close()
+
+
+def _init_postgres(app):
+    """Migrate on a dedicated connection, holding the start-up lock.
+
+    The API and the worker both run this when they start. The lock makes them
+    take turns: the first applies the migrations and start-up data steps, the
+    second then finds nothing left to do. Requests use the pool afterwards.
+    """
+    from .db import postgres
+
+    url = app.config.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "ACADEMICAI_DATABASE_BACKEND is 'postgresql' but ACADEMICAI_DATABASE_URL is not set.")
+    app.config["_SHARED_MEMORY_CONN"] = None
+    conn = postgres.connect(url, lock_timeout_ms=STARTUP_LOCK_TIMEOUT_MS)
+    try:
+        with conn.startup_lock():
+            _migrate(conn, app)
+    finally:
+        conn.close()
 
 
 def _migrate(conn, app):
@@ -156,11 +199,16 @@ def _register_error_handlers(app):
         return jsonify({"error": "database_busy",
                         "message": "The service is busy. Please retry."}), 503
 
-    @app.errorhandler(sqlite3.IntegrityError)
     def handle_integrity(exc):
         current_app.logger.warning("integrity error")
         return jsonify({"error": "conflict",
                         "message": "That operation conflicts with existing data."}), 409
+
+    # The same 409 for either engine's constraint failure.
+    app.register_error_handler(sqlite3.IntegrityError, handle_integrity)
+    if app.config.get("DATABASE_BACKEND") == "postgresql":
+        from .db import postgres
+        app.register_error_handler(postgres.IntegrityError, handle_integrity)
 
     @app.errorhandler(413)
     def handle_too_large(_exc):

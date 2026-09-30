@@ -9,11 +9,10 @@ Regressions for three confirmed defects:
     write lock up front;
   * at most one ACTIVE membership per user was application-enforced only.
 """
-import sqlite3
-
 import pytest
 
 from academicai import clock
+from tests.pg_support import INTEGRITY_ERRORS
 
 pytestmark = pytest.mark.security
 
@@ -237,7 +236,7 @@ def test_the_database_refuses_a_second_active_membership(client, academic_commun
 
     with app.app_context():
         from academicai.db.connection import execute, transaction
-        with pytest.raises(sqlite3.IntegrityError):
+        with pytest.raises(INTEGRITY_ERRORS):
             with transaction() as conn:
                 execute("""INSERT INTO community_members
                            (community_id, user_id, role, status, requested_at)

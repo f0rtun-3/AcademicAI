@@ -6,6 +6,7 @@ import tempfile
 import pytest
 
 
+@pytest.mark.sqlite_only
 def test_app_boots_with_a_file_database_and_creates_schema():
     from academicai.app import create_app
     from academicai.config import TestConfig
@@ -32,6 +33,7 @@ def test_app_boots_with_a_file_database_and_creates_schema():
         assert expected in tables
 
 
+@pytest.mark.sqlite_only
 def test_backup_produces_a_readable_copy_and_prunes_old_ones():
     from academicai.app import create_app
     from academicai.config import TestConfig
@@ -132,28 +134,89 @@ def test_production_refuses_an_in_memory_database():
     assert "ACADEMICAI_DB_PATH" in str(excinfo.value)
 
 
-def test_production_starts_when_properly_configured():
-    import tempfile
-
-    from academicai.app import create_app
+def _production_config(**extra):
     from academicai.config import Config
-
-    directory = tempfile.mkdtemp()
 
     class ProdConfig(Config):
         ENV = "production"
         TESTING = False
         SECRET_KEY = "a-real-production-secret"
-        DATABASE_PATH = os.path.join(directory, "academicai.db")
+        DATABASE_BACKEND = "postgresql"
+        DATABASE_URL = "postgresql://academicai@db.internal:5432/academicai"
         # A backend that actually sends. `console` used to satisfy this check,
         # which allowed a deployment that printed verification codes to a log
         # while students waited for mail that was never sent.
         EMAIL_BACKEND = "resend"
         RESEND_API_KEY = "re_test_key"
+    for key, value in extra.items():
+        setattr(ProdConfig, key, value)
+    return ProdConfig
 
-    app = create_app(ProdConfig)
+
+def test_production_configuration_on_postgresql_passes_the_checks():
+    from flask import Flask
+
+    from academicai.app import _validate_production_config
+
+    app = Flask("check")
+    app.config.from_object(_production_config())
+    _validate_production_config(app)          # raises if anything is refused
+
+
+@pytest.mark.postgres
+def test_production_starts_when_properly_configured(pg_schema):
+    from academicai.app import create_app
+
+    app = create_app(_production_config(DATABASE_URL=pg_schema))
     assert app.config["SECRET_KEY"] == "a-real-production-secret"
     assert app.debug is False
+
+
+def test_production_refuses_sqlite():
+    """SQLite is the development default, so it must never reach production
+    by omission - a forgotten variable would ship a file database."""
+    import tempfile
+
+    from academicai.app import create_app
+
+    for backend in ("sqlite", "", "postgres", "mysql"):
+        with pytest.raises(RuntimeError) as excinfo:
+            create_app(_production_config(
+                DATABASE_BACKEND=backend,
+                DATABASE_PATH=os.path.join(tempfile.mkdtemp(), "academicai.db")))
+        message = str(excinfo.value)
+        assert "ACADEMICAI_DATABASE_BACKEND" in message
+        assert "requires 'postgresql'" in message
+
+
+def test_production_refuses_postgresql_without_a_url():
+    from academicai.app import create_app
+
+    for url in (None, ""):
+        with pytest.raises(RuntimeError) as excinfo:
+            create_app(_production_config(DATABASE_URL=url))
+        assert "ACADEMICAI_DATABASE_URL" in str(excinfo.value)
+
+
+def test_an_unknown_database_backend_is_refused_outside_production():
+    from academicai.app import create_app
+    from academicai.config import TestConfig
+
+    class Typo(TestConfig):
+        DATABASE_BACKEND = "postgres"
+
+    with pytest.raises(RuntimeError) as excinfo:
+        create_app(Typo)
+    assert "must be 'sqlite' or 'postgresql'" in str(excinfo.value)
+
+
+@pytest.mark.sqlite_only
+def test_sqlite_remains_the_default_for_development_and_tests():
+    from academicai.config import Config, TestConfig
+
+    assert TestConfig.DATABASE_BACKEND == "sqlite"
+    if "ACADEMICAI_DATABASE_BACKEND" not in os.environ:
+        assert Config.DATABASE_BACKEND == "sqlite"
 
 
 def test_development_still_starts_with_defaults():

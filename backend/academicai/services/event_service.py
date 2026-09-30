@@ -84,7 +84,11 @@ def list_events(community_id, course_id=None, include_cancelled=True, conn=None)
         params.append(course_id)
     if not include_cancelled:
         sql += " AND e.status != 'CANCELLED'"
-    sql += " ORDER BY (e.event_date IS NULL), e.event_date, e.event_time, e.id"
+    # Undated events last; on the same day, an event with no time first (it is
+    # "that day", which reads before its timed entries). Spelled out because
+    # SQLite and PostgreSQL disagree on where NULL sorts by default.
+    sql += (" ORDER BY (e.event_date IS NULL), e.event_date,"
+            " (e.event_time IS NOT NULL), e.event_time, e.id")
     return query_all(sql, tuple(params), conn=conn)
 
 

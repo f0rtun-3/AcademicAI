@@ -220,6 +220,7 @@ def test_ai_publish_was_already_protected_and_still_is(
 # Uses a file-backed database: the in-memory database shares one connection,
 # which SQLite forbids across threads (see tests/test_concurrency.py).
 
+@pytest.mark.sqlite_only       # PostgreSQL: test_postgres_concurrency.py
 def test_concurrent_removal_and_publish_leaves_consistent_state(tmp_path):
     """Whichever order they land in, the database must agree with the outcome."""
     import os

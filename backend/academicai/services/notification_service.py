@@ -23,7 +23,6 @@ active course enrollments, so neither a stale enrollment row nor a former
 member can be notified.
 """
 import logging
-import sqlite3
 
 from .. import clock
 from ..db.connection import execute, query_all, query_one, transaction
@@ -41,19 +40,24 @@ def _insert(user_id, community_id, subject, body, dedupe_key, conn,
     The unique dedupe_key is what makes re-running a job idempotent: a second
     attempt to queue the same message for the same recipient is dropped by the
     database rather than by a race-prone application check (spec 21).
+
+    ON CONFLICT (dedupe_key) DO NOTHING drops that duplicate and only that: any
+    other failure (a missing user, a broken constraint) still raises. It also
+    raises nothing for the duplicate, which matters inside a transaction - an
+    error there aborts the whole PostgreSQL transaction, not just the insert.
+    Whether the row went in is the affected-row count. A NULL key never
+    conflicts, so a message without one is always queued, as before.
     """
-    try:
-        execute(
-            """INSERT INTO notifications
-               (user_id, community_id, subject, body, status, dedupe_key, created_at,
-                kind, link, app_subject, app_body)
-               VALUES (?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)""",
-            (user_id, community_id, subject, body, dedupe_key, clock.now_iso(),
-             kind, link, app_subject, app_body), conn=conn,
-        )
-        return True
-    except sqlite3.IntegrityError:
-        return False
+    cursor = execute(
+        """INSERT INTO notifications
+           (user_id, community_id, subject, body, status, dedupe_key, created_at,
+            kind, link, app_subject, app_body)
+           VALUES (?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?)
+           ON CONFLICT (dedupe_key) DO NOTHING""",
+        (user_id, community_id, subject, body, dedupe_key, clock.now_iso(),
+         kind, link, app_subject, app_body), conn=conn,
+    )
+    return cursor.rowcount == 1
 
 
 def enqueue(user_ids, community_id, subject, body, dedupe_key=None, conn=None,

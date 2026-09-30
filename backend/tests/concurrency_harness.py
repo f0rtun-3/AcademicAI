@@ -1,6 +1,7 @@
 """File-backed concurrency harness.
 
-Real threads against a real SQLite file. Every setup step asserts, so a broken
+Real threads against a real SQLite file (or, when the suite runs on
+PostgreSQL, a real PostgreSQL database). Every setup step asserts, so a broken
 fixture fails loudly instead of being mistaken for a passing race.
 """
 import os
@@ -169,5 +170,8 @@ def race(*fns, threads_per_fn=1):
 
 def db(app):
     """A fresh connection for final-state assertions."""
+    if app.config.get("DATABASE_BACKEND") == "postgresql":
+        from academicai.db import postgres
+        return postgres.connect(app.config["DATABASE_URL"])
     from academicai.db.connection import connect
     return connect(app.config["_TEST_DB_PATH"], busy_timeout_ms=5000, wal=True)

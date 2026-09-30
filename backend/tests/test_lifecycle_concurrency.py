@@ -55,7 +55,7 @@ def test_race_election_overflow(tmp_path):
         notifs = conn.execute(
             """SELECT dedupe_key, COUNT(*) AS n FROM notifications
                WHERE dedupe_key LIKE 'nomination:%' GROUP BY dedupe_key
-               HAVING n > 1""").fetchall()
+               HAVING COUNT(*) > 1""").fetchall()
         conn.close()
         print(f"\n[1] election x4 close  reps={reps} passed_ballots={passed} "
               f"promo_audit={promos} dup_notifs={len(notifs)}")

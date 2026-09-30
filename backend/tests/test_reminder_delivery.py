@@ -292,6 +292,7 @@ def test_a_permanent_refusal_is_not_retried_by_the_outbox(client, academic_commu
     assert {(r["status"], r["attempts"]) for r in rows} == {("FAILED", 1)}
 
 
+@pytest.mark.sqlite_only       # total_changes() is SQLite's
 def test_reminder_service_exposes_no_decision(app):
     """any_due and next_due_for_user read; neither writes. (A guard against a
     future change that makes the hint 'helpfully' fire something.)"""

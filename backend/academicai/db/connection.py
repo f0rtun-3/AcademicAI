@@ -1,4 +1,13 @@
-"""SQLite connection and transaction management.
+"""Connection and transaction management.
+
+SQLite by default (local development and tests); PostgreSQL when
+DATABASE_BACKEND is "postgresql" (production). Everything below that talks
+to SQLite directly - PRAGMAs, the two table rebuilds, ALTER TABLE for added
+columns - is SQLite-only. PostgreSQL's schema is db/schema_postgres.sql plus
+numbered migrations, and its connection is db/postgres.py, which keeps the
+behaviour described here (including BEGIN IMMEDIATE's write lock, as an
+advisory lock). The functions the application calls - get_db, transaction,
+execute, query_one, query_all, insert_returning_id - work on either.
 
 Design rules (spec 32):
   * foreign keys ON
@@ -19,7 +28,8 @@ SCHEMA_PATH = os.path.join(os.path.dirname(__file__), "schema.sql")
 
 
 class DatabaseBusy(RuntimeError):
-    """Raised when SQLite could not acquire a lock within busy_timeout.
+    """Raised when the database could not acquire a lock within busy_timeout
+    (SQLite) or lock_timeout (PostgreSQL), or could not be reached.
 
     Deliberately distinct from business-rule errors so that infrastructure
     contention is never mistaken for a stale proposal (spec 32).
@@ -47,12 +57,20 @@ def connect(path, busy_timeout_ms=5000, wal=True):
     return _configure(conn, {"path": path, "busy_timeout_ms": busy_timeout_ms, "wal": wal})
 
 
+def _is_postgres(conn):
+    return getattr(conn, "dialect", None) == "postgresql"
+
+
 def get_db():
     """Connection for the current request/worker job, created on first use."""
     if "db" not in g:
         app = current_app
         path = app.config["DATABASE_PATH"]
-        if path == ":memory:" and app.config.get("_SHARED_MEMORY_CONN") is not None:
+        if app.config.get("DATABASE_BACKEND") == "postgresql":
+            from . import postgres
+            g.db = postgres.checkout(app.config)   # back to the pool in close_db
+            g.db_is_shared = False
+        elif path == ":memory:" and app.config.get("_SHARED_MEMORY_CONN") is not None:
             # Tests share one in-memory connection so every request sees the same DB.
             g.db = app.config["_SHARED_MEMORY_CONN"]
             g.db_is_shared = True
@@ -337,6 +355,8 @@ def _apply_added_columns(conn):
 
 
 def init_schema(conn):
+    if _is_postgres(conn):
+        return _init_postgres_schema(conn)
     with open(SCHEMA_PATH, "r", encoding="utf-8") as fh:
         script = fh.read()
     try:
@@ -347,6 +367,20 @@ def init_schema(conn):
     _widen_event_type_check(conn)
     _apply_added_columns(conn)
     _widen_notification_status_check(conn)
+    _seed_reference_data(conn)
+    _require_university_timezones(conn)
+    return conn
+
+
+def _init_postgres_schema(conn):
+    """PostgreSQL: apply pending migrations (schema_postgres.sql is the
+    baseline), then the same idempotent start-up data steps as SQLite. The
+    caller holds the start-up lock (app._init_database)."""
+    from datetime import datetime, timezone
+
+    from . import postgres
+
+    postgres.migrate(conn, datetime.now(timezone.utc).isoformat(timespec="seconds"))
     _seed_reference_data(conn)
     _require_university_timezones(conn)
     return conn
@@ -448,6 +482,11 @@ def transaction(conn=None, immediate=True):
     so the state a decision was based on cannot change under it.
     """
     conn = conn if conn is not None else get_db()
+    if _is_postgres(conn):
+        # BEGIN plus the app-wide write lock when immediate (db/postgres.py).
+        with conn.transaction(immediate=immediate):
+            yield conn
+        return
     if conn.in_transaction:
         # Already inside an outer transaction: join it rather than nesting,
         # so the outer block keeps all-or-nothing semantics.
@@ -493,5 +532,7 @@ def execute(sql, params=(), conn=None):
 
 def insert_returning_id(sql, params=(), conn=None):
     conn = conn if conn is not None else get_db()
+    if _is_postgres(conn):
+        return conn.insert_returning_id(sql, params)   # INSERT ... RETURNING id
     cur = conn.execute(sql, params)
     return cur.lastrowid
